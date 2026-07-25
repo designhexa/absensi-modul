@@ -10,8 +10,8 @@ export const BUBUR_BASE = {
   daging: 5,
   air: 700,
   sayurHijau: 8,
-  sayurBrokoli: 5,
-  sayurPutih: 1.5, // = 3/2
+  sayurBuah: 5,
+  sayurProtein: 1.5, // = 3/2
 };
 
 export const formatDecimal = (value: number) => {

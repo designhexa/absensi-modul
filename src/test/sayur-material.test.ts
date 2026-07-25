@@ -4,8 +4,8 @@ import { describe, it, expect } from "vitest";
 function calcSayurReqs(
   totals: { buburD: number; buburI: number; timD: number; timI: number },
   settings: {
-    sayurHijauBubur: number; sayurBrokoliBubur: number; sayurPutihBubur: number;
-    sayurHijauTim: number; sayurBrokoliTim: number; sayurPutihTim: number;
+    sayurHijauBubur: number; sayurBuahBubur: number; sayurProteinBubur: number;
+    sayurHijauTim: number; sayurBuahTim: number; sayurProteinTim: number;
   }
 ) {
   const shGr = Math.ceil(
@@ -13,12 +13,12 @@ function calcSayurReqs(
     (totals.timD + totals.timI) * settings.sayurHijauTim
   );
   const sbGr = Math.ceil(
-    (totals.buburD + totals.buburI) * settings.sayurBrokoliBubur +
-    (totals.timD + totals.timI) * settings.sayurBrokoliTim
+    (totals.buburD + totals.buburI) * settings.sayurBuahBubur +
+    (totals.timD + totals.timI) * settings.sayurBuahTim
   );
   const spGr = Math.ceil(
-    (totals.buburD + totals.buburI) * settings.sayurPutihBubur +
-    (totals.timD + totals.timI) * settings.sayurPutihTim
+    (totals.buburD + totals.buburI) * settings.sayurProteinBubur +
+    (totals.timD + totals.timI) * settings.sayurProteinTim
   );
   return { shGr, sbGr, spGr };
 }
@@ -26,11 +26,11 @@ function calcSayurReqs(
 // Corrected DEFAULT_SETTINGS values (from store.ts after fix)
 const DEFAULT_SAYUR = {
   sayurHijauBubur: 1.33,
-  sayurBrokoliBubur: 0.83,
-  sayurPutihBubur: 0.25,
+  sayurBuahBubur: 0.83,
+  sayurProteinBubur: 0.25,
   sayurHijauTim: 1.60,
-  sayurBrokoliTim: 1.00,
-  sayurPutihTim: 0.30,
+  sayurBuahTim: 1.00,
+  sayurProteinTim: 0.30,
 };
 
 describe("Sayur material requirements calculation", () => {
@@ -98,8 +98,8 @@ describe("Sayur per-cup gramasi matches formula ratio", () => {
   // Sayur per cup = (100/6) × 8/100 = 8/6, (100/6) × 5/100 = 5/6, (100/6) × 1.5/100 = 1.5/6
   it("Bubur sayur values should match 100:5:700:8:5:1.5 ratio", () => {
     expect(DEFAULT_SAYUR.sayurHijauBubur).toBeCloseTo(8 / 6, 2);    // 1.333...
-    expect(DEFAULT_SAYUR.sayurBrokoliBubur).toBeCloseTo(5 / 6, 2);  // 0.833...
-    expect(DEFAULT_SAYUR.sayurPutihBubur).toBeCloseTo(1.5 / 6, 2);  // 0.25
+    expect(DEFAULT_SAYUR.sayurBuahBubur).toBeCloseTo(5 / 6, 2);  // 0.833...
+    expect(DEFAULT_SAYUR.sayurProteinBubur).toBeCloseTo(1.5 / 6, 2);  // 0.25
   });
 
   // Nasi Tim: per 100gr beras = 5 cup → beras per cup = 20
@@ -107,8 +107,8 @@ describe("Sayur per-cup gramasi matches formula ratio", () => {
   // Sayur per cup = 20 × 8/100 = 1.6, 20 × 5/100 = 1.0, 20 × 1.5/100 = 0.3
   it("Nasi Tim sayur values should match 100:4:600:8:5:1.5 ratio", () => {
     expect(DEFAULT_SAYUR.sayurHijauTim).toBeCloseTo(20.00 * 8 / 100, 2);  // 1.6
-    expect(DEFAULT_SAYUR.sayurBrokoliTim).toBeCloseTo(20.00 * 5 / 100, 2); // 1.0
-    expect(DEFAULT_SAYUR.sayurPutihTim).toBeCloseTo(20.00 * 1.5 / 100, 2); // 0.3
+    expect(DEFAULT_SAYUR.sayurBuahTim).toBeCloseTo(20.00 * 5 / 100, 2); // 1.0
+    expect(DEFAULT_SAYUR.sayurProteinTim).toBeCloseTo(20.00 * 1.5 / 100, 2); // 0.3
   });
 });
 
@@ -119,8 +119,8 @@ describe("Sayur retur calculation (saveStep5 logic)", () => {
     const settings = DEFAULT_SAYUR;
 
     const returSH = actualRetur * settings.sayurHijauBubur;
-    const returSB = actualRetur * settings.sayurBrokoliBubur;
-    const returSP = actualRetur * settings.sayurPutihBubur;
+    const returSB = actualRetur * settings.sayurBuahBubur;
+    const returSP = actualRetur * settings.sayurProteinBubur;
 
     expect(returSH).toBeCloseTo(13.3, 1);
     expect(returSB).toBeCloseTo(8.3, 1);
@@ -132,8 +132,8 @@ describe("Sayur retur calculation (saveStep5 logic)", () => {
     const settings = DEFAULT_SAYUR;
 
     const returSH = actualRetur * settings.sayurHijauTim;
-    const returSB = actualRetur * settings.sayurBrokoliTim;
-    const returSP = actualRetur * settings.sayurPutihTim;
+    const returSB = actualRetur * settings.sayurBuahTim;
+    const returSP = actualRetur * settings.sayurProteinTim;
 
     expect(returSH).toBeCloseTo(16.0, 1);
     expect(returSB).toBeCloseTo(10.0, 1);
@@ -146,8 +146,8 @@ describe("Sayur retur calculation (saveStep5 logic)", () => {
     const settings = DEFAULT_SAYUR;
 
     const totalSH = returBubur * settings.sayurHijauBubur + returTim * settings.sayurHijauTim;
-    const totalSB = returBubur * settings.sayurBrokoliBubur + returTim * settings.sayurBrokoliTim;
-    const totalSP = returBubur * settings.sayurPutihBubur + returTim * settings.sayurPutihTim;
+    const totalSB = returBubur * settings.sayurBuahBubur + returTim * settings.sayurBuahTim;
+    const totalSP = returBubur * settings.sayurProteinBubur + returTim * settings.sayurProteinTim;
 
     expect(totalSH).toBeCloseTo(8 * 1.33 + 5 * 1.60, 2); // 10.64 + 8 = 18.64
     expect(totalSB).toBeCloseTo(8 * 0.83 + 5 * 1.00, 2); // 6.64 + 5 = 11.64

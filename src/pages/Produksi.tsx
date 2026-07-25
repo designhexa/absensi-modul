@@ -28,8 +28,8 @@ const BUBUR_BASE = {
   daging: 5,
   air: 700,
   sayurHijau: 8,
-  sayurBrokoli: 5,
-  sayurPutih: 1.5, // = 3/2
+  sayurBuah: 5,
+  sayurProtein: 1.5, // = 3/2
 };
 
 const formatDecimal = (value: number) => {
@@ -721,7 +721,7 @@ export default function Produksi() {
       });
     }
 
-    const sbGr = Math.ceil(buburCalc(t.buburD + t.buburI, BUBUR_BASE.sayurBrokoli) + (t.timD + t.timI) * settings.sayurBrokoliTim);
+    const sbGr = Math.ceil(buburCalc(t.buburD + t.buburI, BUBUR_BASE.sayurBuah) + (t.timD + t.timI) * settings.sayurBuahTim);
     if (sbGr > 0) {
       reqs.push({
         bahanId: "b-sb01",
@@ -733,7 +733,7 @@ export default function Produksi() {
       });
     }
 
-    const spGr = Math.ceil(buburCalc(t.buburD + t.buburI, BUBUR_BASE.sayurPutih) + (t.timD + t.timI) * settings.sayurPutihTim);
+    const spGr = Math.ceil(buburCalc(t.buburD + t.buburI, BUBUR_BASE.sayurProtein) + (t.timD + t.timI) * settings.sayurProteinTim);
     if (spGr > 0) {
       reqs.push({
         bahanId: "b-sp01",
@@ -1209,8 +1209,8 @@ export default function Produksi() {
         oat: 0,
         abon: 0,
         sayurHijau: 0,
-        sayurBrokoli: 0,
-        sayurPutih: 0
+        sayurBuah: 0,
+        sayurProtein: 0
       };
 
       outlets.forEach((o) => {
@@ -1224,8 +1224,8 @@ export default function Produksi() {
             if (actualReturCups > 0) {
               recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualReturCups, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualReturCups, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }
           if (sent.bubur_i > 0) {
@@ -1233,8 +1233,8 @@ export default function Produksi() {
             if (actualReturCups > 0) {
               recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualReturCups, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualReturCups, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }
 
@@ -1244,8 +1244,8 @@ export default function Produksi() {
             if (actualReturCups > 0) {
               recoveredIngredients.beras += actualReturCups * settings.berasTim;
               recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualReturCups * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualReturCups * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }
           if (sent.tim_i > 0) {
@@ -1253,8 +1253,8 @@ export default function Produksi() {
             if (actualReturCups > 0) {
               recoveredIngredients.beras += actualReturCups * settings.berasTim;
               recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualReturCups * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualReturCups * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }
 
@@ -1355,17 +1355,17 @@ export default function Produksi() {
           keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.sayurBrokoli > 1) {
+      if (recoveredIngredients.sayurBuah > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-sb01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.sayurBrokoli),
+          qty: Math.ceil(recoveredIngredients.sayurBuah),
           keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.sayurPutih > 1) {
+      if (recoveredIngredients.sayurProtein > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-sp01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.sayurPutih),
+          qty: Math.ceil(recoveredIngredients.sayurProtein),
           keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
         }));
       }
@@ -2034,12 +2034,12 @@ export default function Produksi() {
               
               // Sayur
               const totalShBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurHijau);
-              const totalSbBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurBrokoli);
-              const totalSpBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurPutih);
+              const totalSbBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurBuah);
+              const totalSpBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurProtein);
               
               const totalShTim = (totals.timD + totals.timI) * settings.sayurHijauTim;
-              const totalSbTim = (totals.timD + totals.timI) * settings.sayurBrokoliTim;
-              const totalSpTim = (totals.timD + totals.timI) * settings.sayurPutihTim;
+              const totalSbTim = (totals.timD + totals.timI) * settings.sayurBuahTim;
+              const totalSpTim = (totals.timD + totals.timI) * settings.sayurProteinTim;
 
               const hasPlan = totalBeras > 0 || totalOatmeal > 0 || totalPuding > 0 || totalAbon > 0;
               if (!hasPlan) {
@@ -2129,8 +2129,8 @@ export default function Produksi() {
                       <div>• {bubur1Name}: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.daging))} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.air))} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurHijau))} gr</span></div>
-                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurBrokoli))} gr</span></div>
-                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurPutih))} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurBuah))} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurProtein))} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2144,8 +2144,8 @@ export default function Produksi() {
                       <div>• {bubur2Name}: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.daging))} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.air))} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurHijau))} gr</span></div>
-                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurBrokoli))} gr</span></div>
-                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurPutih))} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurBuah))} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurProtein))} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2159,8 +2159,8 @@ export default function Produksi() {
                       <div>• {tim1Name}: <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.dagingTim)} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.airTim)} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurHijauTim)} gr</span></div>
-                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurBrokoliTim)} gr</span></div>
-                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurPutihTim)} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurBuahTim)} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurProteinTim)} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2174,8 +2174,8 @@ export default function Produksi() {
                       <div>• {tim2Name}: <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.dagingTim)} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.airTim)} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurHijauTim)} gr</span></div>
-                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurBrokoliTim)} gr</span></div>
-                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurPutihTim)} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurBuahTim)} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurProteinTim)} gr</span></div>
                     </div>
                   </div>
                 )}

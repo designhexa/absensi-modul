@@ -351,7 +351,7 @@ export default function Distribusi() {
       }
 
       // Recovered ingredients
-      const recoveredIngredients = { beras: 0, puding: 0, oat: 0, abon: 0, sayurHijau: 0, sayurBrokoli: 0, sayurPutih: 0 };
+      const recoveredIngredients = { beras: 0, puding: 0, oat: 0, abon: 0, sayurHijau: 0, sayurBuah: 0, sayurProtein: 0 };
 
       outlets.forEach((o) => {
         const sent = distGrid[o.id] || {};
@@ -365,8 +365,8 @@ export default function Distribusi() {
               if (actualRet > 0) {
                 recoveredIngredients.beras += buburCalc(actualRet, BUBUR_BASE.beras);
                 recoveredIngredients.sayurHijau += buburCalc(actualRet, BUBUR_BASE.sayurHijau);
-                recoveredIngredients.sayurBrokoli += buburCalc(actualRet, BUBUR_BASE.sayurBrokoli);
-                recoveredIngredients.sayurPutih += buburCalc(actualRet, BUBUR_BASE.sayurPutih);
+                recoveredIngredients.sayurBuah += buburCalc(actualRet, BUBUR_BASE.sayurBuah);
+                recoveredIngredients.sayurProtein += buburCalc(actualRet, BUBUR_BASE.sayurProtein);
               }
             }
           });
@@ -379,8 +379,8 @@ export default function Distribusi() {
               if (actualRet > 0) {
                 recoveredIngredients.beras += actualRet * settings.berasTim;
                 recoveredIngredients.sayurHijau += actualRet * settings.sayurHijauTim;
-                recoveredIngredients.sayurBrokoli += actualRet * settings.sayurBrokoliTim;
-                recoveredIngredients.sayurPutih += actualRet * settings.sayurPutihTim;
+                recoveredIngredients.sayurBuah += actualRet * settings.sayurBuahTim;
+                recoveredIngredients.sayurProtein += actualRet * settings.sayurProteinTim;
               }
             }
           });
@@ -414,8 +414,8 @@ export default function Distribusi() {
       if (recoveredIngredients.oat > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "IN", qty: Math.ceil(recoveredIngredients.oat / (bahan.find((x: any) => x.id === "b-oat01")?.konversiGram ?? 154)), keterangan: `Retur Bahan Baku (sachet) [${tanggal}]` }));
       if (recoveredIngredients.abon > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ab01", tipe: "IN", qty: Math.ceil(recoveredIngredients.abon / (bahan.find((x: any) => x.id === "b-ab01")?.konversiGram ?? 10)), keterangan: `Retur Bahan Baku (pcs) [${tanggal}]` }));
       if (recoveredIngredients.sayurHijau > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sh01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurHijau), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.sayurBrokoli > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurBrokoli), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.sayurPutih > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurPutih), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
+      if (recoveredIngredients.sayurBuah > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurBuah), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
+      if (recoveredIngredients.sayurProtein > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurProtein), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
 
       if (movPromises.length > 0) { await Promise.all(movPromises); }
 

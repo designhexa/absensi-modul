@@ -32,8 +32,8 @@ function calcReturSplit(
 interface BubaSettings {
   berasTim: number;
   sayurHijauTim: number;
-  sayurBrokoliTim: number;
-  sayurPutihTim: number;
+  sayurBuahTim: number;
+  sayurProteinTim: number;
   oatmealCup: number;
   pudingCup: number;
   abonCup: number;
@@ -55,8 +55,8 @@ interface Recovered {
   oat: number;
   abon: number;
   sayurHijau: number;
-  sayurBrokoli: number;
-  sayurPutih: number;
+  sayurBuah: number;
+  sayurProtein: number;
 }
 
 function calcRecoveredIngredients(
@@ -65,7 +65,7 @@ function calcRecoveredIngredients(
   outlets: { id: string }[],
   settings: BubaSettings
 ): Recovered {
-  const recovered: Recovered = { beras: 0, puding: 0, oat: 0, abon: 0, sayurHijau: 0, sayurBrokoli: 0, sayurPutih: 0 };
+  const recovered: Recovered = { beras: 0, puding: 0, oat: 0, abon: 0, sayurHijau: 0, sayurBuah: 0, sayurProtein: 0 };
 
   outlets.forEach((o) => {
     const sent = distGrid[o.id] || { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
@@ -80,8 +80,8 @@ function calcRecoveredIngredients(
           if (actualRet > 0) {
             recovered.beras += buburCalc(actualRet, BUBUR_BASE.beras);
             recovered.sayurHijau += buburCalc(actualRet, BUBUR_BASE.sayurHijau);
-            recovered.sayurBrokoli += buburCalc(actualRet, BUBUR_BASE.sayurBrokoli);
-            recovered.sayurPutih += buburCalc(actualRet, BUBUR_BASE.sayurPutih);
+            recovered.sayurBuah += buburCalc(actualRet, BUBUR_BASE.sayurBuah);
+            recovered.sayurProtein += buburCalc(actualRet, BUBUR_BASE.sayurProtein);
           }
         }
       });
@@ -96,8 +96,8 @@ function calcRecoveredIngredients(
           if (actualRet > 0) {
             recovered.beras += actualRet * settings.berasTim;
             recovered.sayurHijau += actualRet * settings.sayurHijauTim;
-            recovered.sayurBrokoli += actualRet * settings.sayurBrokoliTim;
-            recovered.sayurPutih += actualRet * settings.sayurPutihTim;
+            recovered.sayurBuah += actualRet * settings.sayurBuahTim;
+            recovered.sayurProtein += actualRet * settings.sayurProteinTim;
           }
         }
       });
@@ -442,8 +442,8 @@ describe("calcRecoveredIngredients", () => {
   const defaultSettings: BubaSettings = {
     berasTim: 20,
     sayurHijauTim: 1.6,
-    sayurBrokoliTim: 1.0,
-    sayurPutihTim: 0.3,
+    sayurBuahTim: 1.0,
+    sayurProteinTim: 0.3,
     oatmealCup: 25.71,
     pudingCup: 13,
     abonCup: 10,
@@ -460,8 +460,8 @@ describe("calcRecoveredIngredients", () => {
     expect(result.oat).toBe(0);
     expect(result.abon).toBe(0);
     expect(result.sayurHijau).toBe(0);
-    expect(result.sayurBrokoli).toBe(0);
-    expect(result.sayurPutih).toBe(0);
+    expect(result.sayurBuah).toBe(0);
+    expect(result.sayurProtein).toBe(0);
   });
 
   it("should calculate recovered ingredients from bubur retur correctly", () => {
@@ -482,8 +482,8 @@ describe("calcRecoveredIngredients", () => {
     // SayurPutih: 10 * 1.5/6 = 2.5
     expect(result.beras).toBeCloseTo(166.67, 1);
     expect(result.sayurHijau).toBeCloseTo(13.33, 1);
-    expect(result.sayurBrokoli).toBeCloseTo(8.33, 1);
-    expect(result.sayurPutih).toBeCloseTo(2.50, 1);
+    expect(result.sayurBuah).toBeCloseTo(8.33, 1);
+    expect(result.sayurProtein).toBeCloseTo(2.50, 1);
     expect(result.puding).toBe(0);
     expect(result.oat).toBe(0);
     expect(result.abon).toBe(0);
@@ -507,8 +507,8 @@ describe("calcRecoveredIngredients", () => {
     // SayurPutih: 8 * 0.3 = 2.4
     expect(result.beras).toBeCloseTo(160, 1);
     expect(result.sayurHijau).toBeCloseTo(12.8, 1);
-    expect(result.sayurBrokoli).toBe(8);
-    expect(result.sayurPutih).toBeCloseTo(2.4, 1);
+    expect(result.sayurBuah).toBe(8);
+    expect(result.sayurProtein).toBeCloseTo(2.4, 1);
   });
 
   it("should calculate recovered ingredients from oatmeal, puding, abon retur", () => {
@@ -562,8 +562,8 @@ describe("calcRecoveredIngredients", () => {
 
     expect(result.beras).toBeCloseTo(313.33, 0);
     expect(result.sayurHijau).toBeCloseTo(25.07, 0);
-    expect(result.sayurBrokoli).toBeCloseTo(15.67, 0);
-    expect(result.sayurPutih).toBeCloseTo(4.7, 0);
+    expect(result.sayurBuah).toBeCloseTo(15.67, 0);
+    expect(result.sayurProtein).toBeCloseTo(4.7, 0);
     expect(result.oat).toBeCloseTo(77.13, 0);
     expect(result.puding).toBe(13);
     expect(result.abon).toBe(30);

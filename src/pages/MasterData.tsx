@@ -82,15 +82,15 @@ export default function MasterData() {
   const [sDagingBubur, setSDagingBubur] = useState(globalSettings.dagingBubur);
   const [sAirBubur, setSAirBubur] = useState(globalSettings.airBubur);
   const [sSayurHijauBubur, setSSayurHijauBubur] = useState(globalSettings.sayurHijauBubur);
-  const [sSayurBrokoliBubur, setSSayurBrokoliBubur] = useState(globalSettings.sayurBrokoliBubur);
-  const [sSayurPutihBubur, setSSayurPutihBubur] = useState(globalSettings.sayurPutihBubur);
+  const [sSayurBrokoliBubur, setSSayurBrokoliBubur] = useState(globalSettings.sayurBuahBubur);
+  const [sSayurPutihBubur, setSSayurPutihBubur] = useState(globalSettings.sayurProteinBubur);
 
   const [sBerasTim, setSBerasTim] = useState(globalSettings.berasTim);
   const [sDagingTim, setSDagingTim] = useState(globalSettings.dagingTim);
   const [sAirTim, setSAirTim] = useState(globalSettings.airTim);
   const [sSayurHijauTim, setSSayurHijauTim] = useState(globalSettings.sayurHijauTim);
-  const [sSayurBrokoliTim, setSSayurBrokoliTim] = useState(globalSettings.sayurBrokoliTim);
-  const [sSayurPutihTim, setSSayurPutihTim] = useState(globalSettings.sayurPutihTim);
+  const [sSayurBrokoliTim, setSSayurBrokoliTim] = useState(globalSettings.sayurBuahTim);
+  const [sSayurPutihTim, setSSayurPutihTim] = useState(globalSettings.sayurProteinTim);
 
   const [sOatmealCup, setSOatmealCup] = useState(globalSettings.oatmealCup);
   const [sPudingCup, setSPudingCup] = useState(globalSettings.pudingCup);
@@ -106,14 +106,14 @@ export default function MasterData() {
       setSDagingBubur(gs.dagingBubur);
       setSAirBubur(gs.airBubur);
       setSSayurHijauBubur(gs.sayurHijauBubur);
-      setSSayurBrokoliBubur(gs.sayurBrokoliBubur);
-      setSSayurPutihBubur(gs.sayurPutihBubur);
+      setSSayurBrokoliBubur(gs.sayurBuahBubur);
+      setSSayurPutihBubur(gs.sayurProteinBubur);
       setSBerasTim(gs.berasTim);
       setSDagingTim(gs.dagingTim);
       setSAirTim(gs.airTim);
       setSSayurHijauTim(gs.sayurHijauTim);
-      setSSayurBrokoliTim(gs.sayurBrokoliTim);
-      setSSayurPutihTim(gs.sayurPutihTim);
+      setSSayurBrokoliTim(gs.sayurBuahTim);
+      setSSayurPutihTim(gs.sayurProteinTim);
       setSOatmealCup(gs.oatmealCup);
       setSPudingCup(gs.pudingCup);
       setSAbonCup(gs.abonCup);
@@ -133,15 +133,15 @@ export default function MasterData() {
       dagingBubur: Number(sDagingBubur),
       airBubur: Number(sAirBubur),
       sayurHijauBubur: Number(sSayurHijauBubur),
-      sayurBrokoliBubur: Number(sSayurBrokoliBubur),
-      sayurPutihBubur: Number(sSayurPutihBubur),
+      sayurBuahBubur: Number(sSayurBrokoliBubur),
+      sayurProteinBubur: Number(sSayurPutihBubur),
       
       berasTim: Number(sBerasTim),
       dagingTim: Number(sDagingTim),
       airTim: Number(sAirTim),
       sayurHijauTim: Number(sSayurHijauTim),
-      sayurBrokoliTim: Number(sSayurBrokoliTim),
-      sayurPutihTim: Number(sSayurPutihTim),
+      sayurBuahTim: Number(sSayurBrokoliTim),
+      sayurProteinTim: Number(sSayurPutihTim),
 
       oatmealCup: Number(sOatmealCup),
       pudingCup: Number(sPudingCup),

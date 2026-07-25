@@ -12,16 +12,16 @@ export interface BubaSettings {
   dagingBubur: number;
   airBubur: number;
   sayurHijauBubur: number;
-  sayurBrokoliBubur: number;
-  sayurPutihBubur: number;
+  sayurBuahBubur: number;
+  sayurProteinBubur: number;
   
   // Nasi Tim
   berasTim: number;
   dagingTim: number;
   airTim: number;
   sayurHijauTim: number;
-  sayurBrokoliTim: number;
-  sayurPutihTim: number;
+  sayurBuahTim: number;
+  sayurProteinTim: number;
 
   // Lainnya
   oatmealCup: number;
@@ -41,12 +41,12 @@ export interface BubaSettings {
 //
 // LEVEL 1 — BASE RATIO (per 100gr BERAS)
 //   Menentukan komposisi bahan relatif terhadap 100gr beras.
-//   Rasio: Beras : Daging : Air : S.Hijau : S.Brokoli : S.Putih
+//   Rasio: Beras : Daging : Air : S.Hijau : Buah : Protein
 //
 //   Bubur    → 100 : 5 : 700 : 8 : 5 : 1.5
 //   Nasi Tim → 100 : 4 : 600 : 8 : 5 : 1.5
 //
-//   Artinya: setiap 100gr beras BUTUH 5gr daging, 700ml air, 8gr SH, 5gr SB, 1.5gr SP.
+//   Artinya: setiap 100gr beras BUTUH 5gr daging, 700ml air, 8gr SH, 5gr SB (Sayur Buah), 1.5gr SP (Sayur Protein).
 //
 // LEVEL 2 — PER CUP (Nilai yang disimpan di settings ini)
 //   Hasil konversi dari Level 1 dengan membagi sesuai jumlah cup per 100gr beras.
@@ -67,8 +67,8 @@ export const DEFAULT_SETTINGS: BubaSettings = {
   dagingBubur: 0.83,          // 5 ÷ 6 = 0.833...
   airBubur: 116.67,           // 700 ÷ 6 = 116 2/3
   sayurHijauBubur: 1.33,      // 8 ÷ 6 = 4/3 = 1.333...
-  sayurBrokoliBubur: 0.83,    // 5 ÷ 6 = 0.833...
-  sayurPutihBubur: 0.25,      // 1.5 ÷ 6 = 0.25
+  sayurBuahBubur: 0.83,       // 5 ÷ 6 = 0.833...
+  sayurProteinBubur: 0.25,    // 1.5 ÷ 6 = 0.25
   
   // --- NASI TIM ---
   // Base ratio (per 100gr beras): 100 : 4 : 600 : 8 : 5 : 1.5
@@ -77,8 +77,8 @@ export const DEFAULT_SETTINGS: BubaSettings = {
   dagingTim: 0.80,             // 4 ÷ 5 = 0.8
   airTim: 120.00,              // 600 ÷ 5 = 120
   sayurHijauTim: 1.60,         // 8 ÷ 5 = 1.6
-  sayurBrokoliTim: 1.00,       // 5 ÷ 5 = 1.0
-  sayurPutihTim: 0.30,         // 1.5 ÷ 5 = 0.3
+  sayurBuahTim: 1.00,          // 5 ÷ 5 = 1.0
+  sayurProteinTim: 0.30,       // 1.5 ÷ 5 = 0.3
 
   oatmealCup: 25.71,
   pudingCup: 13.00,
@@ -88,11 +88,29 @@ export const DEFAULT_SETTINGS: BubaSettings = {
   lockEnabled: false,
 };
 
+// Map old setting names to new names for backward compatibility
+export function migrateBubaSettings(saved: Record<string, any>): Record<string, any> {
+  const oldToNew: Record<string, string> = {
+    sayurBrokoliBubur: "sayurBuahBubur",
+    sayurBrokoliTim: "sayurBuahTim",
+    sayurPutihBubur: "sayurProteinBubur",
+    sayurPutihTim: "sayurProteinTim"
+  };
+  const migrated: Record<string, any> = {};
+  for (const [key, val] of Object.entries(saved)) {
+    const newKey = oldToNew[key] || key;
+    migrated[newKey] = val;
+  }
+  return migrated;
+}
+
 export function getBubaSettings(): BubaSettings {
   const saved = localStorage.getItem("buba_settings");
   if (!saved) return DEFAULT_SETTINGS;
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    const parsed = JSON.parse(saved);
+    const migrated = migrateBubaSettings(parsed);
+    return { ...DEFAULT_SETTINGS, ...migrated };
   } catch {
     return DEFAULT_SETTINGS;
   }

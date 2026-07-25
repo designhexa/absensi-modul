@@ -190,8 +190,8 @@ const recovPatterns = [
             if (actualRetur > 0) {
               recoveredIngredients.beras += buburCalc(actualRetur, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualRetur, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualRetur, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualRetur, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualRetur, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualRetur, BUBUR_BASE.sayurProtein);
             }
           }`,
     new: `          if (sent.bubur_d > 0) {
@@ -199,8 +199,8 @@ const recovPatterns = [
             if (actualReturCups > 0) {
               recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualReturCups, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualReturCups, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }`
   },
@@ -211,8 +211,8 @@ const recovPatterns = [
             if (actualRetur > 0) {
               recoveredIngredients.beras += buburCalc(actualRetur, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualRetur, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualRetur, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualRetur, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualRetur, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualRetur, BUBUR_BASE.sayurProtein);
             }
           }`,
     new: `          if (sent.bubur_i > 0) {
@@ -220,8 +220,8 @@ const recovPatterns = [
             if (actualReturCups > 0) {
               recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
               recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBrokoli += buburCalc(actualReturCups, BUBUR_BASE.sayurBrokoli);
-              recoveredIngredients.sayurPutih += buburCalc(actualReturCups, BUBUR_BASE.sayurPutih);
+              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }`
   },
@@ -232,8 +232,8 @@ const recovPatterns = [
             if (actualRetur > 0) {
               recoveredIngredients.beras += actualRetur * settings.berasTim;
               recoveredIngredients.sayurHijau += actualRetur * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualRetur * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualRetur * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualRetur * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualRetur * settings.sayurProteinTim;
             }
           }`,
     new: `          if (sent.tim_d > 0) {
@@ -241,8 +241,8 @@ const recovPatterns = [
             if (actualReturCups > 0) {
               recoveredIngredients.beras += actualReturCups * settings.berasTim;
               recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualReturCups * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualReturCups * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }`
   },
@@ -253,8 +253,8 @@ const recovPatterns = [
             if (actualRetur > 0) {
               recoveredIngredients.beras += actualRetur * settings.berasTim;
               recoveredIngredients.sayurHijau += actualRetur * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualRetur * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualRetur * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualRetur * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualRetur * settings.sayurProteinTim;
             }
           }`,
     new: `          if (sent.tim_i > 0) {
@@ -262,8 +262,8 @@ const recovPatterns = [
             if (actualReturCups > 0) {
               recoveredIngredients.beras += actualReturCups * settings.berasTim;
               recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBrokoli += actualReturCups * settings.sayurBrokoliTim;
-              recoveredIngredients.sayurPutih += actualReturCups * settings.sayurPutihTim;
+              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }`
   }
