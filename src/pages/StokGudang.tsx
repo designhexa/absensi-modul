@@ -463,7 +463,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   const [editTanggal, setEditTanggal] = useState(todayISO());
 
   const effectiveStokMov = useMemo(
-    () => (stokMov || []).filter((m: any) => !m.keterangan?.startsWith("RUSAK:PENDING:")),
+    () => (stokMov || []).filter((m: any) => !m.keterangan?.startsWith("RUSAK:PENDING:") && !m.keterangan?.startsWith("EDIT:PENDING:")),
     [stokMov]
   );
 
@@ -567,15 +567,15 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
         </Card>
       </div>
 
-      {/* Pengajuan Edit Stok */}
+      {/* Form Kesesuaian */}
       <Card className="glass border-0 shadow-card border-l-4 border-l-blue-500">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Edit3 className="h-5 w-5 text-blue-500" />
-            Pengajuan Edit Stok
+            Form Kesesuaian
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Jika ada ketidaksesuaian data stok di lapangan, ajukan koreksi di sini. Admin akan memproses pengajuan Anda.
+            Validasi data stok di aplikasi dengan kondisi fisik di lapangan. Jika ada perbedaan (selisih stok, barang datang tidak tercatat, dll.), ajukan koreksi di sini. Admin akan menyetujui atau menolak pengajuan Anda.
           </p>
         </CardHeader>
         <CardContent>
@@ -930,6 +930,33 @@ export default function StokGudang() {
     toast.success("Laporan barang rusak ditolak & dihapus.");
   };
 
+  // === Helper: Approve pending edit dari gudang ===
+  const approveEdit = async (mov: any) => {
+    const selectedBahan = bahan.find(b => b.id === mov.bahanId);
+    if (!selectedBahan) return toast.error("Bahan tidak ditemukan");
+
+    const rawDetail = mov.keterangan?.replace("EDIT:PENDING:", "") || "";
+    const parts = rawDetail.split("|");
+    const itemDetail = parts[0]?.trim() || rawDetail;
+    const creatorInfo = parts[1]?.trim() || "";
+    const adminName = user?.nama || user?.username || "Admin";
+    const approvedKet = `EDIT:APPROVED:${itemDetail}${creatorInfo ? ` | ${creatorInfo}` : ""} | disetujui oleh ${adminName}`;
+
+    // Update keterangan jadi APPROVED
+    await supabase
+      .from("stok_movement")
+      .update({ keterangan: approvedKet })
+      .eq("id", mov.id);
+
+    toast.success(`Koreksi stok disetujui! ${mov.tipe === "IN" ? "Stok bertambah" : "Stok berkurang"} ${mov.qty} ${selectedBahan.satuan}.`);
+  };
+
+  // === Helper: Reject pending edit ===
+  const rejectEdit = async (mov: any) => {
+    await db.deleteStokMov(mov.id);
+    toast.success("Pengajuan koreksi stok ditolak & dihapus.");
+  };
+
   const getGramasiInfo = (b: any) => {
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
@@ -955,7 +982,7 @@ export default function StokGudang() {
 
   // StokMov tanpa PENDING rusak — pending tidak boleh pengaruhi saldo & riwayat
   const effectiveStokMov = useMemo(
-    () => (stokMov || []).filter((m: any) => !m.keterangan?.startsWith("RUSAK:PENDING:")),
+    () => (stokMov || []).filter((m: any) => !m.keterangan?.startsWith("RUSAK:PENDING:") && !m.keterangan?.startsWith("EDIT:PENDING:")),
     [stokMov]
   );
 
@@ -981,6 +1008,11 @@ export default function StokGudang() {
 
   const pendingRusak = useMemo(
     () => (stokMov || []).filter(m => m.keterangan?.startsWith("RUSAK:PENDING:")).reverse(),
+    [stokMov]
+  );
+
+  const pendingEdit = useMemo(
+    () => (stokMov || []).filter(m => m.keterangan?.startsWith("EDIT:PENDING:")).reverse(),
     [stokMov]
   );
 
@@ -1200,6 +1232,80 @@ export default function StokGudang() {
           </TabsContent>
 
           <TabsContent value="rusak" className="m-0 space-y-4">
+            {/* === ADMIN: PENDING EDIT REQUESTS FROM GUDANG === */}
+            {!isProduksi && pendingEdit.length > 0 && (
+              <Card className="glass border-0 shadow-card border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                    <Clock className="h-5 w-5" />
+                    Form Kesesuaian — Pengajuan dari Gudang
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">Setujui untuk mencatat perubahan stok, atau tolak untuk hapus</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-xl border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Tanggal</TableHead>
+                          <TableHead>Bahan</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead>Tipe</TableHead>
+                          <TableHead>Alasan</TableHead>
+                          <TableHead className="w-[120px] text-right">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pendingEdit.slice(0, 20).map((m: any) => {
+                          const b = bahan.find((x: any) => x.id === m.bahanId);
+                          const raw = m.keterangan?.replace("EDIT:PENDING:", "") || "";
+                          const parts = raw.split("|");
+                          const detail = parts[0]?.trim() || raw;
+                          const creator = parts[1]?.trim() || "";
+                          return (
+                            <TableRow key={m.id}>
+                              <TableCell className="whitespace-nowrap">{m.tanggal}</TableCell>
+                              <TableCell className="font-medium">{b?.nama ?? "-"}</TableCell>
+                              <TableCell className="text-right font-semibold">{m.qty} {b?.satuan}</TableCell>
+                              <TableCell>
+                                {m.tipe === "IN" 
+                                  ? <Badge className="bg-success text-success-foreground">Tambah</Badge>
+                                  : <Badge variant="destructive">Kurang</Badge>
+                                }
+                              </TableCell>
+                              <TableCell className="text-xs max-w-[200px]">
+                                <span>{detail}</span>
+                                {creator && (
+                                  <span className="text-muted-foreground block leading-tight mt-0.5">{creator}</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-1 justify-end">
+                                  <Button size="sm" className="h-8 w-8 p-0" variant="outline"
+                                    onClick={() => approveEdit(m)} title="Setujui">
+                                    <Check className="h-4 w-4 text-success" />
+                                  </Button>
+                                  <Button size="sm" className="h-8 w-8 p-0" variant="outline"
+                                    onClick={() => rejectEdit(m)} title="Tolak">
+                                    <X className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {pendingEdit.length > 20 && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Menampilkan 20 request terbaru ({pendingEdit.length} total)
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* === ADMIN: PENDING RUSAK REQUESTS FROM PRODUKSI === */}
             {!isProduksi && pendingRusak.length > 0 && (
               <Card className="glass border-0 shadow-card border-l-4 border-l-amber-500">

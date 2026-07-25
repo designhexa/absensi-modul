@@ -27,7 +27,12 @@ export default function Absensi() {
   const { karyawan = [], absensi = [], outlets = [] } = useDB();
 
   const visibleKaryawan = useMemo(
-    () => (isAdmin ? karyawan : karyawan.filter((k) => k.outletId === user?.outletId)),
+    () => {
+      if (isAdmin) return karyawan;
+      if (user?.role === "produksi") return karyawan.filter((k) => k.id === "k-produksi");
+      if (user?.role === "gudang") return karyawan.filter((k) => k.id === "k-gudang");
+      return karyawan.filter((k) => k.outletId === user?.outletId);
+    },
     [karyawan, isAdmin, user]
   );
 
@@ -152,7 +157,7 @@ export default function Absensi() {
   };
 
   useEffect(() => {
-    if (user?.role === "produksi" || user?.role === "outlet") {
+    if (user?.role === "produksi" || user?.role === "gudang" || user?.role === "outlet") {
       fetchGPSLocation();
     }
   }, [user]);
@@ -185,7 +190,7 @@ export default function Absensi() {
   };
 
   const todayRecord = useMemo(() => {
-    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "outlet" ? `k-${user.outletId}-1` : (karyawanId || visibleKaryawan[0]?.id));
+    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "outlet" ? `k-${user.outletId}-1` : (karyawanId || visibleKaryawan[0]?.id)));
     if (!kid) return null;
     return absensi.find((a) => a.tanggal === todayISO() && a.karyawanId === kid);
   }, [absensi, karyawanId, visibleKaryawan, user]);
@@ -237,9 +242,9 @@ export default function Absensi() {
 
   const handleClockInGPS = () => {
     if (gpsLoading) return toast.error("Menunggu GPS mengunci lokasi...");
-    if (!validateGPSDistance()) return;
+    if (user?.role !== "gudang" && !validateGPSDistance()) return;
     const jam = currentTime();
-    const kid = user?.role === "produksi" ? "k-produksi" : `k-${user?.outletId}-1`;
+    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : `k-${user?.outletId}-1`);
     setRecordedJamMasuk(jam);
     db.addAbsensi({
       tanggal: todayISO(),
@@ -254,7 +259,7 @@ export default function Absensi() {
   const handleClockOutGPS = () => {
     if (!todayRecord) return toast.error("Data absensi tidak ditemukan");
     if (gpsLoading) return toast.error("Menunggu GPS mengunci lokasi...");
-    if (!validateGPSDistance()) return;
+    if (user?.role !== "gudang" && !validateGPSDistance()) return;
     const jam = currentTime();
     setRecordedJamPulang(jam);
     db.updateAbsensi(todayRecord.id, {
@@ -423,7 +428,7 @@ export default function Absensi() {
             )}
           </CardContent>
         </Card>
-      ) : (user?.role === "produksi" || user?.role === "outlet") ? (
+      ) : (user?.role === "produksi" || user?.role === "gudang" || user?.role === "outlet") ? (
         <Card className="glass border-0 shadow-card overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-xl font-bold flex items-center gap-2">
