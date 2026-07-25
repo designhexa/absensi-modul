@@ -829,6 +829,18 @@ export default function Produksi() {
       });
     }
 
+    // Plastik Sealer (1 puding = 1 pcs)
+    if (t.puding > 0) {
+      reqs.push({
+        bahanId: "b-plas01",
+        kode: "PLAS01",
+        nama: "PLASTIK SELER",
+        qty: t.puding,
+        rawQtyGrams: t.puding, // 1:1
+        satuan: "pcs"
+      });
+    }
+
     // Cup Oat
     if (t.oatmeal > 0) {
       reqs.push({
