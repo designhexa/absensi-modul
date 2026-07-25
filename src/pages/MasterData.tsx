@@ -553,16 +553,16 @@ export default function MasterData() {
                         <div className="grid grid-cols-2 gap-2">
                           <div className="text-[10px]">
                             <span className="font-bold text-amber-600">Bubur</span>
-                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:SB:SP = </span>
+                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:Buah:Protein = </span>
                             <span className="font-mono font-semibold">100:5:700:8:5:1,5</span>
                           </div>
                           <div className="text-[10px]">
                             <span className="font-bold text-blue-600">Nasi Tim</span>
-                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:SB:SP = </span>
+                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:Buah:Protein = </span>
                             <span className="font-mono font-semibold">100:4:600:8:5:1,5</span>
                           </div>
                         </div>
-                        <p className="text-[9px] text-muted-foreground italic">Artinya: setiap 100gr beras butuh 5gr/4gr daging, 700ml/600ml air, 8gr SH, 5gr SB, 1,5gr SP</p>
+                        <p className="text-[9px] text-muted-foreground italic">Artinya: setiap 100gr beras butuh 5gr/4gr daging, 700ml/600ml air, 8gr SH, 5gr Buah, 1,5gr Protein</p>
                       </div>
 
                       {/* LEVEL 2: PER CUP */}

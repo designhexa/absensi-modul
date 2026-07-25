@@ -104,3 +104,18 @@ $$;
 
 -- ⛔ Hanya service_role — aman untuk script server-side
 GRANT EXECUTE ON FUNCTION exec_sql TO service_role;
+
+
+-- === 20260627000010_add_gudang_to_role_check.sql ===
+-- Migration: Allow 'gudang' as a valid role in users table
+-- Date: 2026-07-25
+-- Fix: users_role_check constraint was blocking role='gudang' inserts/updates
+
+-- Drop old check constraint
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS check_role;
+
+-- Re-add constraint with 'gudang' included
+ALTER TABLE users
+  ADD CONSTRAINT users_role_check
+  CHECK (role IN ('admin', 'outlet', 'produksi', 'gudang'));

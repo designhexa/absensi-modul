@@ -2,7 +2,7 @@
 // BASE RATIOS & HELPERS for Bubur & Nasi Tim calculations
 // =============================================================================
 //
-// Base ratio: Beras:Daging:Air:S.Hijau:S.Brokoli:S.Putih = 100:5:700:8:5:1.5
+// Base ratio: Beras:Daging:Air:S.Hijau:Buah:Protein = 100:5:700:8:5:1.5
 // Rasio 100/6 menghasilkan sekitar 16.67 gr per cup, jadi hasil dapat berisi desimal.
 
 export const BUBUR_BASE = {
