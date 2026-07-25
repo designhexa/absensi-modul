@@ -1823,7 +1823,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.bubur_d || ""}
-                              onChange={(e) => handlePlanChange(o.id, "bubur_d", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "bubur_d", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-amber-300/80 focus-visible:ring-amber-500 bg-amber-500/5"
                               placeholder="0"
                             />
@@ -1834,7 +1836,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.bubur_i || ""}
-                              onChange={(e) => handlePlanChange(o.id, "bubur_i", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "bubur_i", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-blue-300/80 focus-visible:ring-blue-500 bg-blue-500/5"
                               placeholder="0"
                             />
@@ -1845,7 +1849,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.tim_d || ""}
-                              onChange={(e) => handlePlanChange(o.id, "tim_d", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "tim_d", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-amber-300/80 focus-visible:ring-amber-500 bg-amber-500/5"
                               placeholder="0"
                             />
@@ -1856,7 +1862,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.tim_i || ""}
-                              onChange={(e) => handlePlanChange(o.id, "tim_i", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "tim_i", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-blue-300/80 focus-visible:ring-blue-500 bg-blue-500/5"
                               placeholder="0"
                             />
@@ -1867,7 +1875,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.oatmeal || ""}
-                              onChange={(e) => handlePlanChange(o.id, "oatmeal", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "oatmeal", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"
                               placeholder="0"
                             />
@@ -1878,7 +1888,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.puding || ""}
-                              onChange={(e) => handlePlanChange(o.id, "puding", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "puding", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"
                               placeholder="0"
                             />
@@ -1889,7 +1901,9 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.abon || ""}
-                              onChange={(e) => handlePlanChange(o.id, "abon", parseInt(e.target.value) || 0)}
+                              disabled={isReadOnlyGudang}
+                              disabled={isReadOnlyGudang}
+                            onChange={(e) => handlePlanChange(o.id, "abon", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"
                               placeholder="0"
                             />
@@ -1935,6 +1949,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.bubur_d || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "bubur_d", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center border-amber-300/80 focus-visible:ring-amber-500 font-semibold"
                             placeholder="0"
@@ -1947,6 +1962,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.bubur_i || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "bubur_i", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center border-blue-300/80 focus-visible:ring-blue-500 font-semibold"
                             placeholder="0"
@@ -1959,6 +1975,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.tim_d || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "tim_d", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center border-amber-300/80 focus-visible:ring-amber-500 font-semibold"
                             placeholder="0"
@@ -1971,6 +1988,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.tim_i || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "tim_i", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center border-blue-300/80 focus-visible:ring-blue-500 font-semibold"
                             placeholder="0"
@@ -1983,6 +2001,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.oatmeal || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "oatmeal", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center"
                             placeholder="0"
@@ -1995,6 +2014,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.puding || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "puding", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center"
                             placeholder="0"
@@ -2007,6 +2027,7 @@ export default function Produksi() {
                             type="number"
                             min={0}
                             value={row.abon || ""}
+                            disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "abon", parseInt(e.target.value) || 0)}
                             className="h-8 text-xs text-center"
                             placeholder="0"
