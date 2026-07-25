@@ -153,6 +153,7 @@ export const SEED_USERS: UserAccount[] = [
   { username: "admin", password: "admin123", nama: "Administrator", role: "admin" },
   { username: "khazana", password: "Fazana@10", nama: "Super Admin", role: "admin" },
   { username: "produksi", password: "produksi123", nama: "Kepala Produksi", role: "admin", karyawanId: "k-produksi" },
+  { username: "gudang", password: "gudang123", nama: "Pegawai Gudang", role: "gudang", karyawanId: "k-gudang" },
   ...SEED_OUTLETS.map((o) => {
     const username = o.id.replace("o-", "");
     return {
@@ -189,13 +190,30 @@ const RAW_BAHAN = [
   { kode: "BL01", nama: "BALON + Stik", satuan: "biji", stokMin: 10, stokAwal: 0, hargaBeli: 1200 },
   { kode: "PLAS01", nama: "PLASTIK SELER", satuan: "pcs", stokMin: 1, stokAwal: 0, hargaBeli: 66000 },
   { kode: "SH01", nama: "SAYUR HIJAU", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 },
-  { kode: "SB01", nama: "SAYUR BROKOLI", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 },
-  { kode: "SP01", nama: "SAYUR PUTIH", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 }
+  { kode: "SB01", nama: "SAYUR BUAH", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 },
+  { kode: "SP01", nama: "SAYUR PROTEIN", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 }
 ];
 
 export const SEED_BAHAN: BahanBaku[] = RAW_BAHAN.map((b) => ({ ...b, id: `b-${slug(b.kode)}` }));
 
 export const SEED_KARYAWAN: Karyawan[] = [
+  {
+    id: "k-gudang",
+    nama: "Pegawai Gudang",
+    posisi: "Pegawai Gudang",
+    role: "gudang",
+    outletId: undefined,
+    gajiPokok: 20000,
+    bonusOmset: 0,
+    bonusUlasan: 0,
+    bonusOH: 0,
+    tunjanganHarian: 5000,
+    overtimeRate: 10000,
+    jamMasuk: "07:00",
+    jamPulang: "15:00",
+    username: "gudang",
+    password: "gudang123"
+  },
   {
     id: "k-produksi",
     nama: "Kepala Produksi",

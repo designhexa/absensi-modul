@@ -51,6 +51,15 @@ export function BottomNav() {
         { title: "Absen", url: "/absensi", icon: UserCheck },
         { title: "Profile", url: "/profile", icon: User },
       ];
+    } else if (user?.role === "gudang") {
+      return [
+        { title: "Home", url: "/", icon: LayoutDashboard },
+        { title: "Stok", url: "/stok", icon: Warehouse, highlighted: true },
+        { title: "Produksi", url: "/produksi", icon: ChefHat },
+        { title: "Absen", url: "/absensi", icon: UserCheck },
+        { title: "Laporan", url: "/laporan", icon: FileBarChart },
+        { title: "Profile", url: "/profile", icon: User },
+      ];
     } else { // outlet
       return [
         { title: "Home", url: "/", icon: LayoutDashboard },

@@ -34,6 +34,15 @@ export function AppSidebar() {
         { title: "Absensi", url: "/absensi", icon: UserCheck },
         { title: "Profile", url: "/profile", icon: User },
       ];
+    } else if (user?.role === "gudang") {
+      return [
+        { title: "Dashboard", url: "/", icon: LayoutDashboard },
+        { title: "Absensi", url: "/absensi", icon: UserCheck },
+        { title: "Stok Gudang", url: "/stok", icon: Warehouse },
+        { title: "Produksi", url: "/produksi", icon: ChefHat },
+        { title: "Laporan", url: "/laporan", icon: FileBarChart },
+        { title: "Profile", url: "/profile", icon: User },
+      ];
     } else { // outlet
       return [
         { title: "Dashboard", url: "/", icon: LayoutDashboard },

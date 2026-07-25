@@ -89,6 +89,7 @@ export default function Laporan() {
   const { user } = useAuth();
   const isOutlet = user?.role === "outlet";
   const isProduksi = user?.role === "produksi";
+  const isGudang = user?.role === "gudang";
 
   const [periode, setPeriode] = useState<Periode>("harian");
   const [outletId, setOutletId] = useState<string>(isOutlet ? user!.outletId! : "all");
@@ -150,7 +151,7 @@ export default function Laporan() {
         </div>
       </div>
 
-      <Tabs defaultValue={isOutlet || isProduksi ? "sisa-produksi" : "riwayat"} className="space-y-6">
+      <Tabs defaultValue={isOutlet || isProduksi || isGudang ? "sisa-produksi" : "riwayat"} className="space-y-6">
         <TabsList className={`grid w-full ${isProduksi ? "grid-cols-1" : "grid-cols-3"} gap-0`}>
           <TabsTrigger value="sisa-produksi" className="rounded-t-lg">Sisa (OH)</TabsTrigger>
           {!isProduksi && <TabsTrigger value="riwayat" className="rounded-t-lg">Riwayat</TabsTrigger>}
@@ -169,6 +170,7 @@ export default function Laporan() {
             />
           ) : (
             <SisaProduksiAdminView
+              user={user}
               outlets={outlets}
               produk={produk}
               penjualan={penjualan}
@@ -1003,18 +1005,21 @@ function SisaProduksiOH({
 // SISA PRODUKSI (OH) — ADMIN VIEW: Editable sisa across all outlets
 // ====================================================================
 function SisaProduksiAdminView({
+  user,
   outlets,
   produk,
   penjualan,
   permohonanStok,
   jurnal,
 }: {
+  user?: any;
   outlets: any[];
   produk: any[];
   penjualan: any[];
   permohonanStok: any[];
   jurnal: any[];
 }) {
+  const readOnly = user?.role === "gudang";
   const [tanggal, setTanggal] = useState(todayISO());
   const [sisaGrid, setSisaGrid] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
@@ -1213,6 +1218,7 @@ function SisaProduksiAdminView({
   }, [outletRows]);
 
   const handleSubmit = useCallback(async () => {
+    if (readOnly) return toast.error("Anda tidak memiliki izin untuk menyimpan data sisa produksi");
     setSaving(true);
     try {
       let savedCount = 0;

@@ -505,7 +505,10 @@ export default function Produksi() {
   };
 
   // STEP 1 Action: Save pre-production target plans
+  const isReadOnlyGudang = user?.role === "gudang";
+
   const saveStep1 = async () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
     try {
       const existing = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
       if (existing.length > 0) {
@@ -723,7 +726,7 @@ export default function Produksi() {
       reqs.push({
         bahanId: "b-sb01",
         kode: "SB01",
-        nama: "SAYUR BROKOLI",
+        nama: "SAYUR BUAH",
         qty: sbGr,
         rawQtyGrams: sbGr,
         satuan: "gr"
@@ -735,7 +738,7 @@ export default function Produksi() {
       reqs.push({
         bahanId: "b-sp01",
         kode: "SP01",
-        nama: "SAYUR PUTIH",
+        nama: "SAYUR PROTEIN",
         qty: spGr,
         rawQtyGrams: spGr,
         satuan: "gr"
@@ -845,6 +848,7 @@ export default function Produksi() {
   }, [stokMov, tanggal, tanggal2, isTwoDayPlan]);
 
   const requestWarehouse = async () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk memotong stok");
     // Cegah double-click: hanya cek requestingWarehouse (bukan isWarehouseRequested)
     // agar user bisa melakukan validasi ulang jika perlu (dengan menghapus & membuat ulang)
     if (requestingWarehouse) return;
@@ -886,6 +890,7 @@ export default function Produksi() {
 
   // STEP 3 Action
   const saveStep3 = async () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
     try {
       const existing = produksi.filter((p: any) => p.tanggal === tanggal);
       if (existing.length > 0) {
@@ -931,6 +936,7 @@ export default function Produksi() {
 
   // STEP 4 Action
   const saveStep4 = async () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan distribusi");
     // Validation: check if distributed exceeds actual cooked
     if (distTotals.buburD > actualCups.bubur_1) {
       return toast.error(`Distribusi Bubur 1 (${bubur1Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.buburD} cup, Masak: ${actualCups.bubur_1} cup)`);
@@ -1066,6 +1072,7 @@ export default function Produksi() {
   // 3. Posting jurnal & stok movement
   // 4. Kembali ke Langkah 1 (siklus selesai)
   const saveStep5 = async () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menutup siklus");
     if (closingCycle) return; // Cegah double-click
     setClosingCycle(true);
 
@@ -2122,8 +2129,8 @@ export default function Produksi() {
                       <div>• {bubur1Name}: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.daging))} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.air))} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurHijau))} gr</span></div>
-                      <div>• Sayur Brokoli (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurBrokoli))} gr</span></div>
-                      <div>• Sayur Putih (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurPutih))} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurBrokoli))} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburD, BUBUR_BASE.sayurPutih))} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2137,8 +2144,8 @@ export default function Produksi() {
                       <div>• {bubur2Name}: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.daging))} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.air))} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurHijau))} gr</span></div>
-                      <div>• Sayur Brokoli (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurBrokoli))} gr</span></div>
-                      <div>• Sayur Putih (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurPutih))} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurBrokoli))} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{formatDecimal(buburCalc(totals.buburI, BUBUR_BASE.sayurPutih))} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2152,8 +2159,8 @@ export default function Produksi() {
                       <div>• {tim1Name}: <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.dagingTim)} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.airTim)} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurHijauTim)} gr</span></div>
-                      <div>• Sayur Brokoli (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurBrokoliTim)} gr</span></div>
-                      <div>• Sayur Putih (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurPutihTim)} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurBrokoliTim)} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timD * settings.sayurPutihTim)} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -2167,8 +2174,8 @@ export default function Produksi() {
                       <div>• {tim2Name}: <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.dagingTim)} gr</span></div>
                       <div>• Air: <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.airTim)} ml</span></div>
                       <div>• Sayur Hijau (SH): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurHijauTim)} gr</span></div>
-                      <div>• Sayur Brokoli (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurBrokoliTim)} gr</span></div>
-                      <div>• Sayur Putih (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurPutihTim)} gr</span></div>
+                      <div>• Sayur Buah (SB): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurBrokoliTim)} gr</span></div>
+                      <div>• Sayur Protein (SP): <span className="font-semibold text-foreground">{Math.ceil(totals.timI * settings.sayurPutihTim)} gr</span></div>
                     </div>
                   </div>
                 )}
@@ -3218,7 +3225,7 @@ export default function Produksi() {
     );
   }
 
-  const isKapro = user?.role === "produksi";
+  const isKapro = user?.role === "produksi" || user?.role === "gudang";
 
   if (isKapro) {
     return (

@@ -35,13 +35,14 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 {/* Pages accessible to Admin and Kepala Produksi */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi"]} />}>
+                {/* Pages accessible to Admin, Produksi, and Gudang */}
+                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang"]} />}>
                   <Route path="/produksi" element={<Produksi />} />
                   <Route path="/distribusi" element={<Distribusi />} />
                 </Route>
 
-                {/* Pages accessible to Admin, Outlet, and Produksi */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "outlet", "produksi"]} />}>
+                {/* Pages accessible to Admin, Outlet, Produksi, and Gudang */}
+                <Route element={<ProtectedRoute allowedRoles={["admin", "outlet", "produksi", "gudang"]} />}>
                   <Route path="/laporan" element={<Laporan />} />
                 </Route>
                 

@@ -587,8 +587,8 @@ export default function MasterData() {
                         <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirBubur} onChange={(e) => setSAirBubur(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">Ikan/Daging (gr)</Label><Input type="number" step="any" value={sDagingBubur} onChange={(e) => setSDagingBubur(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">S.Hijau (gr)</Label><Input type="number" step="any" value={sSayurHijauBubur} onChange={(e) => setSSayurHijauBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Brokoli (gr)</Label><Input type="number" step="any" value={sSayurBrokoliBubur} onChange={(e) => setSSayurBrokoliBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Putih (gr)</Label><Input type="number" step="any" value={sSayurPutihBubur} onChange={(e) => setSSayurPutihBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Buah (gr)</Label><Input type="number" step="any" value={sSayurBrokoliBubur} onChange={(e) => setSSayurBrokoliBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Protein (gr)</Label><Input type="number" step="any" value={sSayurPutihBubur} onChange={(e) => setSSayurPutihBubur(Number(e.target.value))} /></div>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -598,8 +598,8 @@ export default function MasterData() {
                         <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirTim} onChange={(e) => setSAirTim(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">Ikan/Daging (gr)</Label><Input type="number" step="any" value={sDagingTim} onChange={(e) => setSDagingTim(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">S.Hijau (gr)</Label><Input type="number" step="any" value={sSayurHijauTim} onChange={(e) => setSSayurHijauTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Brokoli (gr)</Label><Input type="number" step="any" value={sSayurBrokoliTim} onChange={(e) => setSSayurBrokoliTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Putih (gr)</Label><Input type="number" step="any" value={sSayurPutihTim} onChange={(e) => setSSayurPutihTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Buah (gr)</Label><Input type="number" step="any" value={sSayurBrokoliTim} onChange={(e) => setSSayurBrokoliTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Protein (gr)</Label><Input type="number" step="any" value={sSayurPutihTim} onChange={(e) => setSSayurPutihTim(Number(e.target.value))} /></div>
                       </div>
                     </div>
                     <div className="space-y-2">

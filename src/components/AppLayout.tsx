@@ -5,7 +5,7 @@ import { Outlet } from "react-router-dom";
 import logo from "@/assets/logo.jpg";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck, Store } from "lucide-react";
+import { LogOut, ShieldCheck, Store, Warehouse } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,8 @@ export default function AppLayout() {
                         {user?.role === "admin" && <ShieldCheck className="h-3 w-3" />}
                         {user?.role === "produksi" && <ShieldCheck className="h-3 w-3 text-amber-500" />}
                         {user?.role === "outlet" && <Store className="h-3 w-3" />}
-                        {user?.role === "admin" ? "Admin" : user?.role === "produksi" ? "Produksi" : "Outlet"}
+                        {user?.role === "gudang" && <Warehouse className="h-3 w-3 text-green-500" />}
+                        {user?.role === "admin" ? "Admin" : user?.role === "produksi" ? "Produksi" : user?.role === "gudang" ? "Pegawai Gudang" : "Outlet"}
                       </div>
                     </div>
                   </Button>

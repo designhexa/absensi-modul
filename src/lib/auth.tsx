@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: u.username,
             password: u.password,
             nama: u.nama,
-            role: u.username === "produksi" ? "produksi" : u.role,
+            role: u.username === "produksi" ? "produksi" : u.role === "gudang" ? "gudang" : u.role,
             outletId: u.outlet_id,
             karyawanId: u.karyawan_id
           }));
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: data.username,
           password: data.password,
           nama: data.nama,
-          role: data.username === "produksi" ? "produksi" : data.role,
+          role: data.username === "produksi" ? "produksi" : data.role === "gudang" ? "gudang" : data.role,
           outletId: data.outlet_id,
           karyawanId: data.karyawan_id
         };
