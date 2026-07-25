@@ -452,6 +452,7 @@ export default function Produksi() {
   }, [tanggal, outlets, penjualan, permohonanStok, produksi, bahan]); // penjualan included so Step 5 returGrid auto-syncs when outlet saves sisa
 
   const handlePlanChange = (outletId: string, field: string, val: number) => {
+    if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     const setter = activePlanDate === "date1" ? setPlanGrid : setPlanGrid2;
     setter(prev => ({
@@ -464,6 +465,7 @@ export default function Produksi() {
   };
 
   const handleDistChange = (outletId: string, field: string, val: number) => {
+    if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setDistGrid(prev => ({
       ...prev,
@@ -475,6 +477,7 @@ export default function Produksi() {
   };
 
   const handleReturChange = (outletId: string, field: string, val: number) => {
+    if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setReturGrid(prev => ({
       ...prev,
@@ -486,6 +489,7 @@ export default function Produksi() {
   };
 
   const handleGramsChange = (prod: string, grams: number) => {
+    if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setActualGrams(prev => ({ ...prev, [prod]: grams }));
     let factor = 1;
@@ -500,6 +504,7 @@ export default function Produksi() {
   };
 
   const handleCupsChange = (prod: string, cups: number) => {
+    if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setActualCups(prev => ({ ...prev, [prod]: cups }));
   };
@@ -2083,7 +2088,7 @@ export default function Produksi() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={saveStep1} className="gradient-primary text-primary-foreground hover-lift">
+            <Button onClick={saveStep1} className="gradient-primary text-primary-foreground hover-lift" disabled={isReadOnlyGudang}>
               <span className="hidden md:inline">Simpan & Lanjutkan ke Bahan Baku</span>
               <ArrowRight className="h-4 w-4 md:ml-2" />
             </Button>
@@ -2269,7 +2274,7 @@ export default function Produksi() {
                   </span>
                   <Button
                     onClick={requestWarehouse}
-                    disabled={materialReqs.length === 0 || requestingWarehouse}
+                    disabled={materialReqs.length === 0 || requestingWarehouse || isReadOnlyGudang}
                     size="sm"
                     className={`h-8 ${
                       isWarehouseRequested 
@@ -2404,7 +2409,7 @@ export default function Produksi() {
               <ArrowLeft className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Kembali</span>
             </Button>
-            <Button onClick={saveStep3} className="gradient-primary text-primary-foreground hover-lift h-10">
+            <Button onClick={saveStep3} className="gradient-primary text-primary-foreground hover-lift h-10" disabled={isReadOnlyGudang}>
               <Check className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Simpan Hasil Aktual & Lanjutkan</span>
             </Button>
@@ -2704,7 +2709,7 @@ export default function Produksi() {
               <ArrowLeft className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Kembali</span>
             </Button>
-            <Button onClick={saveStep4} className="gradient-primary text-primary-foreground hover-lift h-10">
+            <Button onClick={saveStep4} className="gradient-primary text-primary-foreground hover-lift h-10" disabled={isReadOnlyGudang}>
               <Check className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Konfirmasi Pengiriman & Lanjutkan</span>
             </Button>
@@ -3025,7 +3030,7 @@ export default function Produksi() {
               <span className="hidden md:inline">Kembali</span>
             </Button>
 
-            <Button onClick={saveStep5} className="gradient-success text-white hover-lift h-10 font-bold" disabled={closingCycle}>
+            <Button onClick={saveStep5} className="gradient-success text-white hover-lift h-10 font-bold" disabled={closingCycle || isReadOnlyGudang}>
               <ShoppingBag className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{closingCycle ? "Menutup siklus..." : "Selesaikan & Tutup Siklus"}</span>
             </Button>

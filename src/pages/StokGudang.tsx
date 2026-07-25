@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { db, useDB, saldoBahan } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, Edit3, MessageSquare } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -451,16 +451,11 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
   );
 }
 
-// === SUBCOMPONENT: GUDANG VIEW (Pegawai Gudang) ===
-// Hanya bisa melihat saldo, riwayat pergerakan, dan mengajukan edit jika ada ketidaksesuaian
+// === SUBCOMPONENT: GUDANG VIEW (Pegawai Gudang - Read Only) ===
+// Hanya bisa melihat saldo dan riwayat pergerakan, tidak diizinkan entry data
 function GudangView({ dbState, user }: { dbState: any; user: any }) {
   const { bahan = [], stokMov = [], produksi = [], produk = [] } = dbState;
   const [range, setRange] = useState<DateRange>({});
-  const [editBahanId, setEditBahanId] = useState("");
-  const [editQty, setEditQty] = useState(0);
-  const [editKeterangan, setEditKeterangan] = useState("");
-  const [editTipe, setEditTipe] = useState<"IN" | "OUT">("IN");
-  const [editTanggal, setEditTanggal] = useState(todayISO());
 
   const effectiveStokMov = useMemo(
     () => (stokMov || []).filter((m: any) => !m.keterangan?.startsWith("RUSAK:PENDING:") && !m.keterangan?.startsWith("EDIT:PENDING:")),
@@ -487,12 +482,6 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
     [effectiveStokMov, range]
   );
 
-  useEffect(() => {
-    if (bahan.length > 0 && !editBahanId) {
-      setEditBahanId(bahan[0].id);
-    }
-  }, [bahan, editBahanId]);
-
   const getGramasiInfo = (b: any) => {
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
@@ -509,32 +498,11 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
     return null;
   };
 
-  const submitEditRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editBahanId || editQty <= 0) return toast.error("Lengkapi data pengajuan edit");
-    
-    const selectedBahan = bahan.find((b: any) => b.id === editBahanId);
-    const creatorName = user?.nama || user?.username || "Pegawai Gudang";
-    
-    // Simpan sebagai stok movement dengan prefix EDIT:PENDING agar nantinya diapprove admin
-    await db.addStokMov({
-      tanggal: editTanggal,
-      bahanId: editBahanId,
-      tipe: editTipe,
-      qty: editQty,
-      keterangan: `EDIT:PENDING:${selectedBahan?.nama || ""} (${editQty} ${selectedBahan?.satuan || ""}) - ${editKeterangan || "Tidak ada keterangan"} | diajukan oleh ${creatorName}`
-    });
-    
-    toast.success("Pengajuan edit stok dikirim, menunggu persetujuan Admin.");
-    setEditQty(0);
-    setEditKeterangan("");
-  };
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gradient">Stok Gudang</h1>
-        <p className="text-sm text-muted-foreground">Pantau stok bahan baku dan ajukan koreksi jika ada ketidaksesuaian</p>
+        <p className="text-sm text-muted-foreground">Pantau stok bahan baku (read-only)</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -566,60 +534,6 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Form Kesesuaian */}
-      <Card className="glass border-0 shadow-card border-l-4 border-l-blue-500">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Edit3 className="h-5 w-5 text-blue-500" />
-            Form Kesesuaian
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Validasi data stok di aplikasi dengan kondisi fisik di lapangan. Jika ada perbedaan (selisih stok, barang datang tidak tercatat, dll.), ajukan koreksi di sini. Admin akan menyetujui atau menolak pengajuan Anda.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submitEditRequest} className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2">
-                <Label>Tanggal</Label>
-                <Input type="date" value={editTanggal} onChange={(e) => setEditTanggal(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Bahan Baku</Label>
-                <Select value={editBahanId} onValueChange={setEditBahanId}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {bahan.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.kode} — {b.nama}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Tipe Koreksi</Label>
-                <Select value={editTipe} onValueChange={(v) => setEditTipe(v as "IN" | "OUT")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IN">Tambah Stok (IN)</SelectItem>
-                    <SelectItem value="OUT">Kurangi Stok (OUT)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Jumlah</Label>
-                <Input type="number" min={1} value={editQty || ""} onChange={(e) => setEditQty(Number(e.target.value))} placeholder="0" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Alasan / Keterangan Koreksi</Label>
-              <Input value={editKeterangan} onChange={(e) => setEditKeterangan(e.target.value)} placeholder="Contoh: Stok fisik berbeda dengan catatan, ada barang masuk tidak tercatat, dll." />
-            </div>
-            <Button type="submit" className="w-full h-10 gradient-primary text-primary-foreground hover-lift">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Ajukan Koreksi ke Admin
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
       {/* Saldo Bahan Baku */}
       <Card className="glass border-0 shadow-card">
