@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { db, useDB, saldoBahan } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah, hargaPerGram, nilaiBahan } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -17,6 +17,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
 import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // === SUBCOMPONENT: OUTLET VIEW FOR REQUESTING STOCK & RETUR ===
@@ -476,12 +478,10 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   // Hitung totalNilai menggunakan harga per gram (presisi HPP)
   const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
   const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
-  const bahanPg = usePagination(bahan, 10);
 
-  const filteredMov = useMemo(
-    () => [...effectiveStokMov].filter((m) => inRange(m.tanggal, range)).sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
-    [effectiveStokMov, range]
-  );
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showExtraCols, setShowExtraCols] = useState(true);
 
   const getGramasiInfo = (b: any) => {
     const nama = (b.nama || "").toLowerCase();
@@ -497,6 +497,51 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
       return { gramPerUnit: b.konversiGram, label: `${b.konversiGram} gr/${b.satuan}` };
     }
     return null;
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedBahan = useMemo(() => {
+    const list = [...bahan];
+    if (!sortField) return list;
+    return list.sort((a: any, b: any) => {
+      let aVal: any, bVal: any;
+      switch (sortField) {
+        case "kode": aVal = a.kode; bVal = b.kode; break;
+        case "nama": aVal = a.nama; bVal = b.nama; break;
+        case "saldo": aVal = saldoMap[a.id] || 0; bVal = saldoMap[b.id] || 0; break;
+        case "gramasi": aVal = getGramasiInfo(a)?.gramPerUnit ?? 0; bVal = getGramasiInfo(b)?.gramPerUnit ?? 0; break;
+        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, a.konversiGram); bVal = hargaPerGram(b.hargaBeli, b.konversiGram); break;
+        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram); break;
+        case "min": aVal = a.stokMin; bVal = b.stokMin; break;
+        default: aVal = a.kode; bVal = b.kode;
+      }
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      return sortDir === "asc" ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+    });
+  }, [bahan, sortField, sortDir, saldoMap]);
+
+  const bahanPg = usePagination(sortedBahan, 10);
+
+  const filteredMov = useMemo(
+    () => [...effectiveStokMov].filter((m) => inRange(m.tanggal, range)).sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
+    [effectiveStokMov, range]
+  );
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ChevronsUpDown className="ml-1 h-3 w-3 inline opacity-40" />;
+    return sortDir === "asc" 
+      ? <ChevronUp className="ml-1 h-3 w-3 inline" />
+      : <ChevronDown className="ml-1 h-3 w-3 inline" />;
   };
 
   return (
@@ -538,27 +583,40 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
 
       {/* Saldo Bahan Baku */}
       <Card className="glass border-0 shadow-card">
-        <CardHeader><CardTitle>Saldo Bahan Baku</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Saldo Bahan Baku</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExtraCols(!showExtraCols)}
+              className="h-8 text-xs gap-1"
+            >
+              {showExtraCols ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {showExtraCols ? "Sembunyikan Min & Status" : "Tampilkan Min & Status"}
+            </Button>
+          </div>
+        </CardHeader>
         <CardContent>
           <div className="rounded-2xl border overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="text-right">Gramasi</TableHead>
-                    <TableHead className="text-right">Harga/gr</TableHead>
-                    <TableHead className="text-right">Min</TableHead>
-                    <TableHead className="text-right">Nilai</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort("kode")}>Kode <SortIcon field="kode" /></TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort("nama")}>Nama <SortIcon field="nama" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("saldo")}>Saldo <SortIcon field="saldo" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Gramasi <SortIcon field="gramasi" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga/gr <SortIcon field="hrgPerGram" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("nilai")}>Nilai <SortIcon field="nilai" /></TableHead>
+                    <TableHead className={`text-right ${!showExtraCols ? 'hidden' : ''}`}>Min</TableHead>
+                    <TableHead className={`${!showExtraCols ? 'hidden' : ''}`}>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bahanPg.paged.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada saldo bahan baku</TableCell>
+                      <TableCell colSpan={showExtraCols ? 8 : 6} className="text-center text-muted-foreground py-8">Belum ada saldo bahan baku</TableCell>
                     </TableRow>
                   )}
                   {bahanPg.paged.map((b: any) => {
@@ -578,9 +636,9 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                             : <span className="text-muted-foreground">{b.satuan}</span>}
                         </TableCell>
                         <TableCell className="text-right text-xs">{rupiah(hrgPerGram)}/gr</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{b.stokMin}</TableCell>
                         <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
-                        <TableCell>
+                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
+                        <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>
                             : <Badge className="bg-success text-success-foreground">Aman</Badge>}
@@ -634,7 +692,7 @@ export default function StokGudang() {
   const [tanggal, setTanggal] = useState(todayISO());
   const [bahanId, setBahanId] = useState("");
   const [tipe, setTipe] = useState<"IN" | "OUT">("IN");
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState<number | undefined>(undefined);
   const [selectedKetSource, setSelectedKetSource] = useState("Supplier");
   const [customKet, setCustomKet] = useState("");
   const [range, setRange] = useState<DateRange>({});
@@ -667,11 +725,11 @@ export default function StokGudang() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bahanId || qty <= 0) return toast.error("Lengkapi data");
+    if (!bahanId || qty === undefined || qty <= 0) return toast.error("Lengkapi data");
     const finalKet = selectedKetSource === "Lainnya" ? customKet : selectedKetSource;
     db.addStokMov({ tanggal, bahanId, tipe, qty, keterangan: finalKet || (tipe === "IN" ? "Pembelian" : "Pemakaian") });
     toast.success(`Stok ${tipe === "IN" ? "masuk" : "keluar"} dicatat`);
-    setQty(1); setCustomKet("");
+    setQty(undefined); setCustomKet("");
   };
 
   const submitSupplier = async (e: React.FormEvent) => {
@@ -918,7 +976,49 @@ export default function StokGudang() {
   // Hitung totalNilai menggunakan harga per gram (presisi HPP)
   const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
   const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
-  const bahanPg = usePagination(bahan, 10);
+
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showExtraCols, setShowExtraCols] = useState(true);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedBahan = useMemo(() => {
+    const list = [...bahan];
+    if (!sortField) return list;
+    return list.sort((a: any, b: any) => {
+      let aVal: any, bVal: any;
+      switch (sortField) {
+        case "kode": aVal = a.kode; bVal = b.kode; break;
+        case "nama": aVal = a.nama; bVal = b.nama; break;
+        case "saldo": aVal = saldoMap[a.id] || 0; bVal = saldoMap[b.id] || 0; break;
+        case "gramasi": aVal = getGramasiInfo(a)?.gramPerUnit ?? 0; bVal = getGramasiInfo(b)?.gramPerUnit ?? 0; break;
+        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram); break;
+        case "min": aVal = a.stokMin; bVal = b.stokMin; break;
+        default: aVal = a.kode; bVal = b.kode;
+      }
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      return sortDir === "asc" ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+    });
+  }, [bahan, sortField, sortDir, saldoMap]);
+
+  const bahanPg = usePagination(sortedBahan, 10);
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ChevronsUpDown className="ml-1 h-3 w-3 inline opacity-40" />;
+    return sortDir === "asc" 
+      ? <ChevronUp className="ml-1 h-3 w-3 inline" />
+      : <ChevronDown className="ml-1 h-3 w-3 inline" />;
+  };
 
   const filteredMov = useMemo(
     () => [...effectiveStokMov].filter((m) => inRange(m.tanggal, range)).sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
@@ -1026,12 +1126,42 @@ export default function StokGudang() {
                       </div>
                       <div className="space-y-2">
                         <Label>Bahan</Label>
-                        <Select value={bahanId} onValueChange={setBahanId}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {bahan.map((b) => <SelectItem key={b.id} value={b.id}>{b.kode} — {b.nama}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between font-normal h-10"
+                            >
+                              {bahanId
+                                ? bahan.find((b) => b.id === bahanId)?.kode + " — " + bahan.find((b) => b.id === bahanId)?.nama
+                                : "Pilih bahan..."}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                            <Command>
+                              <CommandInput
+                                placeholder="Cari bahan..."
+                                className="h-9"
+                              />
+                              <CommandList>
+                                <CommandEmpty>Tidak ditemukan</CommandEmpty>
+                                <CommandGroup>
+                                  {bahan.map((b) => (
+                                    <CommandItem
+                                      key={b.id}
+                                      value={`${b.kode} ${b.nama}`}
+                                      onSelect={() => setBahanId(b.id)}
+                                    >
+                                      <span>{b.kode} — {b.nama}</span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="space-y-2">
                         <Label>Tipe</Label>
@@ -1045,7 +1175,7 @@ export default function StokGudang() {
                       </div>
                       <div className="space-y-2">
                         <Label>Qty</Label>
-                        <Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+                        <Input type="number" min={1} value={qty ?? ""} onChange={(e) => setQty(e.target.value ? Number(e.target.value) : undefined)} placeholder="" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1442,26 +1572,39 @@ export default function StokGudang() {
         </Tabs>
 
       <Card className="glass border-0 shadow-card">
-        <CardHeader><CardTitle>Saldo Bahan Baku</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Saldo Bahan Baku</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExtraCols(!showExtraCols)}
+              className="h-8 text-xs gap-1"
+            >
+              {showExtraCols ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {showExtraCols ? "Sembunyikan Min & Status" : "Tampilkan Min & Status"}
+            </Button>
+          </div>
+        </CardHeader>
         <CardContent>
           <div className="rounded-2xl border overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="text-right">Gramasi</TableHead>
-                    <TableHead className="text-right">Min</TableHead>
-                    <TableHead className="text-right">Nilai</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort("kode")}>Kode <SortIcon field="kode" /></TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort("nama")}>Nama <SortIcon field="nama" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("saldo")}>Saldo <SortIcon field="saldo" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Gramasi <SortIcon field="gramasi" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("nilai")}>Nilai <SortIcon field="nilai" /></TableHead>
+                    <TableHead className={`text-right ${!showExtraCols ? 'hidden' : ''}`}>Min</TableHead>
+                    <TableHead className={`${!showExtraCols ? 'hidden' : ''}`}>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bahanPg.paged.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={showExtraCols ? 7 : 5} className="text-center text-muted-foreground py-8">
                         Belum ada saldo bahan baku
                       </TableCell>
                     </TableRow>
@@ -1481,9 +1624,9 @@ export default function StokGudang() {
                             ? <><span className="font-medium">{totalGram.toLocaleString()} gr</span><br /><span className="text-muted-foreground">{gramasi!.label}</span></>
                             : <span className="text-muted-foreground">{b.satuan}</span>}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">{b.stokMin}</TableCell>
                         <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
-                        <TableCell>
+                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
+                        <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>
                             : <Badge className="bg-success text-success-foreground">Aman</Badge>}
