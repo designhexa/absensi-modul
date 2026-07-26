@@ -24,7 +24,7 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t bg-muted/20">
+    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-muted/20">
       <div className="text-xs text-muted-foreground">
         {start}-{end} dari {total}
       </div>

@@ -57,8 +57,6 @@ export default function Keuangan() {
     [penjualan, range]
   );
 
-  const totalPenjualanOmzet = filteredPenjualan.reduce((s, p) => s + p.total, 0);
-
   const filteredStokMov = useMemo(
     () =>
       stokMov
@@ -118,9 +116,32 @@ export default function Keuangan() {
     const beban = filteredJurnal
       .filter((j) => j.kategori === "Beban")
       .reduce((s, j) => s + (j.tipe === "Debit" ? j.jumlah : -j.jumlah), 0);
-    const pendapatan = pendapatanJurnal + totalPenjualanOmzet;
-    return { pendapatan, pendapatanJurnal, penjualanOtomatis: totalPenjualanOmzet, beban, laba: pendapatan - beban };
-  }, [filteredJurnal, totalPenjualanOmzet]);
+
+    // Detect dates that already have OUT-SALES jurnal (siklus closed)
+    const closedDates = new Set(
+      filteredJurnal
+        .filter((j) => j.ref === "OUT-SALES")
+        .map((j) => j.tanggal)
+    );
+
+    // Only add penjualan omzet for dates WITHOUT OUT-SALES (not yet closed)
+    // This prevents double counting when siklus sudah ditutup
+    const penjualanBelumDitutup = filteredPenjualan.filter(
+      (p) => !closedDates.has(p.tanggal)
+    );
+    const totalPenjualanBelumDitutup = penjualanBelumDitutup.reduce(
+      (s, p) => s + p.total, 0
+    );
+
+    const pendapatan = pendapatanJurnal + totalPenjualanBelumDitutup;
+    return {
+      pendapatan,
+      pendapatanJurnal,
+      penjualanOtomatis: totalPenjualanBelumDitutup,
+      beban,
+      laba: pendapatan - beban,
+    };
+  }, [filteredJurnal, filteredPenjualan]);
 
   const totalDebit = filteredJurnal.reduce((s, j) => s + (j.tipe === "Debit" ? j.jumlah : 0), 0);
   const totalKredit = filteredJurnal.reduce((s, j) => s + (j.tipe === "Kredit" ? j.jumlah : 0), 0);
