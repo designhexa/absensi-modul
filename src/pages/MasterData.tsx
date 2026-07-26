@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import {
   Card, CardContent, CardHeader, CardTitle
@@ -48,11 +48,47 @@ export default function MasterData() {
   const { user } = useAuth();
   const { outlets = [], produk = [], coa = [], karyawan = [], users = [], bahan = [] } = useDB();
 
-  const outletPg = usePagination(outlets, 10);
-  const produkPg = usePagination(produk, 10);
-  const coaPg = usePagination(coa, 10);
-  const karyawanPg = usePagination(karyawan, 10);
-  const bahanPg = usePagination(bahan, 10);
+  const [outletSearch, setOutletSearch] = useState("");
+  const [produkSearch, setProdukSearch] = useState("");
+  const [bahanSearch, setBahanSearch] = useState("");
+  const [coaSearch, setCoaSearch] = useState("");
+  const [karyawanSearch, setKaryawanSearch] = useState("");
+
+  const filteredOutlets = useMemo(() => {
+    if (!outletSearch.trim()) return outlets;
+    const q = outletSearch.toLowerCase();
+    return outlets.filter((o: any) => o.nama.toLowerCase().includes(q));
+  }, [outlets, outletSearch]);
+
+  const filteredProduk = useMemo(() => {
+    if (!produkSearch.trim()) return produk;
+    const q = produkSearch.toLowerCase();
+    return produk.filter((p: any) => p.nama.toLowerCase().includes(q));
+  }, [produk, produkSearch]);
+
+  const filteredBahanList = useMemo(() => {
+    if (!bahanSearch.trim()) return bahan;
+    const q = bahanSearch.toLowerCase();
+    return bahan.filter((b: any) => b.kode.toLowerCase().includes(q) || b.nama.toLowerCase().includes(q));
+  }, [bahan, bahanSearch]);
+
+  const filteredCoa = useMemo(() => {
+    if (!coaSearch.trim()) return coa;
+    const q = coaSearch.toLowerCase();
+    return coa.filter((a: any) => a.kode.toLowerCase().includes(q) || a.nama.toLowerCase().includes(q));
+  }, [coa, coaSearch]);
+
+  const filteredKaryawan = useMemo(() => {
+    if (!karyawanSearch.trim()) return karyawan;
+    const q = karyawanSearch.toLowerCase();
+    return karyawan.filter((k: any) => k.nama.toLowerCase().includes(q));
+  }, [karyawan, karyawanSearch]);
+
+  const outletPg = usePagination(filteredOutlets, 10);
+  const produkPg = usePagination(filteredProduk, 10);
+  const coaPg = usePagination(filteredCoa, 10);
+  const karyawanPg = usePagination(filteredKaryawan, 10);
+  const bahanPg = usePagination(filteredBahanList, 10);
 
   // Outlet form state with GPS
   const [oNama, setONama] = useState("");
@@ -238,7 +274,24 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <h3 className="text-sm font-bold mb-2 px-1">Daftar Outlet</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="text-sm font-bold px-1">Daftar Outlet</h3>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Cari outlet..."
+                          value={outletSearch}
+                          onChange={(e) => { setOutletSearch(e.target.value); outletPg.setPage(0); }}
+                          className="h-8 w-40 text-xs"
+                        />
+                        <TablePagination 
+                          page={outletPg.page}
+                          totalPages={outletPg.totalPages}
+                          total={outletPg.total}
+                          pageSize={outletPg.pageSize}
+                          onChange={outletPg.setPage}
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       {outletPg.paged.map((o) => {
                         const parsed = parseLokasi(o.lokasi);
@@ -268,13 +321,6 @@ export default function MasterData() {
                         <div className="text-center text-muted-foreground py-6 text-sm">Belum ada outlet</div>
                       )}
                     </div>
-                    <TablePagination 
-                      page={outletPg.page}
-                      totalPages={outletPg.totalPages}
-                      total={outletPg.total}
-                      pageSize={outletPg.pageSize}
-                      onChange={outletPg.setPage}
-                    />
                   </CardContent>
                 </Card>
               </div>
@@ -308,7 +354,18 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <h3 className="text-sm font-bold mb-2 px-1">Daftar Produk</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="text-sm font-bold px-1">Daftar Produk</h3>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Cari produk..."
+                          value={produkSearch}
+                          onChange={(e) => { setProdukSearch(e.target.value); produkPg.setPage(0); }}
+                          className="h-8 w-40 text-xs"
+                        />
+                        <TablePagination page={produkPg.page} totalPages={produkPg.totalPages} total={produkPg.total} pageSize={produkPg.pageSize} onChange={produkPg.setPage} />
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       {produkPg.paged.map((p) => (
                         <div key={p.id} className="rounded-lg border p-3 text-sm flex items-center justify-between">
@@ -324,7 +381,6 @@ export default function MasterData() {
                       ))}
                       {produkPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada produk</div>}
                     </div>
-                    <TablePagination page={produkPg.page} totalPages={produkPg.totalPages} total={produkPg.total} pageSize={produkPg.pageSize} onChange={produkPg.setPage} />
                   </CardContent>
                 </Card>
               </div>
@@ -369,7 +425,18 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <h3 className="text-sm font-bold mb-2 px-1">Daftar Bahan Baku</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="text-sm font-bold px-1">Daftar Bahan Baku</h3>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Cari bahan..."
+                          value={bahanSearch}
+                          onChange={(e) => { setBahanSearch(e.target.value); bahanPg.setPage(0); }}
+                          className="h-8 w-40 text-xs"
+                        />
+                        <TablePagination page={bahanPg.page} totalPages={bahanPg.totalPages} total={bahanPg.total} pageSize={bahanPg.pageSize} onChange={bahanPg.setPage} />
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       {bahanPg.paged.map((b) => (
                         <div key={b.id} className="rounded-lg border p-3 text-sm">
@@ -388,7 +455,6 @@ export default function MasterData() {
                       ))}
                       {bahanPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada bahan baku</div>}
                     </div>
-                    <TablePagination page={bahanPg.page} totalPages={bahanPg.totalPages} total={bahanPg.total} pageSize={bahanPg.pageSize} onChange={bahanPg.setPage} />
                   </CardContent>
                 </Card>
               </div>
@@ -410,7 +476,18 @@ export default function MasterData() {
             <AccordionContent className="px-4 pb-4">
               <Card className="border shadow-sm">
                 <CardContent className="p-3">
-                  <h3 className="text-sm font-bold mb-2 px-1">Chart of Accounts</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h3 className="text-sm font-bold px-1">Chart of Accounts</h3>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Cari COA..."
+                        value={coaSearch}
+                        onChange={(e) => { setCoaSearch(e.target.value); coaPg.setPage(0); }}
+                        className="h-8 w-40 text-xs"
+                      />
+                      <TablePagination page={coaPg.page} totalPages={coaPg.totalPages} total={coaPg.total} pageSize={coaPg.pageSize} onChange={coaPg.setPage} />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     {coaPg.paged.map((a) => (
                       <div key={a.kode} className="rounded-lg border p-3 text-sm flex items-center justify-between">
@@ -425,7 +502,6 @@ export default function MasterData() {
                     ))}
                     {coaPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada COA</div>}
                   </div>
-                  <TablePagination page={coaPg.page} totalPages={coaPg.totalPages} total={coaPg.total} pageSize={coaPg.pageSize} onChange={coaPg.setPage} />
                 </CardContent>
               </Card>
             </AccordionContent>
@@ -450,7 +526,18 @@ export default function MasterData() {
                 </div>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <h3 className="text-sm font-bold mb-2 px-1">Daftar Karyawan</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="text-sm font-bold px-1">Daftar Karyawan</h3>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Cari karyawan..."
+                          value={karyawanSearch}
+                          onChange={(e) => { setKaryawanSearch(e.target.value); karyawanPg.setPage(0); }}
+                          className="h-8 w-40 text-xs"
+                        />
+                        <TablePagination page={karyawanPg.page} totalPages={karyawanPg.totalPages} total={karyawanPg.total} pageSize={karyawanPg.pageSize} onChange={karyawanPg.setPage} />
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       {karyawanPg.paged.map((k) => {
                         const o = outlets.find((x) => x.id === k.outletId);
@@ -478,7 +565,6 @@ export default function MasterData() {
                       })}
                       {karyawanPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada karyawan</div>}
                     </div>
-                    <TablePagination page={karyawanPg.page} totalPages={karyawanPg.totalPages} total={karyawanPg.total} pageSize={karyawanPg.pageSize} onChange={karyawanPg.setPage} />
                   </CardContent>
                 </Card>
               </div>
