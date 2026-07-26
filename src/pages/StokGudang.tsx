@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { db, useDB, saldoBahan } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah, hargaPerGram, nilaiBahan } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -691,7 +691,6 @@ export default function StokGudang() {
   const { bahan = [], stokMov = [], produksi = [], produk = [] } = dbState;
   const [tanggal, setTanggal] = useState(todayISO());
   const [bahanId, setBahanId] = useState("");
-  const [searchText, setSearchText] = useState("");
   const [tipe, setTipe] = useState<"IN" | "OUT">("IN");
   const [qty, setQty] = useState<number | undefined>(undefined);
   const [selectedKetSource, setSelectedKetSource] = useState("Supplier");
@@ -706,7 +705,7 @@ export default function StokGudang() {
   // States for Kiriman Supplier Form
   const [supTanggal, setSupTanggal] = useState(todayISO());
   const [supBahanId, setSupBahanId] = useState("");
-  const [supSearchText, setSupSearchText] = useState("");
+
   const [supQty, setSupQty] = useState(1);
   const [supCost, setSupCost] = useState(0);
   const [supBayar, setSupBayar] = useState("110000"); // Kas Rupiah as default
@@ -714,7 +713,7 @@ export default function StokGudang() {
   // States for Barang Rusak Form
   const [rusakTanggal, setRusakTanggal] = useState(todayISO());
   const [rusakBahanId, setRusakBahanId] = useState("");
-  const [rusakSearchText, setRusakSearchText] = useState("");
+
   const [rusakQty, setRusakQty] = useState(1);
   const [rusakKeterangan, setRusakKeterangan] = useState("");
 
@@ -1127,36 +1126,7 @@ export default function StokGudang() {
                         <Label>Tanggal</Label>
                         <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Bahan</Label>
-                        <Input
-                          placeholder="Cari kode/nama bahan..."
-                          value={searchText}
-                          onChange={(e) => { setSearchText(e.target.value); setBahanId(""); }}
-                          className="h-10"
-                        />
-                        {bahanId && (
-                          <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === bahanId)?.kode} — {bahan.find(b => b.id === bahanId)?.nama}</p>
-                        )}
-                        {searchText && !bahanId && (
-                          <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
-                            {bahan
-                              .filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase()))
-                              .map(b => (
-                                <div
-                                  key={b.id}
-                                  className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
-                                  onClick={() => { setBahanId(b.id); setSearchText(""); }}
-                                >
-                                  <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
-                                </div>
-                              ))}
-                            {bahan.filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase())).length === 0 && (
-                              <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      <BahanFilter bahan={bahan} selectedId={bahanId} onSelect={setBahanId} label="Bahan" />
                       <div className="space-y-2">
                         <Label>Tipe</Label>
                         <Select value={tipe} onValueChange={(v) => setTipe(v as any)}>
@@ -1228,34 +1198,7 @@ export default function StokGudang() {
                         <Input type="date" value={supTanggal} onChange={(e) => setSupTanggal(e.target.value)} />
                       </div>
                       <div className="space-y-2 sm:col-span-2 md:col-span-1">
-                        <Label>Bahan Baku</Label>
-                        <Input
-                          placeholder="Cari kode/nama bahan..."
-                          value={supSearchText}
-                          onChange={(e) => { setSupSearchText(e.target.value); setSupBahanId(""); }}
-                          className="h-10"
-                        />
-                        {supBahanId && (
-                          <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === supBahanId)?.kode} — {bahan.find(b => b.id === supBahanId)?.nama}</p>
-                        )}
-                        {supSearchText && !supBahanId && (
-                          <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
-                            {bahan
-                              .filter(b => b.kode.toLowerCase().startsWith(supSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(supSearchText.toLowerCase()))
-                              .map(b => (
-                                <div
-                                  key={b.id}
-                                  className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
-                                  onClick={() => { setSupBahanId(b.id); setSupSearchText(""); }}
-                                >
-                                  <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
-                                </div>
-                              ))}
-                            {bahan.filter(b => b.kode.toLowerCase().startsWith(supSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(supSearchText.toLowerCase())).length === 0 && (
-                              <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
-                            )}
-                          </div>
-                        )}
+                        <BahanFilter bahan={bahan} selectedId={supBahanId} onSelect={setSupBahanId} label="Bahan Baku" />
                       </div>
                       <div className="space-y-2">
                         <Label>Qty Datang</Label>
@@ -1493,34 +1436,7 @@ export default function StokGudang() {
                       <Input type="date" value={rusakTanggal} onChange={(e) => setRusakTanggal(e.target.value)} />
                     </div>
                     <div className="space-y-2 sm:col-span-2 md:col-span-1">
-                      <Label>Bahan Baku</Label>
-                      <Input
-                        placeholder="Cari kode/nama bahan..."
-                        value={rusakSearchText}
-                        onChange={(e) => { setRusakSearchText(e.target.value); setRusakBahanId(""); }}
-                        className="h-10"
-                      />
-                      {rusakBahanId && (
-                        <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === rusakBahanId)?.kode} — {bahan.find(b => b.id === rusakBahanId)?.nama}</p>
-                      )}
-                      {rusakSearchText && !rusakBahanId && (
-                        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
-                          {bahan
-                            .filter(b => b.kode.toLowerCase().startsWith(rusakSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(rusakSearchText.toLowerCase()))
-                            .map(b => (
-                              <div
-                                key={b.id}
-                                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
-                                onClick={() => { setRusakBahanId(b.id); setRusakSearchText(""); }}
-                              >
-                                <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
-                              </div>
-                            ))}
-                          {bahan.filter(b => b.kode.toLowerCase().startsWith(rusakSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(rusakSearchText.toLowerCase())).length === 0 && (
-                            <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
-                          )}
-                        </div>
-                      )}
+                      <BahanFilter bahan={bahan} selectedId={rusakBahanId} onSelect={setRusakBahanId} label="Bahan Baku" />
                     </div>
                     <div className="space-y-2">
                       <Label>Jumlah Rusak</Label>
@@ -1979,6 +1895,43 @@ function parseRusakKet(keterangan: string | null | undefined): { type: "pending"
 }
 
 // === HELPER COMPONENT FOR HISTORICAL MOVEMENTS ===
+// === REUSABLE COMPONENT: Bahan Filter (Input + filtered list + startsWith) ===
+function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: any[]; selectedId: string; onSelect: (id: string) => void; label?: string }) {
+  const [searchText, setSearchText] = useState("");
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input
+        placeholder="Cari kode/nama bahan..."
+        value={searchText}
+        onChange={(e) => { setSearchText(e.target.value); onSelect(""); }}
+        className="h-10"
+      />
+      {selectedId && (
+        <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === selectedId)?.kode} — {bahan.find(b => b.id === selectedId)?.nama}</p>
+      )}
+      {searchText && !selectedId && (
+        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
+          {bahan
+            .filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase()))
+            .map(b => (
+              <div
+                key={b.id}
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
+                onClick={() => { onSelect(b.id); setSearchText(""); }}
+              >
+                <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+              </div>
+            ))}
+          {bahan.filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase())).length === 0 && (
+            <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MovTable({ mov, bahan, produksi, produk }: any) {
   const [searchText, setSearchText] = useState("");
   const filteredMov = useMemo(() => {
