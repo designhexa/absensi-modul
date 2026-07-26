@@ -691,6 +691,7 @@ export default function StokGudang() {
   const { bahan = [], stokMov = [], produksi = [], produk = [] } = dbState;
   const [tanggal, setTanggal] = useState(todayISO());
   const [bahanId, setBahanId] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [tipe, setTipe] = useState<"IN" | "OUT">("IN");
   const [qty, setQty] = useState<number | undefined>(undefined);
   const [selectedKetSource, setSelectedKetSource] = useState("Supplier");
@@ -1128,42 +1129,33 @@ export default function StokGudang() {
                       </div>
                       <div className="space-y-2">
                         <Label>Bahan</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className="w-full justify-between font-normal h-10"
-                            >
-                              {bahanId
-                                ? bahan.find((b) => b.id === bahanId)?.kode + " — " + bahan.find((b) => b.id === bahanId)?.nama
-                                : "Pilih bahan..."}
-                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                            <Command>
-                              <CommandInput
-                                placeholder="Cari bahan..."
-                                className="h-9"
-                              />
-                              <CommandList>
-                                <CommandEmpty>Tidak ditemukan</CommandEmpty>
-                                <CommandGroup>
-                                  {bahan.map((b) => (
-                                    <CommandItem
-                                      key={b.id}
-                                      value={`${b.kode} ${b.nama}`}
-                                      onSelect={() => setBahanId(b.id)}
-                                    >
-                                      <span>{b.kode} — {b.nama}</span>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                        <Input
+                          placeholder="Cari kode/nama bahan..."
+                          value={searchText}
+                          onChange={(e) => { setSearchText(e.target.value); setBahanId(""); }}
+                          className="h-10"
+                        />
+                        {bahanId && (
+                          <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === bahanId)?.kode} — {bahan.find(b => b.id === bahanId)?.nama}</p>
+                        )}
+                        {searchText && !bahanId && (
+                          <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
+                            {bahan
+                              .filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase()))
+                              .map(b => (
+                                <div
+                                  key={b.id}
+                                  className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
+                                  onClick={() => { setBahanId(b.id); setSearchText(""); }}
+                                >
+                                  <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+                                </div>
+                              ))}
+                            {bahan.filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase())).length === 0 && (
+                              <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Tipe</Label>
@@ -1249,7 +1241,7 @@ export default function StokGudang() {
                         {supSearchText && !supBahanId && (
                           <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
                             {bahan
-                              .filter(b => (b.kode + " " + b.nama).toLowerCase().includes(supSearchText.toLowerCase()))
+                              .filter(b => b.kode.toLowerCase().startsWith(supSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(supSearchText.toLowerCase()))
                               .map(b => (
                                 <div
                                   key={b.id}
@@ -1259,7 +1251,7 @@ export default function StokGudang() {
                                   <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
                                 </div>
                               ))}
-                            {bahan.filter(b => (b.kode + " " + b.nama).toLowerCase().includes(supSearchText.toLowerCase())).length === 0 && (
+                            {bahan.filter(b => b.kode.toLowerCase().startsWith(supSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(supSearchText.toLowerCase())).length === 0 && (
                               <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
                             )}
                           </div>
@@ -1514,7 +1506,7 @@ export default function StokGudang() {
                       {rusakSearchText && !rusakBahanId && (
                         <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
                           {bahan
-                            .filter(b => (b.kode + " " + b.nama).toLowerCase().includes(rusakSearchText.toLowerCase()))
+                            .filter(b => b.kode.toLowerCase().startsWith(rusakSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(rusakSearchText.toLowerCase()))
                             .map(b => (
                               <div
                                 key={b.id}
@@ -1524,7 +1516,7 @@ export default function StokGudang() {
                                 <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
                               </div>
                             ))}
-                          {bahan.filter(b => (b.kode + " " + b.nama).toLowerCase().includes(rusakSearchText.toLowerCase())).length === 0 && (
+                          {bahan.filter(b => b.kode.toLowerCase().startsWith(rusakSearchText.toLowerCase()) || b.nama.toLowerCase().startsWith(rusakSearchText.toLowerCase())).length === 0 && (
                             <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
                           )}
                         </div>
