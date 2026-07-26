@@ -1898,34 +1898,38 @@ function parseRusakKet(keterangan: string | null | undefined): { type: "pending"
 // === REUSABLE COMPONENT: Bahan Filter (Input + filtered list + startsWith) ===
 function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: any[]; selectedId: string; onSelect: (id: string) => void; label?: string }) {
   const [searchText, setSearchText] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const filteredBahan = useMemo(() => {
     if (!searchText.trim()) return bahan;
     const q = searchText.toLowerCase();
     return bahan.filter(b => b.kode.toLowerCase().startsWith(q) || b.nama.toLowerCase().startsWith(q));
   }, [bahan, searchText]);
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsOpen(false); }}>
       <Label>{label}</Label>
       <Input
         placeholder="Cari kode/nama bahan..."
         value={searchText}
-        onChange={(e) => { setSearchText(e.target.value); onSelect(""); }}
+        onChange={(e) => { setSearchText(e.target.value); onSelect(""); setIsOpen(true); }}
+        onFocus={() => setIsOpen(true)}
         className="h-10"
       />
-      <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
-        {filteredBahan.map(b => (
-          <div
-            key={b.id}
-            className={`px-3 py-2 text-sm cursor-pointer transition-colors ${selectedId === b.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-            onClick={() => { onSelect(b.id); setSearchText(""); }}
-          >
-            <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
-          </div>
-        ))}
-        {filteredBahan.length === 0 && (
-          <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
-        )}
-      </div>
+      {isOpen && (
+        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y bg-background">
+          {filteredBahan.map(b => (
+            <div
+              key={b.id}
+              className={`px-3 py-2 text-sm cursor-pointer transition-colors ${selectedId === b.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+              onMouseDown={(e) => { e.preventDefault(); onSelect(b.id); setSearchText(""); setIsOpen(false); }}
+            >
+              <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+            </div>
+          ))}
+          {filteredBahan.length === 0 && (
+            <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
