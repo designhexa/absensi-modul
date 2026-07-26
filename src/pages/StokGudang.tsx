@@ -705,6 +705,7 @@ export default function StokGudang() {
   // States for Kiriman Supplier Form
   const [supTanggal, setSupTanggal] = useState(todayISO());
   const [supBahanId, setSupBahanId] = useState("");
+  const [supSearchText, setSupSearchText] = useState("");
   const [supQty, setSupQty] = useState(1);
   const [supCost, setSupCost] = useState(0);
   const [supBayar, setSupBayar] = useState("110000"); // Kas Rupiah as default
@@ -712,6 +713,7 @@ export default function StokGudang() {
   // States for Barang Rusak Form
   const [rusakTanggal, setRusakTanggal] = useState(todayISO());
   const [rusakBahanId, setRusakBahanId] = useState("");
+  const [rusakSearchText, setRusakSearchText] = useState("");
   const [rusakQty, setRusakQty] = useState(1);
   const [rusakKeterangan, setRusakKeterangan] = useState("");
 
@@ -1233,14 +1235,35 @@ export default function StokGudang() {
                         <Label>Tanggal Kirim</Label>
                         <Input type="date" value={supTanggal} onChange={(e) => setSupTanggal(e.target.value)} />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 sm:col-span-2 md:col-span-1">
                         <Label>Bahan Baku</Label>
-                        <Select value={supBahanId} onValueChange={setSupBahanId}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {bahan.map((b) => <SelectItem key={b.id} value={b.id}>{b.kode} — {b.nama}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          placeholder="Cari kode/nama bahan..."
+                          value={supSearchText}
+                          onChange={(e) => { setSupSearchText(e.target.value); setSupBahanId(""); }}
+                          className="h-10"
+                        />
+                        {supBahanId && (
+                          <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === supBahanId)?.kode} — {bahan.find(b => b.id === supBahanId)?.nama}</p>
+                        )}
+                        {supSearchText && !supBahanId && (
+                          <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
+                            {bahan
+                              .filter(b => (b.kode + " " + b.nama).toLowerCase().includes(supSearchText.toLowerCase()))
+                              .map(b => (
+                                <div
+                                  key={b.id}
+                                  className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
+                                  onClick={() => { setSupBahanId(b.id); setSupSearchText(""); }}
+                                >
+                                  <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+                                </div>
+                              ))}
+                            {bahan.filter(b => (b.kode + " " + b.nama).toLowerCase().includes(supSearchText.toLowerCase())).length === 0 && (
+                              <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Qty Datang</Label>
@@ -1477,14 +1500,35 @@ export default function StokGudang() {
                       <Label>Tanggal</Label>
                       <Input type="date" value={rusakTanggal} onChange={(e) => setRusakTanggal(e.target.value)} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:col-span-2 md:col-span-1">
                       <Label>Bahan Baku</Label>
-                      <Select value={rusakBahanId} onValueChange={setRusakBahanId}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {bahan.map((b) => <SelectItem key={b.id} value={b.id}>{b.kode} — {b.nama}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        placeholder="Cari kode/nama bahan..."
+                        value={rusakSearchText}
+                        onChange={(e) => { setRusakSearchText(e.target.value); setRusakBahanId(""); }}
+                        className="h-10"
+                      />
+                      {rusakBahanId && (
+                        <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === rusakBahanId)?.kode} — {bahan.find(b => b.id === rusakBahanId)?.nama}</p>
+                      )}
+                      {rusakSearchText && !rusakBahanId && (
+                        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
+                          {bahan
+                            .filter(b => (b.kode + " " + b.nama).toLowerCase().includes(rusakSearchText.toLowerCase()))
+                            .map(b => (
+                              <div
+                                key={b.id}
+                                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
+                                onClick={() => { setRusakBahanId(b.id); setRusakSearchText(""); }}
+                              >
+                                <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+                              </div>
+                            ))}
+                          {bahan.filter(b => (b.kode + " " + b.nama).toLowerCase().includes(rusakSearchText.toLowerCase())).length === 0 && (
+                            <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Jumlah Rusak</Label>
@@ -1944,9 +1988,27 @@ function parseRusakKet(keterangan: string | null | undefined): { type: "pending"
 
 // === HELPER COMPONENT FOR HISTORICAL MOVEMENTS ===
 function MovTable({ mov, bahan, produksi, produk }: any) {
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(mov, 10);
+  const [searchText, setSearchText] = useState("");
+  const filteredMov = useMemo(() => {
+    if (!searchText.trim()) return mov;
+    const q = searchText.toLowerCase();
+    return mov.filter((m: any) => {
+      const b = bahan.find((x: any) => x.id === m.bahanId);
+      const nama = (b?.nama || "").toLowerCase();
+      const kode = (b?.kode || "").toLowerCase();
+      return nama.includes(q) || kode.includes(q);
+    });
+  }, [mov, searchText, bahan]);
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filteredMov, 10);
   return (
-    <div className="rounded-2xl border overflow-hidden max-w-full">
+    <div className="space-y-3">
+      <Input
+        placeholder="Cari bahan..."
+        value={searchText}
+        onChange={(e) => { setSearchText(e.target.value); setPage(0); }}
+        className="max-w-xs h-9 text-sm"
+      />
+      <div className="rounded-2xl border overflow-hidden max-w-full">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -2012,6 +2074,7 @@ function MovTable({ mov, bahan, produksi, produk }: any) {
         </Table>
       </div>
       <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
+    </div>
     </div>
   );
 }
