@@ -706,15 +706,15 @@ export default function StokGudang() {
   const [supTanggal, setSupTanggal] = useState(todayISO());
   const [supBahanId, setSupBahanId] = useState("");
 
-  const [supQty, setSupQty] = useState(1);
-  const [supCost, setSupCost] = useState(0);
+  const [supQty, setSupQty] = useState<number | undefined>(undefined);
+  const [supCost, setSupCost] = useState<number | undefined>(undefined);
   const [supBayar, setSupBayar] = useState("110000"); // Kas Rupiah as default
 
   // States for Barang Rusak Form
   const [rusakTanggal, setRusakTanggal] = useState(todayISO());
   const [rusakBahanId, setRusakBahanId] = useState("");
 
-  const [rusakQty, setRusakQty] = useState(1);
+  const [rusakQty, setRusakQty] = useState<number | undefined>(undefined);
   const [rusakKeterangan, setRusakKeterangan] = useState("");
 
   useEffect(() => {
@@ -736,7 +736,7 @@ export default function StokGudang() {
 
   const submitSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supBahanId || supQty <= 0 || supCost <= 0) {
+    if (!supBahanId || !supQty || supQty <= 0 || !supCost || supCost <= 0) {
       return toast.error("Lengkapi data kiriman supplier dengan benar");
     }
     
@@ -790,13 +790,13 @@ export default function StokGudang() {
     ]);
 
     toast.success("Kiriman supplier berhasil dicatat dan jurnal otomatis terposting!");
-    setSupQty(1);
-    setSupCost(0);
+    setSupQty(undefined);
+    setSupCost(undefined);
   };
 
   const submitRusak = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rusakBahanId || rusakQty <= 0) {
+    if (!rusakBahanId || !rusakQty || rusakQty <= 0) {
       return toast.error("Lengkapi data barang rusak dengan benar");
     }
 
@@ -852,7 +852,7 @@ export default function StokGudang() {
       toast.success("Laporan barang rusak dikirim, menunggu persetujuan Admin.");
     }
 
-    setRusakQty(1);
+    setRusakQty(undefined);
     setRusakKeterangan("");
   };
 
@@ -1202,11 +1202,11 @@ export default function StokGudang() {
                       </div>
                       <div className="space-y-2">
                         <Label>Qty Datang</Label>
-                        <Input type="number" min={1} value={supQty} onChange={(e) => setSupQty(Number(e.target.value))} />
+                        <Input type="number" min={1} value={supQty ?? ""} onChange={(e) => setSupQty(e.target.value ? Number(e.target.value) : undefined)} placeholder="" />
                       </div>
                       <div className="space-y-2">
                         <Label>Total Biaya (Rp)</Label>
-                        <Input type="number" min={0} value={supCost} onChange={(e) => setSupCost(Number(e.target.value))} />
+                        <Input type="number" min={0} value={supCost ?? ""} onChange={(e) => setSupCost(e.target.value ? Number(e.target.value) : undefined)} placeholder="" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1440,7 +1440,7 @@ export default function StokGudang() {
                     </div>
                     <div className="space-y-2">
                       <Label>Jumlah Rusak</Label>
-                      <Input type="number" min={1} value={rusakQty} onChange={(e) => setRusakQty(Number(e.target.value))} />
+                      <Input type="number" min={1} value={rusakQty ?? ""} onChange={(e) => setRusakQty(e.target.value ? Number(e.target.value) : undefined)} placeholder="" />
                     </div>
                     <div className="space-y-2">
                       <Label>Keterangan / Alasan</Label>
@@ -1898,6 +1898,11 @@ function parseRusakKet(keterangan: string | null | undefined): { type: "pending"
 // === REUSABLE COMPONENT: Bahan Filter (Input + filtered list + startsWith) ===
 function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: any[]; selectedId: string; onSelect: (id: string) => void; label?: string }) {
   const [searchText, setSearchText] = useState("");
+  const filteredBahan = useMemo(() => {
+    if (!searchText.trim()) return bahan;
+    const q = searchText.toLowerCase();
+    return bahan.filter(b => b.kode.toLowerCase().startsWith(q) || b.nama.toLowerCase().startsWith(q));
+  }, [bahan, searchText]);
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -1907,27 +1912,20 @@ function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: 
         onChange={(e) => { setSearchText(e.target.value); onSelect(""); }}
         className="h-10"
       />
-      {selectedId && (
-        <p className="text-xs text-primary font-medium mt-1">✓ {bahan.find(b => b.id === selectedId)?.kode} — {bahan.find(b => b.id === selectedId)?.nama}</p>
-      )}
-      {searchText && !selectedId && (
-        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
-          {bahan
-            .filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase()))
-            .map(b => (
-              <div
-                key={b.id}
-                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
-                onClick={() => { onSelect(b.id); setSearchText(""); }}
-              >
-                <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
-              </div>
-            ))}
-          {bahan.filter(b => b.kode.toLowerCase().startsWith(searchText.toLowerCase()) || b.nama.toLowerCase().startsWith(searchText.toLowerCase())).length === 0 && (
-            <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
-          )}
-        </div>
-      )}
+      <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y">
+        {filteredBahan.map(b => (
+          <div
+            key={b.id}
+            className={`px-3 py-2 text-sm cursor-pointer transition-colors ${selectedId === b.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+            onClick={() => { onSelect(b.id); setSearchText(""); }}
+          >
+            <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
+          </div>
+        ))}
+        {filteredBahan.length === 0 && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">Tidak ditemukan</div>
+        )}
+      </div>
     </div>
   );
 }
