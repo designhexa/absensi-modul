@@ -280,7 +280,7 @@ export default function MasterData() {
                         <Input
                           placeholder="Cari outlet..."
                           value={outletSearch}
-                          onChange={(e) => { setOutletSearch(e.target.value); outletPg.setPage(0); }}
+                          onChange={(e) => { setOutletSearch(e.target.value); outletPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
                         <TablePagination 
@@ -360,7 +360,7 @@ export default function MasterData() {
                         <Input
                           placeholder="Cari produk..."
                           value={produkSearch}
-                          onChange={(e) => { setProdukSearch(e.target.value); produkPg.setPage(0); }}
+                          onChange={(e) => { setProdukSearch(e.target.value); produkPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
                         <TablePagination page={produkPg.page} totalPages={produkPg.totalPages} total={produkPg.total} pageSize={produkPg.pageSize} onChange={produkPg.setPage} />
@@ -431,7 +431,7 @@ export default function MasterData() {
                         <Input
                           placeholder="Cari bahan..."
                           value={bahanSearch}
-                          onChange={(e) => { setBahanSearch(e.target.value); bahanPg.setPage(0); }}
+                          onChange={(e) => { setBahanSearch(e.target.value); bahanPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
                         <TablePagination page={bahanPg.page} totalPages={bahanPg.totalPages} total={bahanPg.total} pageSize={bahanPg.pageSize} onChange={bahanPg.setPage} />
@@ -482,7 +482,7 @@ export default function MasterData() {
                       <Input
                         placeholder="Cari COA..."
                         value={coaSearch}
-                        onChange={(e) => { setCoaSearch(e.target.value); coaPg.setPage(0); }}
+                        onChange={(e) => { setCoaSearch(e.target.value); coaPg.setPage(1); }}
                         className="h-8 w-40 text-xs"
                       />
                       <TablePagination page={coaPg.page} totalPages={coaPg.totalPages} total={coaPg.total} pageSize={coaPg.pageSize} onChange={coaPg.setPage} />
@@ -532,7 +532,7 @@ export default function MasterData() {
                         <Input
                           placeholder="Cari karyawan..."
                           value={karyawanSearch}
-                          onChange={(e) => { setKaryawanSearch(e.target.value); karyawanPg.setPage(0); }}
+                          onChange={(e) => { setKaryawanSearch(e.target.value); karyawanPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
                         <TablePagination page={karyawanPg.page} totalPages={karyawanPg.totalPages} total={karyawanPg.total} pageSize={karyawanPg.pageSize} onChange={karyawanPg.setPage} />

@@ -1952,7 +1952,7 @@ function MovTable({ mov, bahan, produksi, produk }: any) {
       <Input
         placeholder="Cari bahan..."
         value={searchText}
-        onChange={(e) => { setSearchText(e.target.value); setPage(0); }}
+        onChange={(e) => { setSearchText(e.target.value); setPage(1); }}
         className="max-w-xs h-9 text-sm"
       />
       <div className="rounded-2xl border overflow-hidden max-w-full">
