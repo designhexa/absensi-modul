@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db, useDB } from "@/lib/store";
-import { rupiah, todayISO, DateRange, inRange } from "@/lib/format";
+import { rupiah, todayISO, DateRange, inRange, hargaPerGram } from "@/lib/format";
 import { AkunKategori } from "@/lib/types";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -69,7 +69,11 @@ export default function Keuangan() {
 
   const stokMovValue = (mov: any) => {
     const item = bahan.find((b) => b.id === mov.bahanId);
-    return (item?.hargaBeli ?? 0) * mov.qty;
+    if (!item) return 0;
+    // Gunakan harga per gram untuk presisi HPP
+    const hrgPerGram = hargaPerGram(item.hargaBeli, item.konversiGram);
+    const qtyInGram = item.konversiGram && item.konversiGram > 0 ? mov.qty * item.konversiGram : mov.qty;
+    return hrgPerGram * qtyInGram;
   };
 
   const totalStokIn = filteredStokMov

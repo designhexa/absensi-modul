@@ -21,3 +21,19 @@ export const daysAgoISO = (n: number) => {
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 };
+
+// Hitung harga per gram dari harga beli per satuan dan konversi gram
+// Contoh: hargaBeli=15500 (per pack), konversiGram=600 → Rp25.83/gr
+export const hargaPerGram = (hargaBeli: number, konversiGram?: number | null): number => {
+  if (!konversiGram || konversiGram <= 0) return hargaBeli; // fallback: treat satuan as 1
+  return hargaBeli / konversiGram;
+};
+
+// Hitung nilai persediaan berdasarkan gramasi (presisi HPP)
+// saldo dalam satuan (pack/sachet/pcs), hargaBeli per satuan, konversiGram gr/satuan
+export const nilaiBahan = (saldo: number, hargaBeli: number, konversiGram?: number | null): number => {
+  if (!konversiGram || konversiGram <= 0) return saldo * hargaBeli; // fallback
+  const totalGram = saldo * konversiGram;
+  return totalGram * (hargaBeli / konversiGram);
+};
+

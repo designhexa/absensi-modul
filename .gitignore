@@ -30,6 +30,9 @@ dist-ssr
 
 .vercel
 
+# Database backups (contain sensitive data)
+backups/
+
 # Temporary / scratch files
 nul
 scratch-*.js

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { db, useDB, saldoBahan } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
-import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
+import { todayISO, DateRange, inRange, rupiah, hargaPerGram, nilaiBahan } from "@/lib/format";
 import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -473,7 +473,8 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
     return m;
   }, [bahan, effectiveStokMov, filteredDbState]);
 
-  const totalNilai = bahan.reduce((s, b) => s + (saldoMap[b.id] || 0) * b.hargaBeli, 0);
+  // Hitung totalNilai menggunakan harga per gram (presisi HPP)
+  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
   const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
   const bahanPg = usePagination(bahan, 10);
 
@@ -548,6 +549,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     <TableHead>Nama</TableHead>
                     <TableHead className="text-right">Saldo</TableHead>
                     <TableHead className="text-right">Gramasi</TableHead>
+                    <TableHead className="text-right">Harga/gr</TableHead>
                     <TableHead className="text-right">Min</TableHead>
                     <TableHead className="text-right">Nilai</TableHead>
                     <TableHead>Status</TableHead>
@@ -556,7 +558,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                 <TableBody>
                   {bahanPg.paged.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada saldo bahan baku</TableCell>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada saldo bahan baku</TableCell>
                     </TableRow>
                   )}
                   {bahanPg.paged.map((b: any) => {
@@ -564,6 +566,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     const low = saldo <= b.stokMin;
                     const gramasi = getGramasiInfo(b);
                     const totalGram = gramasi ? saldo * gramasi.gramPerUnit : null;
+                    const hrgPerGram = hargaPerGram(b.hargaBeli, b.konversiGram);
                     return (
                       <TableRow key={b.id}>
                         <TableCell className="whitespace-nowrap font-mono text-xs">{b.kode}</TableCell>
@@ -574,8 +577,9 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                             ? <><span className="font-medium">{totalGram.toLocaleString()} gr</span><br /><span className="text-muted-foreground">{gramasi!.label}</span></>
                             : <span className="text-muted-foreground">{b.satuan}</span>}
                         </TableCell>
+                        <TableCell className="text-right text-xs">{rupiah(hrgPerGram)}/gr</TableCell>
                         <TableCell className="text-right text-muted-foreground">{b.stokMin}</TableCell>
-                        <TableCell className="text-right">{rupiah(saldo * b.hargaBeli)}</TableCell>
+                        <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
                         <TableCell>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>
@@ -911,7 +915,8 @@ export default function StokGudang() {
     return m;
   }, [bahan, effectiveStokMov, filteredDbState]);
 
-  const totalNilai = bahan.reduce((s, b) => s + (saldoMap[b.id] || 0) * b.hargaBeli, 0);
+  // Hitung totalNilai menggunakan harga per gram (presisi HPP)
+  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
   const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
   const bahanPg = usePagination(bahan, 10);
 
@@ -1322,6 +1327,9 @@ export default function StokGudang() {
                       <div>
                         <span className="text-muted-foreground">Harga beli:</span>{' '}
                         <strong>{rupiah(b.hargaBeli)}/{b.satuan}</strong>
+                        {b.konversiGram && b.konversiGram > 0 && (
+                          <span className="text-muted-foreground ml-1">({rupiah(hargaPerGram(b.hargaBeli, b.konversiGram))}/gr)</span>
+                        )}
                       </div>
                       {rusakQty > 0 && (
                         <div>
@@ -1474,7 +1482,7 @@ export default function StokGudang() {
                             : <span className="text-muted-foreground">{b.satuan}</span>}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">{b.stokMin}</TableCell>
-                        <TableCell className="text-right">{rupiah(saldo * b.hargaBeli)}</TableCell>
+                        <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
                         <TableCell>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>
