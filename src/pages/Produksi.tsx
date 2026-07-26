@@ -68,7 +68,6 @@ export default function Produksi() {
   const [step1OutletId, setStep1OutletId] = useState("");
   const [expandedOutlets, setExpandedOutlets] = useState<Record<string, boolean>>({});
   const [recipeExpanded, setRecipeExpanded] = useState(false);
-  const [estimasiExpanded, setEstimasiExpanded] = useState(false);
   const [settings, setSettings] = useState(getBubaSettings());
   useEffect(() => {
     const handler = () => setSettings(getBubaSettings());
@@ -847,6 +846,18 @@ export default function Produksi() {
         bahanId: "b-cupoat1",
         kode: "CUPOAT1",
         nama: "CUP OAT",
+        qty: t.oatmeal,
+        rawQtyGrams: t.oatmeal, // 1:1
+        satuan: "biji"
+      });
+    }
+
+    // Tutup (1 oat = 1 tutup)
+    if (t.oatmeal > 0) {
+      reqs.push({
+        bahanId: "b-ttp01",
+        kode: "TTP01",
+        nama: "TUTUP",
         qty: t.oatmeal,
         rawQtyGrams: t.oatmeal, // 1:1
         satuan: "biji"
@@ -2042,83 +2053,7 @@ export default function Produksi() {
             </div>
           </div>
 
-          {/* Keterangan Gramasi & Kebutuhan Bahan Baku Total (Collapsible) */}
-          <div className="bg-muted/10 p-4 rounded-2xl border space-y-3 shadow-inner">
-            <div 
-              onClick={() => setEstimasiExpanded(prev => !prev)}
-              className="flex items-center justify-between cursor-pointer select-none"
-            >
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Calculator className="h-4 w-4 text-primary" /> Kebutuhan Bahan Baku Total (Seluruh Outlet)
-              </h3>
-              <div className="flex items-center gap-1 text-[11px] text-primary font-semibold">
-                {estimasiExpanded ? "Sembunyikan" : "Lihat Detail"}
-                {estimasiExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </div>
-            </div>
 
-            {estimasiExpanded && (
-              <div className="border-t border-dashed pt-3">
-              {(() => {
-              // Calculate ingredients for all outlets combined
-              const totalBeras = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.beras) + (totals.timD * settings.berasTim) + (totals.timI * settings.berasTim);
-              const totalBubur1Meat = buburCalc(totals.buburD, BUBUR_BASE.daging);
-              const totalBubur2Meat = buburCalc(totals.buburI, BUBUR_BASE.daging);
-              const totalTim1Meat = totals.timD * settings.dagingTim;
-              const totalTim2Meat = totals.timI * settings.dagingTim;
-              const totalOatmeal = totals.oatmeal * settings.oatmealCup;
-              const totalPuding = totals.puding * settings.pudingCup;
-              const totalAbon = totals.abon * settings.abonCup;
-              
-              // Sayur
-              const totalShBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurHijau);
-              const totalSbBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurBuah);
-              const totalSpBubur = buburCalc(totals.buburD + totals.buburI, BUBUR_BASE.sayurProtein);
-              
-              const totalShTim = (totals.timD + totals.timI) * settings.sayurHijauTim;
-              const totalSbTim = (totals.timD + totals.timI) * settings.sayurBuahTim;
-              const totalSpTim = (totals.timD + totals.timI) * settings.sayurProteinTim;
-
-              const hasPlan = totalBeras > 0 || totalOatmeal > 0 || totalPuding > 0 || totalAbon > 0;
-              if (!hasPlan) {
-                return (
-                  <p className="text-xs text-muted-foreground italic">
-                    Belum ada target porsi yang dimasukkan untuk hari ini. Kebutuhan bahan akan terhitung otomatis.
-                  </p>
-                );
-              }
-
-              return (
-                <div className="space-y-3">
-                  <div className="text-xs font-semibold text-primary">
-                    Detail Kebutuhan Bahan Baku untuk Rencana Produksi Hari Ini:
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 text-xs">
-                    {totalBeras > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>Beras:</strong> {formatDecimal(totalBeras)} gr</div>}
-                    {totalBubur1Meat > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>{bubur1Name}:</strong> {formatDecimal(totalBubur1Meat)} gr</div>}
-                    {totalBubur2Meat > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>{bubur2Name}:</strong> {formatDecimal(totalBubur2Meat)} gr</div>}
-                    {totalTim1Meat > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>{tim1Name}:</strong> {Math.ceil(totalTim1Meat)} gr</div>}
-                    {totalTim2Meat > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>{tim2Name}:</strong> {Math.ceil(totalTim2Meat)} gr</div>}
-                    {totalOatmeal > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>Oatmeal:</strong> {Math.ceil(totalOatmeal).toLocaleString()} gr</div>}
-                    {totalPuding > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>Puding:</strong> {Math.ceil(totalPuding).toLocaleString()} gr</div>}
-                    {totalAbon > 0 && <div className="p-3 bg-card rounded-xl border shadow-sm">• <strong>Abon:</strong> {Math.ceil(totalAbon).toLocaleString()} gr</div>}
-                    {(totalShBubur > 0 || totalSbBubur > 0 || totalSpBubur > 0) && (
-                      <div className="p-3 bg-card rounded-xl border shadow-sm sm:col-span-2">
-                        • <strong>Sayur Bubur (SH/SB/SP):</strong> {formatDecimal(totalShBubur)}g / {formatDecimal(totalSbBubur)}g / {formatDecimal(totalSpBubur)}g
-                      </div>
-                    )}
-                    {(totalShTim > 0 || totalSbTim > 0 || totalSpTim > 0) && (
-                      <div className="p-3 bg-card rounded-xl border shadow-sm sm:col-span-2">
-                        • <strong>Sayur Tim (SH/SB/SP):</strong> {Math.ceil(totalShTim)}g / {Math.ceil(totalSbTim)}g / {Math.ceil(totalSpTim)}g
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-            </div>
-            )}
-          </div>
 
           <div className="flex justify-end">
             <Button onClick={saveStep1} className="gradient-primary text-primary-foreground hover-lift" disabled={isReadOnlyGudang}>
