@@ -274,15 +274,17 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <h3 className="text-sm font-bold px-1">Daftar Outlet</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold px-1">Daftar Outlet</h3>
                         <Input
                           placeholder="Cari outlet..."
                           value={outletSearch}
                           onChange={(e) => { setOutletSearch(e.target.value); outletPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
+                      </div>
+                      <div className="flex justify-end">
                         <TablePagination 
                           page={outletPg.page}
                           totalPages={outletPg.totalPages}
@@ -354,15 +356,17 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <h3 className="text-sm font-bold px-1">Daftar Produk</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold px-1">Daftar Produk</h3>
                         <Input
                           placeholder="Cari produk..."
                           value={produkSearch}
                           onChange={(e) => { setProdukSearch(e.target.value); produkPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
+                      </div>
+                      <div className="flex justify-end">
                         <TablePagination page={produkPg.page} totalPages={produkPg.totalPages} total={produkPg.total} pageSize={produkPg.pageSize} onChange={produkPg.setPage} />
                       </div>
                     </div>
@@ -425,15 +429,17 @@ export default function MasterData() {
                 </Card>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <h3 className="text-sm font-bold px-1">Daftar Bahan Baku</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold px-1">Daftar Bahan Baku</h3>
                         <Input
                           placeholder="Cari bahan..."
                           value={bahanSearch}
                           onChange={(e) => { setBahanSearch(e.target.value); bahanPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
+                      </div>
+                      <div className="flex justify-end">
                         <TablePagination page={bahanPg.page} totalPages={bahanPg.totalPages} total={bahanPg.total} pageSize={bahanPg.pageSize} onChange={bahanPg.setPage} />
                       </div>
                     </div>
@@ -476,15 +482,17 @@ export default function MasterData() {
             <AccordionContent className="px-4 pb-4">
               <Card className="border shadow-sm">
                 <CardContent className="p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <h3 className="text-sm font-bold px-1">Chart of Accounts</h3>
-                    <div className="flex items-center gap-2">
+                  <div className="mb-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold px-1">Chart of Accounts</h3>
                       <Input
                         placeholder="Cari COA..."
                         value={coaSearch}
                         onChange={(e) => { setCoaSearch(e.target.value); coaPg.setPage(1); }}
                         className="h-8 w-40 text-xs"
                       />
+                    </div>
+                    <div className="flex justify-end">
                       <TablePagination page={coaPg.page} totalPages={coaPg.totalPages} total={coaPg.total} pageSize={coaPg.pageSize} onChange={coaPg.setPage} />
                     </div>
                   </div>
@@ -526,15 +534,17 @@ export default function MasterData() {
                 </div>
                 <Card className="border shadow-sm">
                   <CardContent className="p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <h3 className="text-sm font-bold px-1">Daftar Karyawan</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold px-1">Daftar Karyawan</h3>
                         <Input
                           placeholder="Cari karyawan..."
                           value={karyawanSearch}
                           onChange={(e) => { setKaryawanSearch(e.target.value); karyawanPg.setPage(1); }}
                           className="h-8 w-40 text-xs"
                         />
+                      </div>
+                      <div className="flex justify-end">
                         <TablePagination page={karyawanPg.page} totalPages={karyawanPg.totalPages} total={karyawanPg.total} pageSize={karyawanPg.pageSize} onChange={karyawanPg.setPage} />
                       </div>
                     </div>
