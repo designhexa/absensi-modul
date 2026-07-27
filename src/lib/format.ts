@@ -30,10 +30,10 @@ export const hargaPerGram = (hargaBeli: number, konversiGram?: number | null): n
 };
 
 // Hitung nilai persediaan berdasarkan gramasi (presisi HPP)
-// saldo dalam satuan (pack/sachet/pcs), hargaBeli per satuan, konversiGram gr/satuan
+// saldo dalam gram (untuk bahan dengan konversiGram), hargaBeli per satuan, konversiGram gr/satuan
 export const nilaiBahan = (saldo: number, hargaBeli: number, konversiGram?: number | null): number => {
-  if (!konversiGram || konversiGram <= 0) return saldo * hargaBeli; // fallback
-  const totalGram = saldo * konversiGram;
-  return totalGram * (hargaBeli / konversiGram);
+  if (!konversiGram || konversiGram <= 0) return saldo * hargaBeli; // fallback: unit-based
+  // saldo sudah dalam gram, hitung nilai = gram × (harga_per_satuan / gram_per_satuan)
+  return saldo * (hargaBeli / konversiGram);
 };
 

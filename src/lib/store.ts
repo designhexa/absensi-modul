@@ -875,14 +875,30 @@ export const db = {
   }
 };
 
+// Bahan yang punya konversiGram tapi tetap dihitung dalam satuan utuh (sachet),
+// karena produksi selalu menghabiskan per sachet utuh, tidak pernah ada sisa gram.
+export const GRAM_EXCLUDED_BAHAN = new Set(["b-pud01", "b-oat01"]);
+
 export function saldoBahan(bahanId: string, state_?: DB): number {
   const s = state_ ?? state;
   const b = s.bahan.find((x) => x.id === bahanId);
   if (!b) return 0;
-  let saldo = b.stokAwal;
-  for (const m of s.stokMov) {
-    if (m.bahanId !== bahanId) continue;
-    saldo += m.tipe === "IN" ? m.qty : -m.qty;
+  const kg = b.konversiGram && b.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(bahanId) ? b.konversiGram : null;
+  if (kg) {
+    // Gram-based: stok awal dalam gram, movement dalam gram
+    let saldo = b.stokAwal * kg;
+    for (const m of s.stokMov) {
+      if (m.bahanId !== bahanId) continue;
+      saldo += m.tipe === "IN" ? m.qty : -m.qty;
+    }
+    return saldo;
+  } else {
+    // Unit-based: tanpa konversi gram (cup, tutup, dll, dan oat/puding)
+    let saldo = b.stokAwal;
+    for (const m of s.stokMov) {
+      if (m.bahanId !== bahanId) continue;
+      saldo += m.tipe === "IN" ? m.qty : -m.qty;
+    }
+    return saldo;
   }
-  return saldo;
 }

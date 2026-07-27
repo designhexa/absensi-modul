@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { db, useDB, saldoBahan } from "@/lib/store";
+import { db, useDB, saldoBahan, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah, hargaPerGram, nilaiBahan } from "@/lib/format";
 import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, } from "lucide-react";
@@ -476,8 +476,12 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   }, [bahan, effectiveStokMov, filteredDbState]);
 
   // Hitung totalNilai menggunakan harga per gram (presisi HPP)
-  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
-  const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
+  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram), 0);
+  const lowStock = bahan.filter((b) => {
+    const saldo = saldoMap[b.id] || 0;
+    const minGram = !GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? b.stokMin * b.konversiGram : b.stokMin;
+    return saldo <= minGram;
+  });
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -518,8 +522,8 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
         case "nama": aVal = a.nama; bVal = b.nama; break;
         case "saldo": aVal = saldoMap[a.id] || 0; bVal = saldoMap[b.id] || 0; break;
         case "gramasi": aVal = getGramasiInfo(a)?.gramPerUnit ?? 0; bVal = getGramasiInfo(b)?.gramPerUnit ?? 0; break;
-        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, a.konversiGram); bVal = hargaPerGram(b.hargaBeli, b.konversiGram); break;
-        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram); break;
+        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, GRAM_EXCLUDED_BAHAN.has(a.id) ? null : a.konversiGram); bVal = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram); break;
+        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, GRAM_EXCLUDED_BAHAN.has(a.id) ? null : a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram); break;
         case "min": aVal = a.stokMin; bVal = b.stokMin; break;
         default: aVal = a.kode; bVal = b.kode;
       }
@@ -621,13 +625,17 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                   )}
                   {bahanPg.paged.map((b: any) => {
                     const saldo = saldoMap[b.id] || 0;
-                    const low = saldo <= b.stokMin;
                     const gramasi = getGramasiInfo(b);
-                    const totalGram = gramasi ? saldo * gramasi.gramPerUnit : null;
-                    const hrgPerGram = hargaPerGram(b.hargaBeli, b.konversiGram);
-                    const saldoDisplay = totalGram !== null
-                      ? <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan} <span className="text-muted-foreground font-normal">({totalGram.toLocaleString()} gr)</span></>
-                      : <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan}</>;
+                    const minGram = !GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? b.stokMin * b.konversiGram : b.stokMin;
+                    const low = saldo <= minGram;
+                    const hrgPerGram = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram);
+                    // saldo sekarang dalam gram untuk bahan dengan konversiGram
+                    const totalUnit = gramasi && gramasi.gramPerUnit > 0 ? saldo / gramasi.gramPerUnit : null;
+                    const saldoDisplay = GRAM_EXCLUDED_BAHAN.has(b.id)
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</span> <span className="text-muted-foreground font-normal">({(saldo * (gramasi?.gramPerUnit || 0)).toLocaleString()} gr)</span></>
+                      : gramasi
+                        ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({totalUnit !== null ? (Number.isInteger(totalUnit) ? totalUnit : totalUnit.toFixed(2)) : '?'} {b.satuan})</span></>
+                        : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
                     const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
                       <TableRow key={b.id}>
@@ -635,9 +643,9 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
                         <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
                         <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
-                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}/gr</TableCell>
-                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
-                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan}` : "/gr"}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram))}</TableCell>
+                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{!GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? `${(b.stokMin * b.konversiGram).toLocaleString()} gr` : b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>
@@ -729,7 +737,11 @@ export default function StokGudang() {
     e.preventDefault();
     if (!bahanId || qty === undefined || qty <= 0) return toast.error("Lengkapi data");
     const finalKet = selectedKetSource === "Lainnya" ? customKet : selectedKetSource;
-    db.addStokMov({ tanggal, bahanId, tipe, qty, keterangan: finalKet || (tipe === "IN" ? "Pembelian" : "Pemakaian") });
+    // Konversi qty ke gram jika bahan memiliki konversiGram
+    const selectedB = bahan.find((b: any) => b.id === bahanId);
+    const kg = selectedB?.konversiGram && selectedB.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedB.id) ? selectedB.konversiGram : null;
+    const qtyGram = kg ? qty * kg : qty;
+    db.addStokMov({ tanggal, bahanId, tipe, qty: qtyGram, keterangan: finalKet || (tipe === "IN" ? "Pembelian" : "Pemakaian") });
     toast.success(`Stok ${tipe === "IN" ? "masuk" : "keluar"} dicatat`);
     setQty(undefined); setCustomKet("");
   };
@@ -745,12 +757,14 @@ export default function StokGudang() {
 
     const labelBahan = selectedBahan.nama;
     
-    // 1. Record stock movement IN
+    // 1. Record stock movement IN (konversi ke gram jika ada konversiGram)
+    const kgSup = selectedBahan.konversiGram && selectedBahan.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedBahan.id) ? selectedBahan.konversiGram : null;
+    const qtyGramSup = kgSup ? supQty * kgSup : supQty;
     await db.addStokMov({
       tanggal: supTanggal,
       bahanId: supBahanId,
       tipe: "IN",
-      qty: supQty,
+      qty: qtyGramSup,
       keterangan: `Kiriman Supplier: ${labelBahan} (${supQty} ${selectedBahan.satuan})`
     });
 
@@ -803,21 +817,28 @@ export default function StokGudang() {
     const selectedBahan = bahan.find(b => b.id === rusakBahanId);
     if (!selectedBahan) return toast.error("Bahan baku tidak ditemukan");
 
+    const kgRusak = selectedBahan.konversiGram && selectedBahan.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedBahan.id) ? selectedBahan.konversiGram : null;
+    const qtyGramRusak = kgRusak ? rusakQty * kgRusak : rusakQty;
+
     if (!isProduksi) {
       // === ADMIN: langsung kurangi stok + posting jurnal ===
       const currentStock = saldoMap[rusakBahanId] || 0;
-      if (rusakQty > currentStock) {
-        return toast.error(`Stok tidak mencukupi! Stok saat ini: ${currentStock} ${selectedBahan.satuan}`);
+      if (qtyGramRusak > currentStock) {
+        const stockDisplay = kgRusak
+          ? `${(currentStock / kgRusak).toFixed(2)} ${selectedBahan.satuan} (${currentStock.toLocaleString()} gr)`
+          : `${currentStock} ${selectedBahan.satuan}`;
+        return toast.error(`Stok tidak mencukupi! Stok saat ini: ${stockDisplay}`);
       }
 
       const labelBahan = selectedBahan.nama;
+      // totalLoss pakai qty dalam unit asli × harga per unit (untuk jurnal)
       const totalLoss = rusakQty * selectedBahan.hargaBeli;
 
       await db.addStokMov({
         tanggal: rusakTanggal,
         bahanId: rusakBahanId,
         tipe: "OUT",
-        qty: rusakQty,
+        qty: qtyGramRusak,
         keterangan: `RUSAK:APPROVED:${labelBahan} (${rusakQty} ${selectedBahan.satuan})${rusakKeterangan ? ` - ${rusakKeterangan}` : ""}`
       });
 
@@ -846,7 +867,7 @@ export default function StokGudang() {
         tanggal: rusakTanggal,
         bahanId: rusakBahanId,
         tipe: "OUT",
-        qty: rusakQty,
+        qty: qtyGramRusak,
         keterangan: `RUSAK:PENDING:${selectedBahan.nama} (${rusakQty} ${selectedBahan.satuan})${rusakKeterangan ? ` - ${rusakKeterangan}` : ""}|dibuat oleh ${creatorName}`
       });
       toast.success("Laporan barang rusak dikirim, menunggu persetujuan Admin.");
@@ -863,10 +884,13 @@ export default function StokGudang() {
 
     const currentStock = saldoMap[mov.bahanId] || 0;
     if (mov.qty > currentStock) {
-      return toast.error(`Stok tidak mencukupi! Stok saat ini: ${currentStock} ${selectedBahan.satuan}`);
+      return toast.error(`Stok tidak mencukupi! Stok saat ini: ${currentStock} gr`);
     }
 
-    const totalLoss = mov.qty * selectedBahan.hargaBeli;
+    // mov.qty sudah dalam gram (dari DB). totalLoss perlu dalam unit asli × harga per unit
+    const kgAppr = selectedBahan.konversiGram && selectedBahan.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedBahan.id) ? selectedBahan.konversiGram : 1;
+    const unitQty = mov.qty / kgAppr;
+    const totalLoss = unitQty * selectedBahan.hargaBeli;
     const rawDetail = mov.keterangan?.replace("RUSAK:PENDING:", "") || "";
     // Parse existing format: "itemDetail|dibuat oleh nama" or fallback to legacy
     const parts = rawDetail.split("|");
@@ -926,7 +950,10 @@ export default function StokGudang() {
       .update({ keterangan: approvedKet })
       .eq("id", mov.id);
 
-    toast.success(`Koreksi stok disetujui! ${mov.tipe === "IN" ? "Stok bertambah" : "Stok berkurang"} ${mov.qty} ${selectedBahan.satuan}.`);
+    const editDisplay = selectedBahan.konversiGram && selectedBahan.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedBahan.id)
+      ? `${mov.qty} gr`
+      : `${mov.qty} ${selectedBahan.satuan}`;
+    toast.success(`Koreksi stok disetujui! ${mov.tipe === "IN" ? "Stok bertambah" : "Stok berkurang"} ${editDisplay}.`);
   };
 
   // === Helper: Reject pending edit ===
@@ -936,6 +963,8 @@ export default function StokGudang() {
   };
 
   const getGramasiInfo = (b: any) => {
+    // Oat & Puding: tetap sachet (bukan gram)
+    if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
 
@@ -976,8 +1005,12 @@ export default function StokGudang() {
   }, [bahan, effectiveStokMov, filteredDbState]);
 
   // Hitung totalNilai menggunakan harga per gram (presisi HPP)
-  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram), 0);
-  const lowStock = bahan.filter((b) => (saldoMap[b.id] || 0) <= b.stokMin);
+  const totalNilai = bahan.reduce((s, b) => s + nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram), 0);
+  const lowStock = bahan.filter((b) => {
+    const saldo = saldoMap[b.id] || 0;
+    const minGram = !GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? b.stokMin * b.konversiGram : b.stokMin;
+    return saldo <= minGram;
+  });
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -1002,8 +1035,8 @@ export default function StokGudang() {
         case "nama": aVal = a.nama; bVal = b.nama; break;
         case "saldo": aVal = saldoMap[a.id] || 0; bVal = saldoMap[b.id] || 0; break;
         case "gramasi": aVal = getGramasiInfo(a)?.gramPerUnit ?? 0; bVal = getGramasiInfo(b)?.gramPerUnit ?? 0; break;
-        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, a.konversiGram); bVal = hargaPerGram(b.hargaBeli, b.konversiGram); break;
-        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram); break;
+        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, GRAM_EXCLUDED_BAHAN.has(a.id) ? null : a.konversiGram); bVal = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram); break;
+        case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, GRAM_EXCLUDED_BAHAN.has(a.id) ? null : a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram); break;
         case "min": aVal = a.stokMin; bVal = b.stokMin; break;
         default: aVal = a.kode; bVal = b.kode;
       }
@@ -1410,7 +1443,7 @@ export default function StokGudang() {
                       <div>
                         <span className="text-muted-foreground">Stok saat ini:</span>{' '}
                         <strong className={saldo <= b.stokMin ? "text-destructive" : "text-success"}>
-                          {saldo} {b.satuan}
+                          {Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} {b.konversiGram ? 'gr' : b.satuan}
                         </strong>
                       </div>
                       <div>
@@ -1562,13 +1595,15 @@ export default function StokGudang() {
                   )}
                   {bahanPg.paged.map((b) => {
                     const saldo = saldoMap[b.id] || 0;
-                    const low = saldo <= b.stokMin;
                     const gramasi = getGramasiInfo(b);
-                    const totalGram = gramasi ? saldo * gramasi.gramPerUnit : null;
-                    const hrgPerGram = hargaPerGram(b.hargaBeli, b.konversiGram);
-                    const saldoDisplay = totalGram !== null
-                      ? <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan} <span className="text-muted-foreground font-normal">({totalGram.toLocaleString()} gr)</span></>
-                      : <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan}</>;
+                    const minGram2 = !GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? b.stokMin * b.konversiGram : b.stokMin;
+                    const low = saldo <= minGram2;
+                    const hrgPerGram = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram);
+                    // saldo sekarang dalam gram untuk bahan dengan konversiGram
+                    const totalUnit = gramasi && gramasi.gramPerUnit > 0 ? saldo / gramasi.gramPerUnit : null;
+                    const saldoDisplay = gramasi
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({totalUnit !== null ? (Number.isInteger(totalUnit) ? totalUnit : totalUnit.toFixed(2)) : '?'} {b.satuan})</span></>
+                      : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
                     const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
                       <TableRow key={b.id}>
@@ -1576,9 +1611,9 @@ export default function StokGudang() {
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
                         <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
                         <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
-                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}/gr</TableCell>
-                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
-                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan}` : "/gr"}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram))}</TableCell>
+                        <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{!GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? `${(b.stokMin * b.konversiGram).toLocaleString()} gr` : b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
                             ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Menipis</Badge>

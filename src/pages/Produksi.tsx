@@ -706,9 +706,9 @@ export default function Produksi() {
         bahanId: "b-brs01",
         kode: "BRS01",
         nama: "BERAS",
-        qty: Math.ceil(berasGr / (bahan.find(x => x.id === "b-brs01")?.konversiGram ?? 600)), // Pack
+        qty: berasGr, // gram
         rawQtyGrams: berasGr,
-        satuan: "Pack"
+        satuan: "gr"
       });
     }
 
@@ -754,16 +754,16 @@ export default function Produksi() {
       const b = bahan.find(x => x.id === variantId);
       if (b && grams > 0) {
         const existing = reqs.find(r => r.bahanId === variantId);
-        const qtyPcs = Math.ceil(grams / (b?.konversiGram ?? 100)); // konversi dari data bahan
+        const qtyPcs = grams; // dalam gram
         if (existing) {
           existing.rawQtyGrams += grams;
-          existing.qty = Math.ceil(existing.rawQtyGrams / (b?.konversiGram ?? 100));
+          existing.qty = existing.rawQtyGrams;
         } else {
           reqs.push({
             bahanId: variantId,
             kode: b.kode,
             nama: b.nama,
-            qty: qtyPcs,
+            qty: grams,
             rawQtyGrams: grams,
             satuan: b.satuan
           });
@@ -777,27 +777,29 @@ export default function Produksi() {
     if (t.timD > 0 && tim1Variant) addVariant(tim1Variant, t.timD * settings.dagingTim);
     if (t.timI > 0 && tim2Variant) addVariant(tim2Variant, t.timI * settings.dagingTim);
 
-    // Puding
+    // Puding — dalam sachet (produksi selalu habis per sachet, tidak ada sisa gram)
     const pudingGr = Math.ceil(t.puding * settings.pudingCup);
-    if (pudingGr > 0) {
+    const pudingSachet = Math.ceil(pudingGr / 130); // 130 gr/sachet
+    if (pudingSachet > 0) {
       reqs.push({
         bahanId: "b-pud01",
         kode: "PUD01",
         nama: "PUDING",
-        qty: Math.ceil(pudingGr / (bahan.find(x => x.id === "b-pud01")?.konversiGram ?? 130)), // sachet
+        qty: pudingSachet,
         rawQtyGrams: pudingGr,
         satuan: "sachet"
       });
     }
 
-    // Oat
+    // Oat — dalam sachet (produksi selalu habis per sachet, tidak ada sisa gram)
     const oatGr = Math.ceil(t.oatmeal * settings.oatmealCup);
-    if (oatGr > 0) {
+    const oatSachet = Math.ceil(oatGr / 154); // 154 gr/sachet
+    if (oatSachet > 0) {
       reqs.push({
         bahanId: "b-oat01",
         kode: "OAT01",
         nama: "OAT",
-        qty: Math.ceil(oatGr / (bahan.find(x => x.id === "b-oat01")?.konversiGram ?? 154)), // sachet
+        qty: oatSachet,
         rawQtyGrams: oatGr,
         satuan: "sachet"
       });
@@ -810,9 +812,9 @@ export default function Produksi() {
         bahanId: "b-ab01",
         kode: "AB01",
         nama: "ABON",
-        qty: Math.ceil(abonGr / (bahan.find(x => x.id === "b-ab01")?.konversiGram ?? 10)), // pcs
+        qty: abonGr, // gram
         rawQtyGrams: abonGr,
-        satuan: "pcs"
+        satuan: "gr"
       });
     }
 
@@ -1352,29 +1354,29 @@ export default function Produksi() {
       if (recoveredIngredients.beras > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-brs01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.beras / (bahan.find(x => x.id === "b-brs01")?.konversiGram ?? 600)),
-          keterangan: `Retur Bahan Baku (Pack) [${tanggal}]`
+          qty: Math.ceil(recoveredIngredients.beras), // gram
+          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
         }));
       }
       if (recoveredIngredients.puding > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-pud01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.puding / (bahan.find(x => x.id === "b-pud01")?.konversiGram ?? 130)),
+          qty: Math.ceil(recoveredIngredients.puding / 130), // sachet
           keterangan: `Retur Bahan Baku (sachet) [${tanggal}]`
         }));
       }
       if (recoveredIngredients.oat > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-oat01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.oat / (bahan.find(x => x.id === "b-oat01")?.konversiGram ?? 154)),
+          qty: Math.ceil(recoveredIngredients.oat / 154), // sachet
           keterangan: `Retur Bahan Baku (sachet) [${tanggal}]`
         }));
       }
       if (recoveredIngredients.abon > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-ab01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.abon / (bahan.find(x => x.id === "b-ab01")?.konversiGram ?? 10)),
-          keterangan: `Retur Bahan Baku (pcs) [${tanggal}]`
+          qty: Math.ceil(recoveredIngredients.abon), // gram
+          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
         }));
       }
 
