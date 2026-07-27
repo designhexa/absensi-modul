@@ -852,17 +852,19 @@ export default function Produksi() {
       });
     }
 
-    // Tutup (1 oat = 1 tutup)
-    if (t.oatmeal > 0) {
-      reqs.push({
-        bahanId: "b-ttp01",
-        kode: "TTP01",
-        nama: "TUTUP",
-        qty: t.oatmeal,
-        rawQtyGrams: t.oatmeal, // 1:1
-        satuan: "biji"
-      });
-    }
+    // Tutup (1 oat = 1 tutup) — TIDAK dipotong otomatis di produksi,
+    // karena tutup/cup bisa diretur jika tidak laku.
+    // Stok tutup hanya dipotong saat outlet melakukan request melalui Gudang.
+    // if (t.oatmeal > 0) {
+    //   reqs.push({
+    //     bahanId: "b-ttp01",
+    //     kode: "TTP01",
+    //     nama: "TUTUP",
+    //     qty: t.oatmeal,
+    //     rawQtyGrams: t.oatmeal, // 1:1
+    //     satuan: "biji"
+    //   });
+    // }
 
     return reqs;
   }, [combinedTotals, bubur1Variant, bubur2Variant, tim1Variant, tim2Variant, bahan, settings]);

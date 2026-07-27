@@ -625,18 +625,18 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     const gramasi = getGramasiInfo(b);
                     const totalGram = gramasi ? saldo * gramasi.gramPerUnit : null;
                     const hrgPerGram = hargaPerGram(b.hargaBeli, b.konversiGram);
+                    const saldoDisplay = totalGram !== null
+                      ? <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan} <span className="text-muted-foreground font-normal">({totalGram.toLocaleString()} gr)</span></>
+                      : <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan}</>;
+                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
                       <TableRow key={b.id}>
                         <TableCell className="whitespace-nowrap font-mono text-xs">{b.kode}</TableCell>
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
-                        <TableCell className="text-right font-semibold">{saldo}</TableCell>
-                        <TableCell className="text-right text-xs">
-                          {totalGram !== null
-                            ? <><span className="font-medium">{totalGram.toLocaleString()} gr</span><br /><span className="text-muted-foreground">{gramasi!.label}</span></>
-                            : <span className="text-muted-foreground">{b.satuan}</span>}
-                        </TableCell>
-                        <TableCell className="text-right text-xs">{rupiah(hrgPerGram)}/gr</TableCell>
-                        <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
+                        <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}/gr</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
                         <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
@@ -1002,6 +1002,7 @@ export default function StokGudang() {
         case "nama": aVal = a.nama; bVal = b.nama; break;
         case "saldo": aVal = saldoMap[a.id] || 0; bVal = saldoMap[b.id] || 0; break;
         case "gramasi": aVal = getGramasiInfo(a)?.gramPerUnit ?? 0; bVal = getGramasiInfo(b)?.gramPerUnit ?? 0; break;
+        case "hrgPerGram": aVal = hargaPerGram(a.hargaBeli, a.konversiGram); bVal = hargaPerGram(b.hargaBeli, b.konversiGram); break;
         case "nilai": aVal = nilaiBahan(saldoMap[a.id] || 0, a.hargaBeli, a.konversiGram); bVal = nilaiBahan(saldoMap[b.id] || 0, b.hargaBeli, b.konversiGram); break;
         case "min": aVal = a.stokMin; bVal = b.stokMin; break;
         default: aVal = a.kode; bVal = b.kode;
@@ -1548,6 +1549,7 @@ export default function StokGudang() {
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort("nama")}>Nama <SortIcon field="nama" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("saldo")}>Saldo <SortIcon field="saldo" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Gramasi <SortIcon field="gramasi" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga/gr <SortIcon field="hrgPerGram" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("nilai")}>Nilai <SortIcon field="nilai" /></TableHead>
                     <TableHead className={`text-right ${!showExtraCols ? 'hidden' : ''}`}>Min</TableHead>
                     <TableHead className={`${!showExtraCols ? 'hidden' : ''}`}>Status</TableHead>
@@ -1555,10 +1557,7 @@ export default function StokGudang() {
                 </TableHeader>
                 <TableBody>
                   {bahanPg.paged.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={showExtraCols ? 7 : 5} className="text-center text-muted-foreground py-8">
-                        Belum ada saldo bahan baku
-                      </TableCell>
+                    <TableRow><TableCell colSpan={showExtraCols ? 8 : 6} className="text-center text-muted-foreground py-8">Belum ada saldo bahan baku</TableCell>
                     </TableRow>
                   )}
                   {bahanPg.paged.map((b) => {
@@ -1566,17 +1565,19 @@ export default function StokGudang() {
                     const low = saldo <= b.stokMin;
                     const gramasi = getGramasiInfo(b);
                     const totalGram = gramasi ? saldo * gramasi.gramPerUnit : null;
+                    const hrgPerGram = hargaPerGram(b.hargaBeli, b.konversiGram);
+                    const saldoDisplay = totalGram !== null
+                      ? <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan} <span className="text-muted-foreground font-normal">({totalGram.toLocaleString()} gr)</span></>
+                      : <>{Number.isInteger(saldo) ? saldo : saldo.toFixed(2)} {b.satuan}</>;
+                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
                       <TableRow key={b.id}>
                         <TableCell className="whitespace-nowrap font-mono text-xs">{b.kode}</TableCell>
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
-                        <TableCell className="text-right font-semibold">{saldo}</TableCell>
-                        <TableCell className="text-right text-xs">
-                          {totalGram !== null
-                            ? <><span className="font-medium">{totalGram.toLocaleString()} gr</span><br /><span className="text-muted-foreground">{gramasi!.label}</span></>
-                            : <span className="text-muted-foreground">{b.satuan}</span>}
-                        </TableCell>
-                        <TableCell className="text-right">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
+                        <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}/gr</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, b.konversiGram))}</TableCell>
                         <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
                           {low
