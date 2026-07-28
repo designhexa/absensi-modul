@@ -169,7 +169,7 @@ export const SEED_USERS: UserAccount[] = [
 ];
 
 const RAW_BAHAN = [
-  { kode: "BRS01", nama: "BERAS", satuan: "Pack", stokMin: 15, stokAwal: 150, hargaBeli: 15500, konversiGram: 600 },
+  { kode: "BRS01", nama: "BERAS", satuan: "Pack", stokMin: 15, stokAwal: 150, hargaBeli: 15500, konversiGram: 700 },
   { kode: "DG01", nama: "DAGING", satuan: "sachet", stokMin: 3, stokAwal: 3, hargaBeli: 12000, konversiGram: 35 },
   { kode: "AY01", nama: "AYAM", satuan: "sachet", stokMin: 3, stokAwal: 24, hargaBeli: 9000, konversiGram: 35 },
   { kode: "TN01", nama: "TUNA", satuan: "sachet", stokMin: 2, stokAwal: 22, hargaBeli: 9000, konversiGram: 35 },

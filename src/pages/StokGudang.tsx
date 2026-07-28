@@ -491,7 +491,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
     if (nama.includes("beras")) {
-      return { gramPerUnit: 600, label: `600 gr/${b.satuan}` };
+      return { gramPerUnit: 700, label: `700 gr/${b.satuan}` };
     }
     const sachet35List = ["tuna", "tengiri", "salmon", "gurami", "kakap", "dori", "daging", "ayam"];
     if (sachet35List.some((ik) => nama.includes(ik))) {
@@ -671,7 +671,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
           </div>
         </CardHeader>
         <CardContent>
-          <MovTable mov={filteredMov} bahan={bahan} produksi={produksi} produk={produk} />
+          <MovTable mov={filteredMov} bahan={bahan} produksi={produksi} produk={produk} readOnly />
         </CardContent>
       </Card>
     </div>
@@ -1970,7 +1970,7 @@ function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: 
   );
 }
 
-function MovTable({ mov, bahan, produksi, produk }: any) {
+function MovTable({ mov, bahan, produksi, produk, readOnly }: any) {
   const [searchText, setSearchText] = useState("");
   const filteredMov = useMemo(() => {
     if (!searchText.trim()) return mov;
@@ -2001,12 +2001,12 @@ function MovTable({ mov, bahan, produksi, produk }: any) {
               <TableHead>Tipe</TableHead>
               <TableHead className="text-right">Qty</TableHead>
               <TableHead>Keterangan</TableHead>
-              <TableHead></TableHead>
+              {!readOnly && <TableHead></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {mov.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada pergerakan</TableCell></TableRow>
+              <TableRow><TableCell colSpan={readOnly ? 5 : 6} className="text-center text-muted-foreground py-8">Belum ada pergerakan</TableCell></TableRow>
             )}
             {paged.map((m: any) => {
               const b = bahan.find((x: any) => x.id === m.bahanId);
@@ -2045,11 +2045,13 @@ function MovTable({ mov, bahan, produksi, produk }: any) {
                     })()}
                     {linkProdNama && <span className="text-muted-foreground"> · Produksi {linkProdNama}</span>}
                   </TableCell>
-                  <TableCell>
-                    <Button size="icon" variant="ghost" onClick={() => db.deleteStokMov(m.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {!readOnly && (
+                    <TableCell>
+                      <Button size="icon" variant="ghost" onClick={() => db.deleteStokMov(m.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

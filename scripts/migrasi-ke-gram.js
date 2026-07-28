@@ -11,7 +11,7 @@
  *   node scripts/migrasi-ke-gram.js
  * 
  * Bahan dengan konversiGram:
- *   - b-brs01 (BERAS):    600 gr/Pack
+ *   - b-brs01 (BERAS):    700 gr/Pack
  *   - b-dg01 (DAGING):    35 gr/sachet
  *   - b-ay01 (AYAM):      35 gr/sachet
  *   - b-tn01 (TUNA):      35 gr/sachet
@@ -55,7 +55,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Mapping bahanId → konversiGram
 const KONVERSI_GRAM = {
-  'b-brs01': 600,  // BERAS Pack
+  'b-brs01': 700,  // BERAS Pack
   'b-dg01': 35,    // DAGING sachet
   'b-ay01': 35,    // AYAM sachet
   'b-tn01': 35,    // TUNA sachet
