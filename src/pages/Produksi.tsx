@@ -317,45 +317,78 @@ export default function Produksi() {
         }
       }
 
-      // Load Step 3
+      // Load Step 3 — auto-fill from plan (Step 1) if no existing produksi data, else load from DB
       const dayProds = produksi.filter((p: any) => p.tanggal === tanggal);
       const newActualGrams = { bubur_1: 0, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
       const newActualCups = { bubur_1: 0, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
       
-      const buburProds = dayProds.filter((p: any) => p.produkId === "p-bubur");
-      const timProds = dayProds.filter((p: any) => p.produkId === "p-nasitim");
-      
-      if (buburProds.length > 0) {
-        newActualCups.bubur_1 = buburProds[0].qtyRealisasi;
-        newActualGrams.bubur_1 = buburProds[0].qtyRealisasi * 118;
-        if (buburProds.length > 1) {
-          newActualCups.bubur_2 = buburProds[1].qtyRealisasi;
-          newActualGrams.bubur_2 = buburProds[1].qtyRealisasi * 118;
+      if (dayProds.length === 0) {
+        // 🔄 Auto-fill dari rencana Step 1 jika belum ada data realisasi
+        const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
+        let planBuburD = 0, planBuburI = 0, planTimD = 0, planTimI = 0;
+        let planOatmeal = 0, planPuding = 0, planAbon = 0;
+        dayReqs.forEach((r: any) => {
+          const split = parseSplit(r.catatan || "");
+          if (r.produkId === "p-bubur") {
+            planBuburD += split.d || r.qty;
+            planBuburI += split.i || 0;
+          } else if (r.produkId === "p-nasitim") {
+            planTimD += split.d || r.qty;
+            planTimI += split.i || 0;
+          } else if (r.produkId === "p-oatmeal") planOatmeal += r.qty;
+          else if (r.produkId === "p-puding") planPuding += r.qty;
+          else if (r.produkId === "p-abon") planAbon += r.qty;
+        });
+        // Gramasi: Bubur=118gr/cup, Tim=108gr/cup, Oatmeal=100gr/cup, Puding=80gr/cup, Abon=10gr/pcs
+        newActualCups.bubur_1 = planBuburD;
+        newActualCups.bubur_2 = planBuburI;
+        newActualCups.tim_1 = planTimD;
+        newActualCups.tim_2 = planTimI;
+        newActualCups.oatmeal = planOatmeal;
+        newActualCups.puding = planPuding;
+        newActualCups.abon = planAbon;
+        newActualGrams.bubur_1 = planBuburD * 118;
+        newActualGrams.bubur_2 = planBuburI * 118;
+        newActualGrams.tim_1 = planTimD * 108;
+        newActualGrams.tim_2 = planTimI * 108;
+        newActualGrams.oatmeal = planOatmeal * 100;
+        newActualGrams.puding = planPuding * 80;
+        newActualGrams.abon = planAbon * 10;
+      } else {
+        // Load existing produksi data
+        const buburProds = dayProds.filter((p: any) => p.produkId === "p-bubur");
+        const timProds = dayProds.filter((p: any) => p.produkId === "p-nasitim");
+        if (buburProds.length > 0) {
+          newActualCups.bubur_1 = buburProds[0].qtyRealisasi;
+          newActualGrams.bubur_1 = buburProds[0].qtyRealisasi * 118;
+          if (buburProds.length > 1) {
+            newActualCups.bubur_2 = buburProds[1].qtyRealisasi;
+            newActualGrams.bubur_2 = buburProds[1].qtyRealisasi * 118;
+          }
         }
-      }
-      if (timProds.length > 0) {
-        newActualCups.tim_1 = timProds[0].qtyRealisasi;
-        newActualGrams.tim_1 = timProds[0].qtyRealisasi * 108;
-        if (timProds.length > 1) {
-          newActualCups.tim_2 = timProds[1].qtyRealisasi;
-          newActualGrams.tim_2 = timProds[1].qtyRealisasi * 108;
+        if (timProds.length > 0) {
+          newActualCups.tim_1 = timProds[0].qtyRealisasi;
+          newActualGrams.tim_1 = timProds[0].qtyRealisasi * 108;
+          if (timProds.length > 1) {
+            newActualCups.tim_2 = timProds[1].qtyRealisasi;
+            newActualGrams.tim_2 = timProds[1].qtyRealisasi * 108;
+          }
         }
-      }
-      
-      const oatmealProd = dayProds.find((p: any) => p.produkId === "p-oatmeal");
-      if (oatmealProd) {
-        newActualCups.oatmeal = oatmealProd.qtyRealisasi;
-        newActualGrams.oatmeal = oatmealProd.qtyRealisasi * 100;
-      }
-      const pudingProd = dayProds.find((p: any) => p.produkId === "p-puding");
-      if (pudingProd) {
-        newActualCups.puding = pudingProd.qtyRealisasi;
-        newActualGrams.puding = pudingProd.qtyRealisasi * 80;
-      }
-      const abonProd = dayProds.find((p: any) => p.produkId === "p-abon");
-      if (abonProd) {
-        newActualCups.abon = abonProd.qtyRealisasi;
-        newActualGrams.abon = abonProd.qtyRealisasi * 10;
+        const oatmealProd = dayProds.find((p: any) => p.produkId === "p-oatmeal");
+        if (oatmealProd) {
+          newActualCups.oatmeal = oatmealProd.qtyRealisasi;
+          newActualGrams.oatmeal = oatmealProd.qtyRealisasi * 100;
+        }
+        const pudingProd = dayProds.find((p: any) => p.produkId === "p-puding");
+        if (pudingProd) {
+          newActualCups.puding = pudingProd.qtyRealisasi;
+          newActualGrams.puding = pudingProd.qtyRealisasi * 80;
+        }
+        const abonProd = dayProds.find((p: any) => p.produkId === "p-abon");
+        if (abonProd) {
+          newActualCups.abon = abonProd.qtyRealisasi;
+          newActualGrams.abon = abonProd.qtyRealisasi * 10;
+        }
       }
       
       setActualGrams(newActualGrams);
