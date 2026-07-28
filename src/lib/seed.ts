@@ -41,7 +41,8 @@ export const SEED_PRODUK: Produk[] = [
   { id: "b-bl01", nama: "Balon + Stik", harga: 0, satuan: "biji" },
   { id: "b-plas01", nama: "Plastik Seler", harga: 0, satuan: "pcs" },
   { id: "b-cupoat1", nama: "Cup Oat", harga: 0, satuan: "biji" },
-  { id: "b-cuppud01", nama: "Cup Puding", harga: 0, satuan: "biji" }
+  { id: "b-cuppud01", nama: "Cup Puding", harga: 0, satuan: "biji" },
+  { id: "b-ttoat01", nama: "Tutup Oat", harga: 0, satuan: "biji" }
 ];
 
 export const SEED_COA: AkunCOA[] = [
@@ -181,6 +182,7 @@ const RAW_BAHAN = [
   { kode: "OAT01", nama: "OAT", satuan: "sachet", stokMin: 5, stokAwal: 25, hargaBeli: 10000, konversiGram: 154 },
   { kode: "CB01", nama: "CUP BUBUR", satuan: "biji", stokMin: 200, stokAwal: 1865, hargaBeli: 530 },
   { kode: "TTP01", nama: "TUTUP", satuan: "biji", stokMin: 200, stokAwal: 0, hargaBeli: 200 },
+  { kode: "TTOAT01", nama: "TUTUP OAT", satuan: "biji", stokMin: 50, stokAwal: 1000, hargaBeli: 200 },
   { kode: "AB01", nama: "ABON", satuan: "pcs", stokMin: 5, stokAwal: 31, hargaBeli: 3000, konversiGram: 10 },
   { kode: "CUPOAT1", nama: "CUP OAT", satuan: "biji", stokMin: 50, stokAwal: 110, hargaBeli: 530 },
   { kode: "CUPPUD01", nama: "CUP PUDING", satuan: "biji", stokMin: 50, stokAwal: 10, hargaBeli: 160 },
