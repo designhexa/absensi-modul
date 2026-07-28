@@ -630,11 +630,13 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     const low = saldo <= minGram;
                     const hrgPerGram = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram);
                     // saldo sekarang dalam gram untuk bahan dengan konversiGram
-                    const totalUnit = gramasi && gramasi.gramPerUnit > 0 ? saldo / gramasi.gramPerUnit : null;
+                    const unitSize = gramasi?.gramPerUnit ?? 0;
+                    const fullUnits = unitSize > 0 ? Math.floor(saldo / unitSize) : null;
+                    const sisa = unitSize > 0 && fullUnits !== null ? saldo - fullUnits * unitSize : null;
                     const saldoDisplay = GRAM_EXCLUDED_BAHAN.has(b.id)
-                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</span> <span className="text-muted-foreground font-normal">({(saldo * (gramasi?.gramPerUnit || 0)).toLocaleString()} gr)</span></>
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</span> <span className="text-muted-foreground font-normal">({(saldo * unitSize).toLocaleString()} gr)</span></>
                       : gramasi
-                        ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({totalUnit !== null ? (Number.isInteger(totalUnit) ? totalUnit : totalUnit.toFixed(2)) : '?'} {b.satuan})</span></>
+                        ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
                         : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
                     const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
@@ -1599,10 +1601,11 @@ export default function StokGudang() {
                     const minGram2 = !GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? b.stokMin * b.konversiGram : b.stokMin;
                     const low = saldo <= minGram2;
                     const hrgPerGram = hargaPerGram(b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram);
-                    // saldo sekarang dalam gram untuk bahan dengan konversiGram
-                    const totalUnit = gramasi && gramasi.gramPerUnit > 0 ? saldo / gramasi.gramPerUnit : null;
+                    const unitSize = gramasi?.gramPerUnit ?? 0;
+                    const fullUnits = unitSize > 0 ? Math.floor(saldo / unitSize) : null;
+                    const sisa = unitSize > 0 && fullUnits !== null ? saldo - fullUnits * unitSize : null;
                     const saldoDisplay = gramasi
-                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({totalUnit !== null ? (Number.isInteger(totalUnit) ? totalUnit : totalUnit.toFixed(2)) : '?'} {b.satuan})</span></>
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
                       : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
                     const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
                     return (
