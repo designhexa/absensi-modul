@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarRange, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarRange, X } from "lucide-react";
 import { DateRange } from "@/lib/format";
-import { format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,6 +33,35 @@ export function DateRangeFilter({ value, onChange, className }: Props) {
     onChange({ from: toISO(r?.from), to: toISO(r?.to) });
   };
 
+  const shiftRange = (direction: "prev" | "next") => {
+    const from = fromISO(value.from);
+    const to = fromISO(value.to);
+
+    if (!from && !to) return;
+
+    // Hitung durasi rentang: jika from & to ada, shift sebesar durasi; jika hanya satu hari, shift 1 hari
+    const diff = from && to ? Math.max(1, differenceInCalendarDays(to, from)) : 1;
+    const multiplier = direction === "prev" ? -1 : 1;
+    const shift = diff * multiplier;
+
+    if (from && to) {
+      onChange({
+        from: toISO(addDays(from, shift)),
+        to: toISO(addDays(to, shift)),
+      });
+    } else if (from) {
+      onChange({
+        from: toISO(addDays(from, shift)),
+        to: undefined,
+      });
+    } else if (to) {
+      onChange({
+        from: undefined,
+        to: toISO(addDays(to, shift)),
+      });
+    }
+  };
+
   const label = !value.from && !value.to
     ? "Pilih rentang tanggal"
     : `${fmt(value.from)} → ${fmt(value.to)}`;
@@ -44,6 +73,18 @@ export function DateRangeFilter({ value, onChange, className }: Props) {
         className
       )}
     >
+      {/* Tombol Previous */}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
+        onClick={() => shiftRange("prev")}
+        disabled={!has}
+        aria-label="Tanggal sebelumnya"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
       <CalendarRange className="h-4 w-4 text-primary shrink-0" />
 
       <Popover>
@@ -70,6 +111,18 @@ export function DateRangeFilter({ value, onChange, className }: Props) {
           />
         </PopoverContent>
       </Popover>
+
+      {/* Tombol Next */}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
+        onClick={() => shiftRange("next")}
+        disabled={!has}
+        aria-label="Tanggal berikutnya"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
 
       {has && (
         <Button
