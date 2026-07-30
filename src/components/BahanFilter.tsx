@@ -50,11 +50,11 @@ export default function BahanFilter({
     [bahan, selectedId]
   );
 
-  // Show selected bahan name in the input when one is selected,
-  // otherwise show whatever the user is typing
-  const inputValue = selectedBahan
-    ? `${selectedBahan.kode} — ${selectedBahan.nama}`
-    : searchText;
+  // IMPORTANT: inputValue harus SELALU dari searchText, BUKAN dari selectedBahan.
+  // Kalau dari selectedBahan, input jadi frozen saat user mengetik karena
+  // string kode-nama tidak berubah meski searchText diupdate oleh onChange.
+  // Simpan nama bahan ke searchText saat user memilih dari popup (lihat onClick).
+  const inputValue = searchText;
 
   return (
     <div className="space-y-2">
@@ -68,7 +68,8 @@ export default function BahanFilter({
           setIsOpen(true);
         }}
         onFocus={() => {
-          // Clear selection when user re-focuses to allow a new search
+          // Hanya reset kalau sebelumnya sudah ada bahan terpilih,
+          // biar teks pencarian yang sedang diketik tidak hilang
           if (selectedBahan) {
             setSearchText("");
             onSelect("");
@@ -102,8 +103,9 @@ export default function BahanFilter({
                   : "hover:bg-muted"
               }`}
               onClick={() => {
+                // Simpan nama bahan ke searchText agar muncul di input
                 onSelect(b.id);
-                setSearchText("");
+                setSearchText(b.nama);
                 setIsOpen(false);
               }}
             >
