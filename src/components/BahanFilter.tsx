@@ -103,9 +103,9 @@ export default function BahanFilter({
                   : "hover:bg-muted"
               }`}
               onClick={() => {
-                // Simpan nama bahan ke searchText agar muncul di input
+                // Input tetap kosong setelah pilih biar langsung bisa ngetik
                 onSelect(b.id);
-                setSearchText(b.nama);
+                setSearchText("");
                 setIsOpen(false);
               }}
             >
