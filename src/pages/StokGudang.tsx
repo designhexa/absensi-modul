@@ -491,16 +491,15 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
     // Oat & Puding: tetap satuan asli (sachet), bukan gram
     if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
-    const satuan = (b.satuan || "").toLowerCase();
     if (nama.includes("beras")) {
-      return { gramPerUnit: 700, label: `700 g/${b.satuan}` };
+      return { gramPerUnit: 700, label: `700 g/${b.satuan?.toLowerCase()}` };
     }
     const sachet35List = ["tuna", "tengiri", "salmon", "gurami", "kakap", "dori", "daging", "ayam"];
     if (sachet35List.some((ik) => nama.includes(ik))) {
-      return { gramPerUnit: 35, label: `35 g/${b.satuan}` };
+      return { gramPerUnit: 35, label: `35 g/${b.satuan?.toLowerCase()}` };
     }
     if (b.konversiGram && b.konversiGram > 0) {
-      return { gramPerUnit: b.konversiGram, label: `${b.konversiGram} g/${b.satuan}` };
+      return { gramPerUnit: b.konversiGram, label: `${b.konversiGram} g/${b.satuan?.toLowerCase()}` };
     }
     return null;
   };
@@ -636,11 +635,11 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     const fullUnits = unitSize > 0 ? Math.floor(saldo / unitSize) : null;
                     const sisa = unitSize > 0 && fullUnits !== null ? saldo - fullUnits * unitSize : null;
                     const saldoDisplay = GRAM_EXCLUDED_BAHAN.has(b.id)
-                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</span> <span className="text-muted-foreground font-normal">({(saldo * unitSize).toLocaleString()} gr)</span></>
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan?.toLowerCase()}</span> <span className="text-muted-foreground font-normal">({(saldo * unitSize).toLocaleString()} gr)</span></>
                       : gramasi
-                        ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
-                        : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
-                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
+                        ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan?.toLowerCase()}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
+                        : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan?.toLowerCase()}</>;
+                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan?.toLowerCase()}</span>;
                     return (
                       <TableRow key={b.id}>
                         <TableCell className="whitespace-nowrap font-mono text-xs">{b.kode}</TableCell>
@@ -970,22 +969,21 @@ export default function StokGudang() {
     // Oat & Puding: tetap sachet (bukan gram)
     if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
-    const satuan = (b.satuan || "").toLowerCase();
 
     // Beras -> 700g per unit
     if (nama.includes("beras")) {
-      return { gramPerUnit: 700, label: `700 g/${b.satuan}` };
+      return { gramPerUnit: 700, label: `700 g/${b.satuan?.toLowerCase()}` };
     }
 
     // Ikan, daging, ayam (sachet) -> 35g per unit
     const sachet35List = ["tuna", "tengiri", "salmon", "gurami", "kakap", "dori", "daging", "ayam"];
     if (sachet35List.some((ik) => nama.includes(ik))) {
-      return { gramPerUnit: 35, label: `35 g/${b.satuan}` };
+      return { gramPerUnit: 35, label: `35 g/${b.satuan?.toLowerCase()}` };
     }
 
     // Use existing konversiGram if set
     if (b.konversiGram && b.konversiGram > 0) {
-      return { gramPerUnit: b.konversiGram, label: `${b.konversiGram} g/${b.satuan}` };
+      return { gramPerUnit: b.konversiGram, label: `${b.konversiGram} g/${b.satuan?.toLowerCase()}` };
     }
 
     return null;
@@ -1452,7 +1450,7 @@ export default function StokGudang() {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Harga beli:</span>{' '}
-                        <strong>{rupiah(b.hargaBeli)}/{b.satuan}</strong>
+                        <strong>{rupiah(b.hargaBeli)}/{b.satuan?.toLowerCase()}</strong>
                         {b.konversiGram && b.konversiGram > 0 && (                           <span className="text-muted-foreground ml-1">({rupiah(hargaPerGram(b.hargaBeli, b.konversiGram))}/g)</span>
                         )}
                       </div>
@@ -1606,9 +1604,9 @@ export default function StokGudang() {
                     const fullUnits = unitSize > 0 ? Math.floor(saldo / unitSize) : null;
                     const sisa = unitSize > 0 && fullUnits !== null ? saldo - fullUnits * unitSize : null;
                     const saldoDisplay = gramasi
-                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
-                      : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan}</>;
-                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan}</span>;
+                      ? <><span className="font-semibold">{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(1)} gr</span> <span className="text-muted-foreground font-normal">({fullUnits !== null ? `${fullUnits.toLocaleString()} ${b.satuan?.toLowerCase()}${sisa && sisa > 0.001 ? '+' : ''}` : '?'})</span></>
+                      : <>{Number.isInteger(saldo) ? saldo.toLocaleString() : saldo.toFixed(2)} {b.satuan?.toLowerCase()}</>;
+                    const gramasiLabel = gramasi ? <span className="text-muted-foreground">{gramasi.label}</span> : <span className="text-muted-foreground">{b.satuan?.toLowerCase()}</span>;
                     return (
                       <TableRow key={b.id}>
                         <TableCell className="whitespace-nowrap font-mono text-xs">{b.kode}</TableCell>

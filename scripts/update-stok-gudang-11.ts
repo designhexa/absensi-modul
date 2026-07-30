@@ -35,12 +35,12 @@ const supabase = createClient(env["VITE_SUPABASE_URL"], env["VITE_SUPABASE_ANON_
 // Mapping: nama_bahan => { targetQty, id }
 const TARGETS: Record<string, { id: string; target: number; label: string }> = {
   Abon:    { id: "b-ab01",    target: 41,   label: "Abon (pcs)" },
-  Sendok:  { id: "b-sen01",   target: 22,   label: "Sendok (Pack)" },
+  Sendok:  { id: "b-sen01",   target: 22,   label: "Sendok (pack)" },
   Tisyu:   { id: "b-ts01",    target: 10,   label: "Tisyu (pcs)" },
-  Kresek:  { id: "b-krs01",   target: 23,   label: "Kresek (PACK)" },
+  Kresek:  { id: "b-krs01",   target: 23,   label: "Kresek (pack)" },
   Oat:     { id: "b-oat01",   target: 17,   label: "Oat (sachet)" },
   Puding:  { id: "b-pud01",   target: 27,   label: "Puding (sachet)" },
-  Beras:   { id: "b-brs01",   target: 7,    label: "Beras (Pack)" },
+  Beras:   { id: "b-brs01",   target: 7,    label: "Beras (pack)" },
   Daging:  { id: "b-dg01",    target: 34,   label: "Daging (sachet)" },
   Ayam:    { id: "b-ay01",    target: 10,   label: "Ayam (sachet)" },
   Salmon:  { id: "b-sl01",    target: 4,    label: "Salmon (sachet)" },
