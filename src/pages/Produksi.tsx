@@ -742,7 +742,7 @@ export default function Produksi() {
         nama: "BERAS",
         qty: berasGr, // gram
         rawQtyGrams: berasGr,
-        satuan: berasBahan?.satuan || "gr"
+        satuan: berasBahan?.satuan || "g"
       });
     }
 
@@ -755,7 +755,7 @@ export default function Produksi() {
         nama: "SAYUR HIJAU",
         qty: shGr,
         rawQtyGrams: shGr,
-        satuan: "gr"
+        satuan: "g"
       });
     }
 
@@ -767,7 +767,7 @@ export default function Produksi() {
         nama: "SAYUR BUAH",
         qty: sbGr,
         rawQtyGrams: sbGr,
-        satuan: "gr"
+        satuan: "g"
       });
     }
 
@@ -779,7 +779,7 @@ export default function Produksi() {
         nama: "SAYUR PROTEIN",
         qty: spGr,
         rawQtyGrams: spGr,
-        satuan: "gr"
+        satuan: "g"
       });
     }
 
@@ -839,16 +839,16 @@ export default function Produksi() {
       });
     }
 
-    // Abon
+    // Abon — stock dalam gram (konversi 1 pcs = 10 g), display satuan pcs
     const abonGr = Math.ceil(t.abon * settings.abonCup);
-    if (abonGr > 0) {
+    if (t.abon > 0) {
       reqs.push({
         bahanId: "b-ab01",
         kode: "AB01",
         nama: "ABON",
-        qty: abonGr, // gram
-        rawQtyGrams: abonGr,
-        satuan: "gr"
+        qty: abonGr, // gram (untuk stok movement)
+        rawQtyGrams: t.abon, // pcs (untuk display)
+        satuan: "pcs"
       });
     }
 
@@ -1408,7 +1408,7 @@ export default function Produksi() {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-ab01", tipe: "IN",
           qty: Math.ceil(recoveredIngredients.abon), // gram
-          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
+          keterangan: `Retur Bahan Baku (g) [${tanggal}]`
         }));
       }
 
@@ -2195,7 +2195,7 @@ export default function Produksi() {
                     <div className="text-xs text-muted-foreground space-y-1">
                       {totals.oatmeal > 0 && <div>• Oatmeal: <span className="font-semibold text-foreground">{Math.ceil(totals.oatmeal * settings.oatmealCup)} gr</span> ({totals.oatmeal} cup)</div>}
                       {totals.puding > 0 && <div>• Puding: <span className="font-semibold text-foreground">{Math.ceil(totals.puding * settings.pudingCup)} gr</span> ({totals.puding} cup)</div>}
-                      {totals.abon > 0 && <div>• Abon: <span className="font-semibold text-foreground">{Math.ceil(totals.abon * settings.abonCup)} gr</span> ({totals.abon} pcs)</div>}
+                      {totals.abon > 0 && <div>• Abon: <span className="font-semibold text-foreground">{Math.ceil(totals.abon * settings.abonCup)} g</span> ({totals.abon} pcs)</div>}
                     </div>
                   </div>
                 )}

@@ -3,7 +3,7 @@
 // =============================================================================
 //
 // Base ratio: Beras:Daging:Air:S.Hijau:Buah:Protein = 100:5:700:8:5:1.5
-// Rasio 100/6 menghasilkan sekitar 16.67 gr per cup, jadi hasil dapat berisi desimal.
+// Rasio 100/6 menghasilkan sekitar 16.67 g per cup, jadi hasil dapat berisi desimal.
 
 export const BUBUR_BASE = {
   beras: 100,

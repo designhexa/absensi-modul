@@ -409,13 +409,13 @@ export default function Distribusi() {
       for (const m of existingReturMov) { await supabase.from("stok_movement").delete().eq("id", m.id); }
 
       const movPromises: Promise<any>[] = [];
-      if (recoveredIngredients.beras > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-brs01", tipe: "IN", qty: Math.ceil(recoveredIngredients.beras), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.puding > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-pud01", tipe: "IN", qty: Math.ceil(recoveredIngredients.puding), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.oat > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "IN", qty: Math.ceil(recoveredIngredients.oat), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.abon > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ab01", tipe: "IN", qty: Math.ceil(recoveredIngredients.abon), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.sayurHijau > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sh01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurHijau), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.sayurBuah > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurBuah), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
-      if (recoveredIngredients.sayurProtein > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurProtein), keterangan: `Retur Bahan Baku (gr) [${tanggal}]` }));
+      if (recoveredIngredients.beras > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-brs01", tipe: "IN", qty: Math.ceil(recoveredIngredients.beras), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.puding > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-pud01", tipe: "IN", qty: Math.ceil(recoveredIngredients.puding), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.oat > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "IN", qty: Math.ceil(recoveredIngredients.oat), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.abon > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ab01", tipe: "IN", qty: Math.ceil(recoveredIngredients.abon), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.sayurHijau > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sh01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurHijau), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.sayurBuah > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurBuah), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (recoveredIngredients.sayurProtein > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurProtein), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
 
       if (movPromises.length > 0) { await Promise.all(movPromises); }
 

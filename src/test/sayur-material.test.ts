@@ -93,7 +93,7 @@ describe("Sayur material requirements calculation", () => {
 });
 
 describe("Sayur per-cup gramasi matches formula ratio", () => {
-  // Bubur: per 100gr beras = 6 cup → beras per cup = 100/6 ≈ 16.67
+  // Bubur: per 100g beras = 6 cup → beras per cup = 100/6 ≈ 16.67
   // Ratio: Beras:Ikan:Air:S.Hijau:S.Buah:S.P = 100:5:700:8:5:1.5
   // Sayur per cup = (100/6) × 8/100 = 8/6, (100/6) × 5/100 = 5/6, (100/6) × 1.5/100 = 1.5/6
   it("Bubur sayur values should match 100:5:700:8:5:1.5 ratio", () => {
@@ -102,7 +102,7 @@ describe("Sayur per-cup gramasi matches formula ratio", () => {
     expect(DEFAULT_SAYUR.sayurProteinBubur).toBeCloseTo(1.5 / 6, 2);  // 0.25
   });
 
-  // Nasi Tim: per 100gr beras = 5 cup → beras per cup = 20
+  // Nasi Tim: per 100g beras = 5 cup → beras per cup = 20
   // Ratio: Beras:Ikan:Air:S.Hijau:S.Buah:S.P = 100:4:600:8:5:1.5
   // Sayur per cup = 20 × 8/100 = 1.6, 20 × 5/100 = 1.0, 20 × 1.5/100 = 0.3
   it("Nasi Tim sayur values should match 100:4:600:8:5:1.5 ratio", () => {

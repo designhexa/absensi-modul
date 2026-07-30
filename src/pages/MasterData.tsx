@@ -425,7 +425,7 @@ export default function MasterData() {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <Input type="number" value={bKonversiGram} onChange={(e) => setBKonversiGram(Number(e.target.value))} placeholder="Konversi Gram" />
-                        <div className="text-[10px] text-muted-foreground flex items-center px-1">gr / {bSatuan || "satuan"}</div>
+                        <div className="text-[10px] text-muted-foreground flex items-center px-1">g / {bSatuan || "satuan"}</div>
                       </div>
                       <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Bahan Baku</Button>
                     </form>
@@ -461,7 +461,7 @@ export default function MasterData() {
                           </div>
                           <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
                             <span>Satuan: {b.satuan}</span><span>Min: {b.stokMin}</span><span>Awal: {b.stokAwal}</span><span className="text-primary font-semibold">{rupiah(b.hargaBeli)}</span>
-                            {b.konversiGram ? <span className="text-amber-600 font-medium">Konv: {b.konversiGram} gr/{b.satuan}</span> : null}
+                            {b.konversiGram ? <span className="text-amber-600 font-medium">Konv: {b.konversiGram} g/{b.satuan}</span> : null}
                           </div>
                         </div>
                       ))}
@@ -688,31 +688,31 @@ export default function MasterData() {
                     <div className="space-y-2">
                       <h4 className="text-xs font-bold text-amber-600">Varian Bubur <span className="text-[9px] font-normal text-muted-foreground">(gram/cup)</span></h4>
                       <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Beras (gr)</Label><Input type="number" step="any" value={sBerasBubur} onChange={(e) => setSBerasBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Beras (g)</Label><Input type="number" step="any" value={sBerasBubur} onChange={(e) => setSBerasBubur(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirBubur} onChange={(e) => setSAirBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Ikan/Daging (gr)</Label><Input type="number" step="any" value={sDagingBubur} onChange={(e) => setSDagingBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Hijau (gr)</Label><Input type="number" step="any" value={sSayurHijauBubur} onChange={(e) => setSSayurHijauBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Buah (gr)</Label><Input type="number" step="any" value={sSayurBrokoliBubur} onChange={(e) => setSSayurBrokoliBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Protein (gr)</Label><Input type="number" step="any" value={sSayurPutihBubur} onChange={(e) => setSSayurPutihBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Ikan/Daging (g)</Label><Input type="number" step="any" value={sDagingBubur} onChange={(e) => setSDagingBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Hijau (g)</Label><Input type="number" step="any" value={sSayurHijauBubur} onChange={(e) => setSSayurHijauBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Buah (g)</Label><Input type="number" step="any" value={sSayurBrokoliBubur} onChange={(e) => setSSayurBrokoliBubur(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Protein (g)</Label><Input type="number" step="any" value={sSayurPutihBubur} onChange={(e) => setSSayurPutihBubur(Number(e.target.value))} /></div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="text-xs font-bold text-blue-600">Varian Nasi Tim <span className="text-[9px] font-normal text-muted-foreground">(gram/cup)</span></h4>
                       <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Beras (gr)</Label><Input type="number" step="any" value={sBerasTim} onChange={(e) => setSBerasTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Beras (g)</Label><Input type="number" step="any" value={sBerasTim} onChange={(e) => setSBerasTim(Number(e.target.value))} /></div>
                         <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirTim} onChange={(e) => setSAirTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Ikan/Daging (gr)</Label><Input type="number" step="any" value={sDagingTim} onChange={(e) => setSDagingTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Hijau (gr)</Label><Input type="number" step="any" value={sSayurHijauTim} onChange={(e) => setSSayurHijauTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Buah (gr)</Label><Input type="number" step="any" value={sSayurBrokoliTim} onChange={(e) => setSSayurBrokoliTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Protein (gr)</Label><Input type="number" step="any" value={sSayurPutihTim} onChange={(e) => setSSayurPutihTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Ikan/Daging (g)</Label><Input type="number" step="any" value={sDagingTim} onChange={(e) => setSDagingTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Hijau (g)</Label><Input type="number" step="any" value={sSayurHijauTim} onChange={(e) => setSSayurHijauTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Buah (g)</Label><Input type="number" step="any" value={sSayurBrokoliTim} onChange={(e) => setSSayurBrokoliTim(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">S.Protein (g)</Label><Input type="number" step="any" value={sSayurPutihTim} onChange={(e) => setSSayurPutihTim(Number(e.target.value))} /></div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="text-xs font-bold text-muted-foreground">Menu Lainnya</h4>
                       <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Oatmeal (gr/cup)</Label><Input type="number" step="any" value={sOatmealCup} onChange={(e) => setSOatmealCup(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Puding (gr/cup)</Label><Input type="number" step="any" value={sPudingCup} onChange={(e) => setSPudingCup(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Abon (gr/pcs)</Label><Input type="number" step="any" value={sAbonCup} onChange={(e) => setSAbonCup(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Oatmeal (g/cup)</Label><Input type="number" step="any" value={sOatmealCup} onChange={(e) => setSOatmealCup(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Puding (g/cup)</Label><Input type="number" step="any" value={sPudingCup} onChange={(e) => setSPudingCup(Number(e.target.value))} /></div>
+                        <div><Label className="text-[10px]">Abon (g/pcs)</Label><Input type="number" step="any" value={sAbonCup} onChange={(e) => setSAbonCup(Number(e.target.value))} /></div>
                       </div>
                     </div>
                     <div className="border-t pt-4 mt-4 space-y-3">
@@ -1153,7 +1153,7 @@ function EditBahanDialog({ bahan }) {
                 <Input type="number" value={konversiGram} onChange={(e) => setKonversiGram(Number(e.target.value))} />
               </div>
               <div className="flex items-end pb-1">
-                <span className="text-xs text-muted-foreground">gr / {satuan}</span>
+                <span className="text-xs text-muted-foreground">g / {satuan}</span>
               </div>
             </div>
 
