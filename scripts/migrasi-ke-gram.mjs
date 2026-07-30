@@ -4,7 +4,7 @@
  * for bahan baku that have konversiGram.
  *
  * Items with konversiGram, EXCEPT Oat & Puding (yang tetap sachet-based):
- * - BRS01 (BERAS) → 600 gr/Pack
+ * - BRS01 (BERAS) → 700 gr/Pack
  * - DG01 (DAGING) → 35 gr/sachet
  * - AY01 (AYAM) → 35 gr/sachet
  * - TN01 (TUNA) → 35 gr/sachet
@@ -37,7 +37,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Bahan yang akan dikonversi dari unit → gram
 const CONVERT_BAHAN = new Map([
-  ['b-brs01', 600],  // BERAS
+  ['b-brs01', 700],  // BERAS
   ['b-dg01', 35],    // DAGING
   ['b-ay01', 35],    // AYAM
   ['b-tn01', 35],    // TUNA
