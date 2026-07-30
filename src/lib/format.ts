@@ -23,7 +23,7 @@ export const daysAgoISO = (n: number) => {
 };
 
 // Hitung harga per gram dari harga beli per satuan dan konversi gram
-// Contoh: hargaBeli=15500 (per pack), konversiGram=600 → Rp25.83/gr
+// Contoh: hargaBeli=15500 (per pack), konversiGram=700 → Rp22.14/gr
 export const hargaPerGram = (hargaBeli: number, konversiGram?: number | null): number => {
   if (!konversiGram || konversiGram <= 0) return hargaBeli; // fallback: treat satuan as 1
   return hargaBeli / konversiGram;

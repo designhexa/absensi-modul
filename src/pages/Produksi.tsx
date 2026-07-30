@@ -732,8 +732,9 @@ export default function Produksi() {
     const t = combinedTotals; // use combined totals for material calculation
     const reqs: { bahanId: string; kode: string; nama: string; qty: number; rawQtyGrams: number; satuan: string }[] = [];
 
-    // 1. Beras
+    // 1. Beras — qty dalam gram (internal stok movement), satuan dari DB (Pack) untuk display konversi
     const berasGr = Math.ceil(buburCalc(t.buburD + t.buburI, BUBUR_BASE.beras) + (t.timD * settings.berasTim) + (t.timI * settings.berasTim));
+    const berasBahan = bahan.find((x: any) => x.id === "b-brs01");
     if (berasGr > 0) {
       reqs.push({
         bahanId: "b-brs01",
@@ -741,7 +742,7 @@ export default function Produksi() {
         nama: "BERAS",
         qty: berasGr, // gram
         rawQtyGrams: berasGr,
-        satuan: "gr"
+        satuan: berasBahan?.satuan || "gr"
       });
     }
 
