@@ -1937,28 +1937,54 @@ function parseRusakKet(keterangan: string | null | undefined): { type: "pending"
 function BahanFilter({ bahan, selectedId, onSelect, label = "Bahan" }: { bahan: any[]; selectedId: string; onSelect: (id: string) => void; label?: string }) {
   const [searchText, setSearchText] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+
   const filteredBahan = useMemo(() => {
     if (!searchText.trim()) return bahan;
     const q = searchText.toLowerCase();
     return bahan.filter(b => b.kode.toLowerCase().startsWith(q) || b.nama.toLowerCase().startsWith(q));
   }, [bahan, searchText]);
+
+  const selectedBahan = useMemo(() => bahan.find(b => b.id === selectedId), [bahan, selectedId]);
+
+  // Tampilkan nama bahan terpilih di input, atau teks pencarian jika sedang mencari
+  const inputValue = selectedBahan ? `${selectedBahan.kode} — ${selectedBahan.nama}` : searchText;
+
   return (
-    <div className="space-y-2" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsOpen(false); }}>
+    <div className="space-y-2">
       <Label>{label}</Label>
       <Input
         placeholder="Cari kode/nama bahan..."
-        value={searchText}
+        value={inputValue}
         onChange={(e) => { setSearchText(e.target.value); onSelect(""); setIsOpen(true); }}
-        onFocus={() => setIsOpen(true)}
+        onFocus={() => {
+          // Jika sudah ada bahan terpilih, reset agar bisa mencari ulang
+          if (selectedBahan) {
+            setSearchText("");
+            onSelect("");
+          }
+          setIsOpen(true);
+        }}
+        onBlur={(e) => {
+          // Capture DOM ref before setTimeout (React pools synthetic events)
+          const container = e.currentTarget.parentElement;
+          setTimeout(() => {
+            if (!container?.contains(document.activeElement)) {
+              setIsOpen(false);
+            }
+          }, 120);
+        }}
         className="h-10"
       />
       {isOpen && (
-        <div className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y bg-background">
+        <div
+          onMouseDown={(e) => e.preventDefault()} // Mencegah blur saat klik di popup
+          className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y bg-background shadow-lg"
+        >
           {filteredBahan.map(b => (
             <div
               key={b.id}
               className={`px-3 py-2 text-sm cursor-pointer transition-colors ${selectedId === b.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-              onMouseDown={(e) => { e.preventDefault(); onSelect(b.id); setSearchText(""); setIsOpen(false); }}
+              onClick={() => { onSelect(b.id); setSearchText(""); setIsOpen(false); }}
             >
               <span className="font-mono text-xs text-muted-foreground">{b.kode}</span> — {b.nama}
             </div>
