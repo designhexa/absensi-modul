@@ -2228,6 +2228,11 @@ export default function Produksi() {
                     const saldo = saldoBahan(r.bahanId, dbState);
                     const isSufficient = saldo >= r.qty;
                     const hasGram = r.satuan !== "biji" && r.satuan !== "pcs";
+                    const b = bahan.find((x: any) => x.id === r.bahanId);
+                    const hasKonversi = b?.konversiGram && b.konversiGram > 0;
+                    // Daging/lauk: qty dalam gram (internal stok movement), tapi tampilkan dalam sachet
+                    const displayQty = hasKonversi ? Math.ceil(r.qty / b.konversiGram) : r.qty;
+                    const displaySaldo = hasKonversi ? Math.round(saldo / b.konversiGram) : saldo;
                     return (
                       <TableRow key={r.bahanId}>
                         <TableCell className="font-semibold">{r.nama}</TableCell>
@@ -2236,9 +2241,9 @@ export default function Produksi() {
                           {hasGram ? `${Number(r.rawQtyGrams).toFixed(2).replace(/\.?0+$/, '')} g` : "-"}
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">
-                          {r.qty} {r.satuan}
+                          {hasKonversi ? `${displayQty} ${r.satuan} (${Number(r.qty).toFixed(2).replace(/\.?0+$/, '')} g)` : `${r.qty} ${r.satuan}`}
                         </TableCell>
-                        <TableCell className="text-right">{saldo} {r.satuan}</TableCell>
+                        <TableCell className="text-right">{displaySaldo} {r.satuan}</TableCell>
                         <TableCell className="text-center">
                           {isSufficient ? (
                             <Badge className="bg-success text-success-foreground">Aman</Badge>
