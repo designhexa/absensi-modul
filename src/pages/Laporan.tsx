@@ -707,15 +707,16 @@ function SisaProduksiOH({
           }
       }
 
-      // === OH Abon → Stok Gudang ===
+      // === OH Abon → Stok Gudang (dalam GRAM, sesuai saldoBahan) ===
       // OH abon (sisa penjualan) bisa dijual lagi besok, jadi harus masuk stok gudang
+      // sisaCups = pcs, sisa = sisaCups * 10 = gram (saldoBahan expects gram)
       const abonRow = rows.find(r => r.subId === "abon");
       if (abonRow && abonRow.sisaCups > 0) {
         await db.addStokMov({
           tanggal,
           bahanId: "b-ab01",
           tipe: "IN",
-          qty: abonRow.sisaCups,
+          qty: abonRow.sisa,
           keterangan: `OH abon dari ${user.outletId} tanggal ${tanggal}`,
         });
       }
@@ -1268,7 +1269,7 @@ function SisaProduksiAdminView({
         }
       }
 
-      // === OH Abon → Stok Gudang ===
+      // === OH Abon → Stok Gudang (dalam GRAM, sesuai saldoBahan) ===
       for (const { outlet, items } of outletRows) {
         const abonRow = items.find((i: any) => i.subId === "abon");
         if (abonRow && abonRow.sisaCups > 0) {
@@ -1276,7 +1277,7 @@ function SisaProduksiAdminView({
             tanggal,
             bahanId: "b-ab01",
             tipe: "IN",
-            qty: abonRow.sisaCups,
+            qty: abonRow.sisaGram,
             keterangan: `OH abon dari ${outlet.id} tanggal ${tanggal}`,
           });
         }
