@@ -735,7 +735,7 @@ export default function StokGudang() {
     }
   }, [bahan, bahanId, supBahanId, rusakBahanId]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bahanId || qty === undefined || qty <= 0) return toast.error("Lengkapi data");
     const finalKet = selectedKetSource === "Lainnya" ? customKet : selectedKetSource;
@@ -743,9 +743,13 @@ export default function StokGudang() {
     const selectedB = bahan.find((b: any) => b.id === bahanId);
     const kg = selectedB?.konversiGram && selectedB.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(selectedB.id) ? selectedB.konversiGram : null;
     const qtyGram = kg ? qty * kg : qty;
-    db.addStokMov({ tanggal, bahanId, tipe, qty: qtyGram, keterangan: finalKet || (tipe === "IN" ? "Pembelian" : "Pemakaian") });
-    toast.success(`Stok ${tipe === "IN" ? "masuk" : "keluar"} dicatat`);
-    setQty(undefined); setCustomKet("");
+    try {
+      await db.addStokMov({ tanggal, bahanId, tipe, qty: qtyGram, keterangan: finalKet || (tipe === "IN" ? "Pembelian" : "Pemakaian") });
+      toast.success(`Stok ${tipe === "IN" ? "masuk" : "keluar"} dicatat`);
+      setQty(undefined); setCustomKet("");
+    } catch (err) {
+      toast.error(`Gagal menyimpan stok: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const submitSupplier = async (e: React.FormEvent) => {
