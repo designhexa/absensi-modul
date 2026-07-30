@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
 import { ExportButtons } from "@/components/ExportButtons";
+import OutletFilter from "@/components/OutletFilter";
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -139,7 +140,7 @@ export default function Produksi() {
 
   // STEP 1 STATES
   const [planGrid, setPlanGrid] = useState<Record<string, Record<string, number>>>({});
-  const [searchOutlet, setSearchOutlet] = useState("");
+  const [outletFilterId, setOutletFilterId] = useState("");
   const [tanggal2, setTanggal2] = useState("");
   const [isTwoDayPlan, setIsTwoDayPlan] = useState(false);
   const [activePlanDate, setActivePlanDate] = useState<"date1" | "date2">("date1");
@@ -1616,8 +1617,9 @@ export default function Produksi() {
   }, [penjualan, tanggal]);
 
   const filteredOutlets = useMemo(() => {
-    return outlets.filter(o => o.nama.toLowerCase().includes(searchOutlet.toLowerCase()));
-  }, [outlets, searchOutlet]);
+    if (!outletFilterId) return outlets;
+    return outlets.filter(o => o.id === outletFilterId);
+  }, [outlets, outletFilterId]);
 
   function renderStep1() {
     return (
@@ -1828,12 +1830,14 @@ export default function Produksi() {
                     <span className="hidden sm:inline">Salin dari Tgl 1</span>
                   </Button>
                 )}
-                <Input
-                  placeholder="Cari outlet..."
-                  value={searchOutlet}
-                  onChange={(e) => setSearchOutlet(e.target.value)}
-                  className="w-full sm:w-[160px] h-9 text-xs"
-                />
+                <div className="w-full sm:w-[200px]">
+                  <OutletFilter
+                    outlets={outlets}
+                    selectedId={outletFilterId}
+                    onSelect={setOutletFilterId}
+                    label=""
+                  />
+                </div>
               </div>
             </div>
 
@@ -2499,43 +2503,13 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      const idx = outlets.findIndex(o => o.id === step4OutletId);
-                      if (idx > 0) setStep4OutletId(outlets[idx - 1].id);
-                    }}
-                    disabled={outlets.findIndex(o => o.id === step4OutletId) <= 0}
-                    className="h-11 w-11"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Select value={step4OutletId} onValueChange={setStep4OutletId}>
-                    <SelectTrigger className="h-11 font-semibold text-sm">
-                      <SelectValue placeholder="Pilih Outlet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {outlets.map((o: any) => (
-                        <SelectItem key={o.id} value={o.id} className="font-medium text-xs">{o.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      const idx = outlets.findIndex(o => o.id === step4OutletId);
-                      if (idx < outlets.length - 1) setStep4OutletId(outlets[idx + 1].id);
-                    }}
-                    disabled={outlets.findIndex(o => o.id === step4OutletId) >= outlets.length - 1}
-                    className="h-11 w-11"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <div className="flex-1 min-w-[200px]">
+                  <OutletFilter
+                    outlets={outlets}
+                    selectedId={step4OutletId}
+                    onSelect={setStep4OutletId}
+                    label="Pilih Outlet"
+                  />
                 </div>
               </div>
             </div>
@@ -2762,43 +2736,13 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      const idx = outlets.findIndex(o => o.id === step5OutletId);
-                      if (idx > 0) setStep5OutletId(outlets[idx - 1].id);
-                    }}
-                    disabled={outlets.findIndex(o => o.id === step5OutletId) <= 0}
-                    className="h-11 w-11"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Select value={step5OutletId} onValueChange={setStep5OutletId}>
-                    <SelectTrigger className="h-11 font-semibold text-sm">
-                      <SelectValue placeholder="Pilih Outlet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {outlets.map((o: any) => (
-                        <SelectItem key={o.id} value={o.id} className="font-medium text-xs">{o.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      const idx = outlets.findIndex(o => o.id === step5OutletId);
-                      if (idx < outlets.length - 1) setStep5OutletId(outlets[idx + 1].id);
-                    }}
-                    disabled={outlets.findIndex(o => o.id === step5OutletId) >= outlets.length - 1}
-                    className="h-11 w-11"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <div className="flex-1 min-w-[200px]">
+                  <OutletFilter
+                    outlets={outlets}
+                    selectedId={step5OutletId}
+                    onSelect={setStep5OutletId}
+                    label="Pilih Outlet"
+                  />
                 </div>
               </div>
             </div>
