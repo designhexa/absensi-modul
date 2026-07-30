@@ -970,9 +970,9 @@ export default function StokGudang() {
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
 
-    // Beras -> 600gr per unit
+    // Beras -> 700gr per unit
     if (nama.includes("beras")) {
-      return { gramPerUnit: 600, label: `600 gr/${b.satuan}` };
+      return { gramPerUnit: 700, label: `700 gr/${b.satuan}` };
     }
 
     // Ikan, daging, ayam (sachet) -> 35gr per unit
