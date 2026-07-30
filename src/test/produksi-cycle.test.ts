@@ -16,7 +16,7 @@ describe("Siklus Produksi — Tutup Oat", () => {
     expect(tutupOat!.nama).toBe("TUTUP OAT");
     expect(tutupOat!.kode).toBe("TTOAT01");
     expect(tutupOat!.stokAwal).toBe(1000);
-    expect(tutupOat!.satuan).toBe("biji");
+    expect(tutupOat!.satuan).toBe("pcs");
   });
 
   it("saldoBahan menghitung stok awal dengan benar tanpa movement", () => {

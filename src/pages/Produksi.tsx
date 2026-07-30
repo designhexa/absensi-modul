@@ -860,7 +860,7 @@ export default function Produksi() {
         nama: "CUP PUDING",
         qty: t.puding,
         rawQtyGrams: t.puding, // 1:1
-        satuan: "biji"
+        satuan: "pcs"
       });
     }
 
@@ -884,7 +884,7 @@ export default function Produksi() {
         nama: "CUP OAT",
         qty: t.oatmeal,
         rawQtyGrams: t.oatmeal, // 1:1
-        satuan: "biji"
+        satuan: "pcs"
       });
     }
 
@@ -896,7 +896,7 @@ export default function Produksi() {
         nama: "TUTUP OAT",
         qty: t.oatmeal,
         rawQtyGrams: t.oatmeal, // 1:1
-        satuan: "biji"
+        satuan: "pcs"
       });
     }
 
@@ -2228,7 +2228,7 @@ export default function Produksi() {
                   {materialReqs.map((r) => {
                     const saldo = saldoBahan(r.bahanId, dbState);
                     const isSufficient = saldo >= r.qty;
-                    const hasGram = r.satuan !== "biji" && r.satuan !== "pcs";
+                    const hasGram = r.satuan !== "pcs";
                     const b = bahan.find((x: any) => x.id === r.bahanId);
                     const hasKonversi = b?.konversiGram && b.konversiGram > 0;
                     // Daging/lauk: qty dalam gram (internal stok movement), tapi tampilkan dalam sachet
