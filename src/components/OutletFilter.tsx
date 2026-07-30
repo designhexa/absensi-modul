@@ -96,8 +96,9 @@ export default function OutletFilter({
                   : "hover:bg-muted"
               }`}
               onClick={() => {
+                // Tampilkan nama outlet di input setelah pilih
                 onSelect(o.id);
-                setSearchText("");
+                setSearchText(o.nama);
                 setIsOpen(false);
               }}
             >
