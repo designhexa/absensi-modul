@@ -35,9 +35,9 @@ export const SEED_PRODUK: Produk[] = [
   // Support supplies registered as products to bypass foreign key constraints:
   { id: "b-cb01", nama: "Cup Bubur", harga: 0, satuan: "pcs" },
   { id: "b-ttp01", nama: "Tutup", harga: 0, satuan: "pcs" },
-  { id: "b-sen01", nama: "Sendok", harga: 0, satuan: "Pack" },
+  { id: "b-sen01", nama: "Sendok", harga: 0, satuan: "pack" },
   { id: "b-ts01", nama: "Tisu", harga: 0, satuan: "pcs" },
-  { id: "b-krs01", nama: "Kresek", harga: 0, satuan: "PACK" },
+  { id: "b-krs01", nama: "Kresek", harga: 0, satuan: "pack" },
   { id: "b-bl01", nama: "Balon + Stik", harga: 0, satuan: "pcs" },
   { id: "b-plas01", nama: "Plastik Seler", harga: 0, satuan: "pcs" },
   { id: "b-cupoat1", nama: "Cup Oat", harga: 0, satuan: "pcs" },
@@ -169,7 +169,7 @@ export const SEED_USERS: UserAccount[] = [
 ];
 
 const RAW_BAHAN = [
-  { kode: "BRS01", nama: "BERAS", satuan: "Pack", stokMin: 15, stokAwal: 150, hargaBeli: 15500, konversiGram: 700 },
+  { kode: "BRS01", nama: "BERAS", satuan: "pack", stokMin: 15, stokAwal: 150, hargaBeli: 15500, konversiGram: 700 },
   { kode: "DG01", nama: "DAGING", satuan: "sachet", stokMin: 3, stokAwal: 3, hargaBeli: 12000, konversiGram: 35 },
   { kode: "AY01", nama: "AYAM", satuan: "sachet", stokMin: 3, stokAwal: 24, hargaBeli: 9000, konversiGram: 35 },
   { kode: "TN01", nama: "TUNA", satuan: "sachet", stokMin: 2, stokAwal: 22, hargaBeli: 9000, konversiGram: 35 },
@@ -186,9 +186,9 @@ const RAW_BAHAN = [
   { kode: "AB01", nama: "ABON", satuan: "pcs", stokMin: 5, stokAwal: 31, hargaBeli: 3000, konversiGram: 10 },
   { kode: "CUPOAT1", nama: "CUP OAT", satuan: "pcs", stokMin: 50, stokAwal: 110, hargaBeli: 530 },
   { kode: "CUPPUD01", nama: "CUP PUDING", satuan: "pcs", stokMin: 50, stokAwal: 10, hargaBeli: 160 },
-  { kode: "SEN01", nama: "SENDOK", satuan: "Pack", stokMin: 5, stokAwal: 20, hargaBeli: 7000 },
+  { kode: "SEN01", nama: "SENDOK", satuan: "pack", stokMin: 5, stokAwal: 20, hargaBeli: 7000 },
   { kode: "TS01", nama: "TISU", satuan: "pcs", stokMin: 5, stokAwal: 7, hargaBeli: 6500 },
-  { kode: "KRS01", nama: "KRESEK", satuan: "PACK", stokMin: 5, stokAwal: 37, hargaBeli: 4000 },
+  { kode: "KRS01", nama: "KRESEK", satuan: "pack", stokMin: 5, stokAwal: 37, hargaBeli: 4000 },
   { kode: "BL01", nama: "BALON + Stik", satuan: "pcs", stokMin: 10, stokAwal: 0, hargaBeli: 1200 },
   { kode: "PLAS01", nama: "PLASTIK SELER", satuan: "pcs", stokMin: 1, stokAwal: 0, hargaBeli: 75 },
   { kode: "SH01", nama: "SAYUR HIJAU", satuan: "gr", stokMin: 100, stokAwal: 5000, hargaBeli: 50 },

@@ -25,15 +25,15 @@
  *   - b-ab01 (ABON):      10 gr/pcs
  * 
  * Bahan TANPA konversiGram (tetap pakai unit):
- *   - b-cb01 (CUP BUBUR): biji
- *   - b-ttp01 (TUTUP): biji
- *   - b-sen01 (SENDOK): Pack
+ *   - b-cb01 (CUP BUBUR): pcs
+ *   - b-ttp01 (TUTUP): pcs
+ *   - b-sen01 (SENDOK): pack
  *   - b-ts01 (TISU): pcs
- *   - b-krs01 (KRESEK): PACK
- *   - b-bl01 (BALON): biji
+ *   - b-krs01 (KRESEK): pack
+ *   - b-bl01 (BALON): pcs
  *   - b-plas01 (PLASTIK SELER): pcs
- *   - b-cupoat1 (CUP OAT): biji
- *   - b-cuppud01 (CUP PUDING): biji
+ *   - b-cupoat1 (CUP OAT): pcs
+ *   - b-cuppud01 (CUP PUDING): pcs
  *   - b-sh01 (SAYUR HIJAU): gr (already in grams)
  *   - b-sb01 (SAYUR BUAH): gr (already in grams)
  *   - b-sp01 (SAYUR PROTEIN): gr (already in grams)

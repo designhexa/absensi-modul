@@ -488,6 +488,8 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   const [showExtraCols, setShowExtraCols] = useState(true);
 
   const getGramasiInfo = (b: any) => {
+    // Oat & Puding: tetap satuan asli (sachet), bukan gram
+    if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
     const satuan = (b.satuan || "").toLowerCase();
     if (nama.includes("beras")) {
@@ -610,8 +612,8 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort("kode")}>Kode <SortIcon field="kode" /></TableHead>
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort("nama")}>Nama <SortIcon field="nama" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("saldo")}>Saldo <SortIcon field="saldo" /></TableHead>
-                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Gramasi <SortIcon field="gramasi" /></TableHead>
-                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga/g <SortIcon field="hrgPerGram" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Satuan <SortIcon field="gramasi" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga Satuan <SortIcon field="hrgPerGram" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("nilai")}>Nilai <SortIcon field="nilai" /></TableHead>
                     <TableHead className={`text-right ${!showExtraCols ? 'hidden' : ''}`}>Min</TableHead>
                     <TableHead className={`${!showExtraCols ? 'hidden' : ''}`}>Status</TableHead>
@@ -645,7 +647,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
                         <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
                         <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
-                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan}` : "/g"}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{!b.konversiGram || GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan?.toLowerCase()}` : "/g"}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram))}</TableCell>
                         <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{!GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? `${(b.stokMin * b.konversiGram).toLocaleString()} g` : b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>
@@ -1582,8 +1584,8 @@ export default function StokGudang() {
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort("kode")}>Kode <SortIcon field="kode" /></TableHead>
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort("nama")}>Nama <SortIcon field="nama" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("saldo")}>Saldo <SortIcon field="saldo" /></TableHead>
-                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Gramasi <SortIcon field="gramasi" /></TableHead>
-                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga/g <SortIcon field="hrgPerGram" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("gramasi")}>Satuan <SortIcon field="gramasi" /></TableHead>
+                    <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("hrgPerGram")}>Harga Satuan <SortIcon field="hrgPerGram" /></TableHead>
                     <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("nilai")}>Nilai <SortIcon field="nilai" /></TableHead>
                     <TableHead className={`text-right ${!showExtraCols ? 'hidden' : ''}`}>Min</TableHead>
                     <TableHead className={`${!showExtraCols ? 'hidden' : ''}`}>Status</TableHead>
@@ -1613,7 +1615,7 @@ export default function StokGudang() {
                         <TableCell className="whitespace-nowrap">{b.nama}</TableCell>
                         <TableCell className="text-right font-semibold whitespace-nowrap">{saldoDisplay}</TableCell>
                         <TableCell className="text-right text-xs whitespace-nowrap">{gramasiLabel}</TableCell>
-                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan}` : "/g"}</TableCell>
+                        <TableCell className="text-right text-xs whitespace-nowrap">{rupiah(hrgPerGram)}{!b.konversiGram || GRAM_EXCLUDED_BAHAN.has(b.id) ? `/${b.satuan?.toLowerCase()}` : "/g"}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">{rupiah(nilaiBahan(saldo, b.hargaBeli, GRAM_EXCLUDED_BAHAN.has(b.id) ? null : b.konversiGram))}</TableCell>
                         <TableCell className={`text-right text-muted-foreground ${!showExtraCols ? 'hidden' : ''}`}>{!GRAM_EXCLUDED_BAHAN.has(b.id) && b.konversiGram && b.konversiGram > 0 ? `${(b.stokMin * b.konversiGram).toLocaleString()} g` : b.stokMin}</TableCell>
                         <TableCell className={`${!showExtraCols ? 'hidden' : ''}`}>

@@ -49,9 +49,9 @@ const TARGETS: Record<string, { id: string; target: number; label: string }> = {
   Kakap:   { id: "b-kk01",    target: 11,   label: "Kakap (sachet)" },
   Tengiri: { id: "b-tg01",    target: 7,    label: "Tengiri (sachet)" },
   Tuna:    { id: "b-tn01",    target: 0,    label: "Tuna (sachet)" },
-  "Cup Bubur": { id: "b-cb01",   target: 1658, label: "Cup Bubur (biji)" },
-  "Cup Oat":   { id: "b-cupoat1", target: 76,  label: "Cup Oat (biji)" },
-  "Cup Puding": { id: "b-cuppud01", target: 168, label: "Cup Puding (biji)" },
+  "Cup Bubur": { id: "b-cb01",   target: 1658, label: "Cup Bubur (pcs)" },
+  "Cup Oat":   { id: "b-cupoat1", target: 76,  label: "Cup Oat (pcs)" },
+  "Cup Puding": { id: "b-cuppud01", target: 168, label: "Cup Puding (pcs)" },
 };
 
 const TANGGAL = "2026-07-11";
