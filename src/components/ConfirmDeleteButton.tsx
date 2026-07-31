@@ -19,6 +19,7 @@ interface ConfirmDeleteButtonProps {
   confirmLabel?: string;
   cancelLabel?: string;
   size?: "icon" | "sm" | "default" | "lg";
+  className?: string;
 }
 
 export default function ConfirmDeleteButton({
@@ -28,11 +29,12 @@ export default function ConfirmDeleteButton({
   confirmLabel = "Hapus",
   cancelLabel = "Batal",
   size = "icon",
+  className,
 }: ConfirmDeleteButtonProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button size={size} variant="ghost" aria-label={title}>
+        <Button size={size} variant="ghost" aria-label={title} className={className}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </AlertDialogTrigger>

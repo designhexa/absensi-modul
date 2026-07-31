@@ -309,12 +309,15 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
                             </TableCell>
                             <TableCell>
                               {r.status === "Pending" && (
-                                <Button size="icon" variant="ghost" onClick={() => {
-                                  db.deletePermohonanStok(r.id);
-                                  toast.success("Permohonan stok dibatalkan");
-                                }}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                <ConfirmDeleteButton
+                                  onConfirm={() => {
+                                    db.deletePermohonanStok(r.id);
+                                    toast.success("Permohonan stok dibatalkan");
+                                  }}
+                                  title="Batalkan Permohonan"
+                                  description={`Permohonan ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
+                                  confirmLabel="Batalkan"
+                                />
                               )}
                             </TableCell>
                           </TableRow>
@@ -429,12 +432,15 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
                             </TableCell>
                             <TableCell>
                               {r.status === "Pending" && (
-                                <Button size="icon" variant="ghost" onClick={() => {
-                                  db.deletePermohonanStok(r.id);
-                                  toast.success("Retur dibatalkan");
-                                }}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                <ConfirmDeleteButton
+                                  onConfirm={() => {
+                                    db.deletePermohonanStok(r.id);
+                                    toast.success("Retur dibatalkan");
+                                  }}
+                                  title="Batalkan Retur"
+                                  description={`Retur ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
+                                  confirmLabel="Batalkan"
+                                />
                               )}
                             </TableCell>
                           </TableRow>

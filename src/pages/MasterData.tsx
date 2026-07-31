@@ -27,6 +27,7 @@ import { toast } from "sonner";
 
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
+import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
 
 // GPS Location parsing helper
 const parseLokasi = (lokasiStr: string) => {
@@ -305,11 +306,12 @@ export default function MasterData() {
                               <span className="font-semibold">{o.nama}</span>
                               <div className="flex gap-1">
                                 <EditOutletDialog outlet={o} />
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
-                                  if (confirm(`Hapus outlet ${o.nama}?`)) db.deleteOutlet(o.id);
-                                }}>
-                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                </Button>
+                                <ConfirmDeleteButton
+                                  className="h-7 w-7"
+                                  onConfirm={() => db.deleteOutlet(o.id)}
+                                  title="Hapus Outlet"
+                                  description={`Outlet ${o.nama} akan dihapus permanen.`}
+                                />
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground">{parsed.alamat || "-"}</div>
@@ -456,7 +458,19 @@ export default function MasterData() {
                             <div><span className="font-mono font-bold text-xs text-primary">{b.kode}</span><span className="font-semibold ml-2">{b.nama}</span></div>
                             <div className="flex gap-1">
                               <EditBahanDialog bahan={b} />
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={async () => { if (confirm(`Hapus ${b.nama}?`)) { try { await db.deleteBahan(b.id); toast.success("Bahan baku dihapus"); } catch (err: any) { toast.error(`Gagal menghapus bahan: ${err?.message || "Terjadi kesalahan"}`); } } }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                              <ConfirmDeleteButton
+                                className="h-7 w-7"
+                                onConfirm={async () => {
+                                  try {
+                                    await db.deleteBahan(b.id);
+                                    toast.success("Bahan baku dihapus");
+                                  } catch (err: any) {
+                                    toast.error(`Gagal menghapus bahan: ${err?.message || "Terjadi kesalahan"}`);
+                                  }
+                                }}
+                                title="Hapus Bahan Baku"
+                                description={`Bahan ${b.kode} — ${b.nama} akan dihapus permanen.`}
+                              />
                             </div>
                           </div>
                           <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
@@ -566,7 +580,12 @@ export default function MasterData() {
                               <span className="font-semibold">{k.nama}</span>
                               <div className="flex gap-1">
                                 <EditKaryawanDialog karyawan={k} outlets={outlets} />
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { if (confirm(`Hapus ${k.nama}?`)) db.deleteKaryawan(k.id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                                <ConfirmDeleteButton
+                                  className="h-7 w-7"
+                                  onConfirm={() => db.deleteKaryawan(k.id)}
+                                  title="Hapus Karyawan"
+                                  description={`Karyawan ${k.nama} akan dihapus permanen.`}
+                                />
                               </div>
                             </div>
                             <div className="flex gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
