@@ -412,7 +412,7 @@ export default function MasterData() {
                 <Card className="border shadow-sm">
                   <CardContent className="p-4 space-y-2">
                     <h3 className="text-sm font-bold">Tambah Bahan Baku</h3>
-                    <form onSubmit={(e) => { e.preventDefault(); if (!bKode || !bNama) return toast.error("Lengkapi kode dan nama bahan!"); db.addBahan({ kode: bKode, nama: bNama, satuan: bSatuan, stokMin: bStokMin, stokAwal: bStokAwal, hargaBeli: bHargaBeli, konversiGram: bKonversiGram || undefined }); setBKode(""); setBNama(""); setBSatuan("sachet"); setBStokMin(0); setBStokAwal(0); setBHargaBeli(0); setBKonversiGram(0); toast.success("Bahan baku ditambahkan"); }} className="space-y-2">
+                    <form onSubmit={async (e) => { e.preventDefault(); if (!bKode || !bNama) return toast.error("Lengkapi kode dan nama bahan!"); try { await db.addBahan({ kode: bKode, nama: bNama, satuan: bSatuan, stokMin: bStokMin, stokAwal: bStokAwal, hargaBeli: bHargaBeli, konversiGram: bKonversiGram || undefined }); setBKode(""); setBNama(""); setBSatuan("sachet"); setBStokMin(0); setBStokAwal(0); setBHargaBeli(0); setBKonversiGram(0); toast.success("Bahan baku ditambahkan"); } catch (err: any) { toast.error(`Gagal menyimpan bahan baku: ${err?.message || "Terjadi kesalahan"}`); } }} className="space-y-2">
                       <Input value={bKode} onChange={(e) => setBKode(e.target.value)} placeholder="Kode (contoh: BRS01)" />
                       <Input value={bNama} onChange={(e) => setBNama(e.target.value)} placeholder="Nama Bahan" />
                       <div className="grid grid-cols-2 gap-2">
@@ -456,7 +456,7 @@ export default function MasterData() {
                             <div><span className="font-mono font-bold text-xs text-primary">{b.kode}</span><span className="font-semibold ml-2">{b.nama}</span></div>
                             <div className="flex gap-1">
                               <EditBahanDialog bahan={b} />
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { if (confirm(`Hapus ${b.nama}?`)) db.deleteBahan(b.id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={async () => { if (confirm(`Hapus ${b.nama}?`)) { try { await db.deleteBahan(b.id); toast.success("Bahan baku dihapus"); } catch (err: any) { toast.error(`Gagal menghapus bahan: ${err?.message || "Terjadi kesalahan"}`); } } }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                             </div>
                           </div>
                           <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
@@ -1115,11 +1115,15 @@ function EditBahanDialog({ bahan }) {
           <DialogHeader><DialogTitle>Edit Bahan Baku</DialogTitle></DialogHeader>
 
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              db.updateBahan(bahan.id, { kode, nama, satuan, stokMin, stokAwal, hargaBeli, konversiGram: konversiGram || undefined });
-              toast.success("Bahan baku diperbarui");
-              setOpen(false);
+              try {
+                await db.updateBahan(bahan.id, { kode, nama, satuan, stokMin, stokAwal, hargaBeli, konversiGram: konversiGram || undefined });
+                toast.success("Bahan baku diperbarui");
+                setOpen(false);
+              } catch (err: any) {
+                toast.error(`Gagal memperbarui bahan: ${err?.message || "Terjadi kesalahan"}`);
+              }
             }}
             className="space-y-3"
           >

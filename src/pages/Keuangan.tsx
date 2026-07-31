@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { db, useDB } from "@/lib/store";
-import { rupiah, todayISO, DateRange, inRange, hargaPerGram } from "@/lib/format";
+import { db, useDB, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
+import { rupiah, todayISO, DateRange, inRange, nilaiBahan } from "@/lib/format";
 import { AkunKategori } from "@/lib/types";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { ImportExcelButton } from "@/components/ImportExcelButton";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
+import { formatDecimal } from "@/lib/produksi-utils";
 
 const KATEGORI: AkunKategori[] = ["Aset", "Kewajiban", "Ekuitas", "Pendapatan", "Beban"];
 
@@ -65,21 +66,29 @@ export default function Keuangan() {
     [stokMov, range]
   );
 
+  // Stok tersimpan dalam GRAM untuk bahan ber-konversiGram (lihat StokGudang: qtyGram = qty * kg),
+  // dan dalam satuan utuh untuk bahan tanpa konversi / GRAM_EXCLUDED_BAHAN (puding, oat).
+  // Konversi balik ke satuan utuh (pcs/sachet/pack) agar tampilan qty konsisten.
+  const stokQtyUnit = (mov: any) => {
+    const item = bahan.find((b) => b.id === mov.bahanId);
+    if (!item) return mov.qty;
+    const konv = item.konversiGram && item.konversiGram > 0 && !GRAM_EXCLUDED_BAHAN.has(item.id) ? item.konversiGram : null;
+    return konv ? mov.qty / konv : mov.qty;
+  };
+
+  // Nilai mutasi stok = qty (gram) × harga per gram = satuan utuh × hargaBeli (per pcs).
   const stokMovValue = (mov: any) => {
     const item = bahan.find((b) => b.id === mov.bahanId);
     if (!item) return 0;
-    // Gunakan harga per gram untuk presisi HPP
-    const hrgPerGram = hargaPerGram(item.hargaBeli, item.konversiGram);
-    const qtyInGram = item.konversiGram && item.konversiGram > 0 ? mov.qty * item.konversiGram : mov.qty;
-    return hrgPerGram * qtyInGram;
+    return nilaiBahan(mov.qty, item.hargaBeli, GRAM_EXCLUDED_BAHAN.has(item.id) ? null : item.konversiGram);
   };
 
   const totalStokIn = filteredStokMov
     .filter((m) => m.tipe === "IN")
-    .reduce((s, m) => s + m.qty, 0);
+    .reduce((s, m) => s + stokQtyUnit(m), 0);
   const totalStokOut = filteredStokMov
     .filter((m) => m.tipe === "OUT")
-    .reduce((s, m) => s + m.qty, 0);
+    .reduce((s, m) => s + stokQtyUnit(m), 0);
   const totalStokInValue = filteredStokMov
     .filter((m) => m.tipe === "IN")
     .reduce((s, m) => s + stokMovValue(m), 0);
@@ -88,7 +97,7 @@ export default function Keuangan() {
     .reduce((s, m) => s + stokMovValue(m), 0);
   const totalReturInQty = filteredStokMov
     .filter((m) => m.tipe === "IN" && m.keterangan?.toLowerCase().includes("retur"))
-    .reduce((s, m) => s + m.qty, 0);
+    .reduce((s, m) => s + stokQtyUnit(m), 0);
   const totalReturInValue = filteredStokMov
     .filter((m) => m.tipe === "IN" && m.keterangan?.toLowerCase().includes("retur"))
     .reduce((s, m) => s + stokMovValue(m), 0);
@@ -311,7 +320,7 @@ export default function Keuangan() {
                   m.tanggal,
                   bahan.find((b: any) => b.id === m.bahanId)?.nama ?? m.bahanId,
                   m.tipe,
-                  m.qty,
+                  formatDecimal(stokQtyUnit(m)),
                   rupiah(stokMovValue(m)),
                   m.keterangan ?? ""
                 ])}
@@ -325,12 +334,12 @@ export default function Keuangan() {
                 </div>
                 <div className="rounded-2xl border p-4 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Stok Masuk</div>
-                  <div className="text-2xl font-bold">{totalStokIn}</div>
+                  <div className="text-2xl font-bold">{formatDecimal(totalStokIn)}</div>
                   <div className="text-xs text-muted-foreground">{rupiah(totalStokInValue)}</div>
                 </div>
                 <div className="rounded-2xl border p-4 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Stok Keluar</div>
-                  <div className="text-2xl font-bold">{totalStokOut}</div>
+                  <div className="text-2xl font-bold">{formatDecimal(totalStokOut)}</div>
                   <div className="text-xs text-muted-foreground">{rupiah(totalStokOutValue)}</div>
                 </div>
               </div>
@@ -338,7 +347,7 @@ export default function Keuangan() {
                 <div className="grid gap-2 md:grid-cols-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Retur Bahan</p>
-                    <p className="text-lg font-semibold">{totalReturInQty}</p>
+                    <p className="text-lg font-semibold">{formatDecimal(totalReturInQty)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Nilai Retur</p>
@@ -368,7 +377,7 @@ export default function Keuangan() {
                           <TableCell>{m.tanggal}</TableCell>
                           <TableCell>{bahan.find((b: any) => b.id === m.bahanId)?.nama ?? m.bahanId}</TableCell>
                           <TableCell>{m.tipe}</TableCell>
-                          <TableCell className="text-right">{m.qty}</TableCell>
+                          <TableCell className="text-right">{formatDecimal(stokQtyUnit(m))}</TableCell>
                           <TableCell className="text-right">{rupiah(stokMovValue(m))}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{m.keterangan ?? "-"}</TableCell>
                         </TableRow>

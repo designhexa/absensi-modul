@@ -501,7 +501,7 @@ export const db = {
 
   async addBahan(b: Omit<BahanBaku, "id">) {
     const id = uid();
-    await supabase.from("bahan_baku").insert([{
+    const { error } = await supabase.from("bahan_baku").insert([{
       id,
       kode: b.kode,
       nama: b.nama,
@@ -511,7 +511,11 @@ export const db = {
       harga_beli: b.hargaBeli,
       konversi_gram: b.konversiGram ?? null
     }]);
-    fetchFromSupabase();
+    if (error) {
+      console.error(`addBahan error (kode=${b.kode}):`, error);
+      throw error;
+    }
+    await fetchFromSupabase();
   },
   async updateBahan(id: string, b: Partial<BahanBaku>) {
     const mapped: any = {};
@@ -522,12 +526,20 @@ export const db = {
     if (b.stokAwal !== undefined) mapped.stok_awal = b.stokAwal;
     if (b.hargaBeli !== undefined) mapped.harga_beli = b.hargaBeli;
     if (b.konversiGram !== undefined) mapped.konversi_gram = b.konversiGram;
-    await supabase.from("bahan_baku").update(mapped).eq("id", id);
-    fetchFromSupabase();
+    const { error } = await supabase.from("bahan_baku").update(mapped).eq("id", id);
+    if (error) {
+      console.error(`updateBahan error (id=${id}):`, error);
+      throw error;
+    }
+    await fetchFromSupabase();
   },
   async deleteBahan(id: string) {
-    await supabase.from("bahan_baku").delete().eq("id", id);
-    fetchFromSupabase();
+    const { error } = await supabase.from("bahan_baku").delete().eq("id", id);
+    if (error) {
+      console.error(`deleteBahan error (id=${id}):`, error);
+      throw error;
+    }
+    await fetchFromSupabase();
   },
 
   async addStokMov(m: Omit<StokMovement, "id">) {
