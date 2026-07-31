@@ -19,6 +19,7 @@ import { TablePagination } from "@/components/TablePagination";
 import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
 
 // === SUBCOMPONENT: OUTLET VIEW FOR REQUESTING STOCK & RETUR ===
 function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
@@ -2016,9 +2017,11 @@ function MovTable({ mov, bahan, produksi, produk, readOnly }: any) {
                   </TableCell>
                   {!readOnly && (
                     <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => db.deleteStokMov(m.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <ConfirmDeleteButton
+                        onConfirm={() => db.deleteStokMov(m.id)}
+                        title="Hapus Pergerakan Stok"
+                        description={`Pergerakan ${b?.nama ?? m.bahanId} (${m.tipe} ${m.qty}) tanggal ${m.tanggal} akan dihapus permanen.`}
+                      />
                     </TableCell>
                   )}
                 </TableRow>

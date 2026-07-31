@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db, useDB, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { rupiah, todayISO, DateRange, inRange, nilaiBahan } from "@/lib/format";
 import { AkunKategori } from "@/lib/types";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
@@ -17,6 +17,7 @@ import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
 import { formatDecimal } from "@/lib/produksi-utils";
+import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
 
 const KATEGORI: AkunKategori[] = ["Aset", "Kewajiban", "Ekuitas", "Pendapatan", "Beban"];
 
@@ -26,26 +27,27 @@ export default function Keuangan() {
   const [keterangan, setKeterangan] = useState("");
   const [kodeAkun, setKodeAkun] = useState(coa[0]?.kode ?? "");
   const [tipe, setTipe] = useState<"Debit" | "Kredit">("Debit");
-  const [jumlah, setJumlah] = useState(0);
+  const [jumlah, setJumlah] = useState("");
   const [range, setRange] = useState<DateRange>({});
 
   const akunObj = coa.find((a) => a.kode === kodeAkun);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!akunObj || jumlah <= 0) return toast.error("Lengkapi data");
+    const jml = Number(jumlah);
+    if (!akunObj || !jumlah || !(jml > 0)) return toast.error("Lengkapi data");
     db.addJurnal({
       tanggal,
       keterangan,
       kodeAkun: akunObj.kode,
       akun: akunObj.nama,
       tipe,
-      jumlah,
+      jumlah: jml,
       kategori: akunObj.kategori,
     });
     toast.success("Jurnal ditambahkan");
     setKeterangan("");
-    setJumlah(0);
+    setJumlah("");
   };
 
   const filteredJurnal = useMemo(
@@ -209,7 +211,7 @@ export default function Keuangan() {
               <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 items-end">
                 <div className="space-y-2"><Label>Tanggal</Label><Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="h-10" /></div>
                 <div className="space-y-2 lg:col-span-2"><Label>Keterangan</Label><Input value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="cth: Bayar listrik" className="h-10" /></div>
-                <div className="space-y-2 lg:col-span-2">
+                <div className="space-y-2 lg:col-span-1">
                   <Label>Akun (COA)</Label>
                   <Select value={kodeAkun} onValueChange={setKodeAkun}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
@@ -223,7 +225,7 @@ export default function Keuangan() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-2 lg:col-span-1">
+                <div className="grid grid-cols-2 gap-2 lg:col-span-2">
                   <div className="space-y-2">
                     <Label>D/K</Label>
                     <Select value={tipe} onValueChange={(v) => setTipe(v as "Debit" | "Kredit")}>
@@ -233,7 +235,7 @@ export default function Keuangan() {
                   </div>
                   <div className="space-y-2">
                     <Label>Jumlah</Label>
-                    <Input type="number" min={0} value={jumlah} onChange={(e) => setJumlah(Number(e.target.value))} className="h-10" />
+                    <Input type="number" min={0} value={jumlah} onChange={(e) => setJumlah(e.target.value)} placeholder="0" className="h-10" />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -446,7 +448,13 @@ function JurnalTable({ filteredJurnal }: { filteredJurnal: any[] }) {
                 <TableCell className="text-muted-foreground text-sm max-w-[180px] truncate">{j.keterangan}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">{j.tipe === "Debit" ? rupiah(j.jumlah) : "-"}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">{j.tipe === "Kredit" ? rupiah(j.jumlah) : "-"}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => db.deleteJurnal(j.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                <TableCell>
+                  <ConfirmDeleteButton
+                    onConfirm={() => db.deleteJurnal(j.id)}
+                    title="Hapus Jurnal"
+                    description={`Entri jurnal ${j.tanggal} — ${j.akun} (${j.tipe} ${rupiah(j.jumlah)}) akan dihapus permanen.`}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
