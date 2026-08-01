@@ -887,8 +887,8 @@ export const db = {
   }
 };
 
-// Bahan yang punya konversiGram tapi tetap dihitung dalam satuan utuh (sachet),
-// karena produksi selalu menghabiskan per sachet utuh, tidak pernah ada sisa gram.
+// Bahan yang punya konversiGram tapi tetap dihitung dalam satuan utuh (pcs/sachet),
+// karena produksi selalu menghabiskan per satuan utuh, tidak pernah ada sisa gram.
 export const GRAM_EXCLUDED_BAHAN = new Set(["b-pud01", "b-oat01"]);
 
 export function saldoBahan(bahanId: string, state_?: DB): number {

@@ -494,7 +494,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   const [showExtraCols, setShowExtraCols] = useState(true);
 
   const getGramasiInfo = (b: any) => {
-    // Oat & Puding: tetap satuan asli (sachet), bukan gram
+    // Oat & Puding: tetap satuan asli (pcs), bukan gram
     if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
     if (nama.includes("beras")) {
@@ -976,7 +976,7 @@ export default function StokGudang() {
   };
 
   const getGramasiInfo = (b: any) => {
-    // Oat & Puding: tetap sachet (bukan gram)
+    // Oat & Puding: tetap pcs (bukan gram)
     if (GRAM_EXCLUDED_BAHAN.has(b.id)) return null;
     const nama = (b.nama || "").toLowerCase();
 

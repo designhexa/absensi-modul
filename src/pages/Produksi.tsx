@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { db, useDB, saldoBahan, getBubaSettings } from "@/lib/store";
+import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
 import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy } from "lucide-react";
@@ -812,31 +812,35 @@ export default function Produksi() {
     if (t.timD > 0 && tim1Variant) addVariant(tim1Variant, t.timD * settings.dagingTim);
     if (t.timI > 0 && tim2Variant) addVariant(tim2Variant, t.timI * settings.dagingTim);
 
-    // Puding — dalam sachet (produksi selalu habis per sachet, tidak ada sisa gram)
+    // Puding — dalam pcs (produksi selalu habis per pcs, tidak ada sisa gram)
     const pudingGr = Math.ceil(t.puding * settings.pudingCup);
-    const pudingSachet = Math.ceil(pudingGr / 130); // 130 gr/sachet
-    if (pudingSachet > 0) {
+    const pudingBahan = bahan.find((x: any) => x.id === "b-pud01");
+    const pudingKonv = pudingBahan?.konversiGram || 130; // konversi dari master data (default 130 gr/pcs)
+    const pudingPcs = Math.ceil(pudingGr / pudingKonv);
+    if (pudingPcs > 0) {
       reqs.push({
         bahanId: "b-pud01",
         kode: "PUD01",
         nama: "PUDING",
-        qty: pudingSachet,
+        qty: pudingPcs,
         rawQtyGrams: pudingGr,
-        satuan: "sachet"
+        satuan: "pcs"
       });
     }
 
-    // Oat — dalam sachet (produksi selalu habis per sachet, tidak ada sisa gram)
+    // Oat — dalam pcs (produksi selalu habis per pcs, tidak ada sisa gram)
     const oatGr = Math.ceil(t.oatmeal * settings.oatmealCup);
-    const oatSachet = Math.ceil(oatGr / 154); // 154 gr/sachet
-    if (oatSachet > 0) {
+    const oatBahan = bahan.find((x: any) => x.id === "b-oat01");
+    const oatKonv = oatBahan?.konversiGram || 154; // konversi dari master data (default 154 gr/pcs)
+    const oatPcs = Math.ceil(oatGr / oatKonv);
+    if (oatPcs > 0) {
       reqs.push({
         bahanId: "b-oat01",
         kode: "OAT01",
         nama: "OAT",
-        qty: oatSachet,
+        qty: oatPcs,
         rawQtyGrams: oatGr,
-        satuan: "sachet"
+        satuan: "pcs"
       });
     }
 
@@ -1392,17 +1396,21 @@ export default function Produksi() {
         }));
       }
       if (recoveredIngredients.puding > 1) {
+        const pudingBahanRetur = bahan.find((x: any) => x.id === "b-pud01");
+        const pudingKonvRetur = pudingBahanRetur?.konversiGram || 130; // konversi master data
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-pud01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.puding / 130), // sachet
-          keterangan: `Retur Bahan Baku (sachet) [${tanggal}]`
+          qty: Math.ceil(recoveredIngredients.puding / pudingKonvRetur), // pcs
+          keterangan: `Retur Bahan Baku (pcs) [${tanggal}]`
         }));
       }
       if (recoveredIngredients.oat > 1) {
+        const oatBahanRetur = bahan.find((x: any) => x.id === "b-oat01");
+        const oatKonvRetur = oatBahanRetur?.konversiGram || 154; // konversi master data
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-oat01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.oat / 154), // sachet
-          keterangan: `Retur Bahan Baku (sachet) [${tanggal}]`
+          qty: Math.ceil(recoveredIngredients.oat / oatKonvRetur), // pcs
+          keterangan: `Retur Bahan Baku (pcs) [${tanggal}]`
         }));
       }
       if (recoveredIngredients.abon > 1) {
@@ -2232,12 +2240,18 @@ export default function Produksi() {
                   {materialReqs.map((r) => {
                     const saldo = saldoBahan(r.bahanId, dbState);
                     const isSufficient = saldo >= r.qty;
-                    const hasGram = r.satuan !== "pcs";
+                    // Tampilkan gramasi kebutuhan bila satuan bukan pcs ATAU bahan yang
+                    // dikecualikan dari gram (OAT/PUDING) — agar gramasi tetap terlihat meski satuan 'pcs'.
+                    const hasGram = r.satuan !== "pcs" || GRAM_EXCLUDED_BAHAN.has(r.bahanId);
                     const b = bahan.find((x: any) => x.id === r.bahanId);
-                    const hasKonversi = b?.konversiGram && b.konversiGram > 0;
+                    // Oat & Puding (GRAM_EXCLUDED_BAHAN): qty & saldo sudah dalam satuan sachet,
+                    // jangan dikonversi ulang — nilai gram mengikuti gramasi kebutuhan (rawQtyGrams).
+                    const isGramExcluded = GRAM_EXCLUDED_BAHAN.has(r.bahanId);
+                    const hasKonversi = !isGramExcluded && b?.konversiGram && b.konversiGram > 0;
                     // Daging/lauk: qty dalam gram (internal stok movement), tapi tampilkan dalam sachet
                     const displayQty = hasKonversi ? Math.ceil(r.qty / b.konversiGram) : r.qty;
                     const displaySaldo = hasKonversi ? Math.round(saldo / b.konversiGram) : saldo;
+                    const displayGrams = isGramExcluded ? r.rawQtyGrams : r.qty;
                     return (
                       <TableRow key={r.bahanId}>
                         <TableCell className="font-semibold">{r.nama}</TableCell>
@@ -2246,7 +2260,7 @@ export default function Produksi() {
                           {hasGram ? `${Number(r.rawQtyGrams).toFixed(2).replace(/\.?0+$/, '')} g` : "-"}
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">
-                          {hasKonversi ? `${displayQty} ${r.satuan} (${Number(r.qty).toFixed(2).replace(/\.?0+$/, '')} g)` : `${r.qty} ${r.satuan}`}
+                          {hasKonversi || isGramExcluded ? `${displayQty} ${r.satuan} (${Number(displayGrams).toFixed(2).replace(/\.?0+$/, '')} g)` : `${r.qty} ${r.satuan}`}
                         </TableCell>
                         <TableCell className="text-right">{displaySaldo} {r.satuan}</TableCell>
                         <TableCell className="text-center">
