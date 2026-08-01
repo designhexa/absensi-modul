@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
@@ -40,6 +41,19 @@ const formatDecimal = (value: number) => {
 
 const buburCalc = (cups: number, baseAmount: number) => (cups * baseAmount) / 6;
 
+// Batas toleransi deviasi realisasi vs rencana — di atas ini muncul konfirmasi saat menyimpan Step 3 (20%)
+const DEVIASI_THRESHOLD = 0.2;
+
+// Gramasi standar per cup/pcs untuk konversi berat matang <-> jumlah cup
+const getUnitFactor = (prod: string) => {
+  if (prod === "bubur_1" || prod === "bubur_2") return 118;
+  if (prod === "tim_1" || prod === "tim_2") return 108;
+  if (prod === "puding") return 80;
+  if (prod === "oatmeal") return 100;
+  if (prod === "abon") return 10;
+  return 1;
+};
+
 // === MAIN COMPONENT ===
 export default function Produksi() {
   const dbState = useDB();
@@ -68,6 +82,8 @@ export default function Produksi() {
 
   const [step1OutletId, setStep1OutletId] = useState("");
   const [expandedOutlets, setExpandedOutlets] = useState<Record<string, boolean>>({});
+  // Daftar produk yang realisasinya menyimpang jauh dari rencana — memicu dialog konfirmasi saat simpan Step 3
+  const [deviasiConfirmList, setDeviasiConfirmList] = useState<{ label: string; target: number; cups: number }[] | null>(null);
   const [recipeExpanded, setRecipeExpanded] = useState(false);
   const [settings, setSettings] = useState(getBubaSettings());
   useEffect(() => {
@@ -525,13 +541,7 @@ export default function Produksi() {
     if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setActualGrams(prev => ({ ...prev, [prod]: grams }));
-    let factor = 1;
-    if (prod === "bubur_1" || prod === "bubur_2") factor = 118;
-    else if (prod === "tim_1" || prod === "tim_2") factor = 108;
-    else if (prod === "puding") factor = 80;
-    else if (prod === "oatmeal") factor = 100;
-    else if (prod === "abon") factor = 10;
-
+    const factor = getUnitFactor(prod);
     const cups = Math.floor(grams / factor);
     setActualCups(prev => ({ ...prev, [prod]: cups }));
   };
@@ -540,6 +550,18 @@ export default function Produksi() {
     if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
     setActualCups(prev => ({ ...prev, [prod]: cups }));
+    // Sinkronkan berat matang agar konsisten saat user mengoreksi jumlah cup aktual
+    if (!isNaN(cups)) {
+      setActualGrams(prev => ({ ...prev, [prod]: cups * getUnitFactor(prod) }));
+    }
+  };
+
+  // Isi ulang realisasi sesuai rencana (target) — koreksi cepat jika input tidak sengaja salah
+  const resetToPlan = (prod: string, targetCups: number, unitWeight: number) => {
+    if (isReadOnlyGudang) return;
+    hasUserModifiedGrids.current = true;
+    setActualCups(prev => ({ ...prev, [prod]: targetCups }));
+    setActualGrams(prev => ({ ...prev, [prod]: targetCups * unitWeight }));
   };
 
   // STEP 1 Action: Save pre-production target plans
@@ -958,7 +980,24 @@ export default function Produksi() {
   };
 
   // STEP 3 Action
-  const saveStep3 = async () => {
+  // Produk yang realisasinya menyimpang jauh dari rencana (> DEVIASI_THRESHOLD) → perlu konfirmasi saat simpan
+  const getDeviasiList = () => {
+    const items = [
+      { label: `Bubur 1 (${bubur1Name})`, target: totals.buburD, cups: actualCups.bubur_1 },
+      { label: `Bubur 2 (${bubur2Name})`, target: totals.buburI, cups: actualCups.bubur_2 },
+      { label: `Nasi Tim 1 (${tim1Name})`, target: totals.timD, cups: actualCups.tim_1 },
+      { label: `Nasi Tim 2 (${tim2Name})`, target: totals.timI, cups: actualCups.tim_2 },
+      { label: "Oatmeal", target: totals.oatmeal, cups: actualCups.oatmeal },
+      { label: "Puding", target: totals.puding, cups: actualCups.puding },
+      { label: "Abon", target: totals.abon, cups: actualCups.abon }
+    ];
+    return items.filter((it) => {
+      if (it.target <= 0) return it.cups > 0; // produksi di luar rencana
+      return Math.abs(it.cups - it.target) / it.target > DEVIASI_THRESHOLD;
+    });
+  };
+
+  const performSaveStep3 = async () => {
     if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
     try {
       const existing = produksi.filter((p: any) => p.tanggal === tanggal);
@@ -983,6 +1022,16 @@ export default function Produksi() {
     } catch (err: any) {
       console.error("saveStep3 error:", err);
       toast.error(`Gagal menyimpan hasil produksi: ${err?.message || err || "Unknown error"}`);
+    }
+  };
+
+  // Simpan — jika ada produk yang menyimpang jauh dari rencana, minta konfirmasi terlebih dahulu
+  const saveStep3 = () => {
+    const deviasi = getDeviasiList();
+    if (deviasi.length > 0) {
+      setDeviasiConfirmList(deviasi);
+    } else {
+      performSaveStep3();
     }
   };
 
@@ -2383,11 +2432,42 @@ export default function Produksi() {
               const cups = actualCups[p.id as keyof typeof actualCups] || 0;
               return (
                 <div key={p.id} className="p-4 rounded-2xl border bg-card/40 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className="font-bold text-sm">{p.label}</span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      Target: {p.targetCups} cup ({(p.targetCups * p.unitWeight).toLocaleString("id-ID")} g)
-                    </Badge>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="space-y-1 min-w-0">
+                      <span className="font-bold text-sm block truncate">{p.label}</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] border ${
+                          cups === p.targetCups
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            : p.targetCups > 0 && Math.abs(cups - p.targetCups) / p.targetCups > DEVIASI_THRESHOLD
+                            ? "bg-destructive/10 text-destructive border-destructive/30"
+                            : "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                        }`}
+                      >
+                        {cups === p.targetCups
+                          ? "✓ Sesuai rencana"
+                          : p.targetCups > 0
+                          ? `${cups > p.targetCups ? "+" : ""}${cups - p.targetCups} cup dari rencana`
+                          : cups > 0
+                          ? `+${cups} cup (target 0)`
+                          : "0 cup dari rencana"}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        Target: {p.targetCups} cup ({(p.targetCups * p.unitWeight).toLocaleString("id-ID")} g)
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] text-muted-foreground hover:text-primary"
+                        onClick={() => resetToPlan(p.id, p.targetCups, p.unitWeight)}
+                        title="Kembalikan ke nilai rencana"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" /> Pakai Rencana
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="space-y-1">
@@ -2442,6 +2522,46 @@ export default function Produksi() {
             </Button>
           </div>
         </CardContent>
+
+        {/* Konfirmasi jika hasil masak menyimpang jauh dari rencana */}
+        <AlertDialog
+          open={deviasiConfirmList !== null}
+          onOpenChange={(open) => { if (!open) setDeviasiConfirmList(null); }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Hasil masak menyimpang dari rencana
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Beberapa produk berbeda jauh dari target rencana ({Math.round(DEVIASI_THRESHOLD * 100)}%+).
+                Periksa kembali angkanya sebelum menyimpan:
+                <ul className="mt-3 space-y-1.5">
+                  {deviasiConfirmList?.map((it) => (
+                    <li key={it.label} className="flex justify-between gap-3 text-sm">
+                      <span className="font-medium">{it.label}</span>
+                      <span className="tabular-nums text-destructive font-semibold">
+                        {it.cups} cup (rencana {it.target} cup)
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Periksa Ulang</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setDeviasiConfirmList(null);
+                  performSaveStep3();
+                }}
+              >
+                Simpan Tetap
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Card>
     );
   }
