@@ -570,10 +570,32 @@ export default function Produksi() {
   const saveStep1 = async () => {
     if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
     try {
-      const existing = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
-      if (existing.length > 0) {
-        await Promise.all(existing.map((r: any) => db.deletePermohonanStok(r.id)));
-      }
+      // Upsert rencana: update record yang sudah ada (PERTAHANKAN status Disetujui),
+      // insert record baru sebagai Pending, dan hapus record lama yang tidak lagi
+      // direncanakan SELAMA belum ber-status Disetujui.
+      // Mencegah re-save rencana menghapus status "Disetujui" — tanpa status itu
+      // outlet tidak bisa menginput OH (form OH outlet hanya membaca Disetujui).
+      const upsertPlan = async (kirimTanggal: string, items: any[]) => {
+        const existingRecs = permohonanStok.filter((r: any) => r.tanggalKirim === kirimTanggal);
+        const existingByKey = new Map(existingRecs.map((r: any) => [`${r.outletId}|${r.produkId}`, r]));
+        const toUpdate: { id: string; qty: number; catatan: string }[] = [];
+        const toInsert: any[] = [];
+        const plannedKeys = new Set<string>();
+        items.forEach((item) => {
+          const key = `${item.outletId}|${item.produkId}`;
+          plannedKeys.add(key);
+          const old = existingByKey.get(key);
+          if (old) {
+            toUpdate.push({ id: old.id, qty: item.qty, catatan: item.catatan });
+          } else {
+            toInsert.push(item);
+          }
+        });
+        await Promise.all(toUpdate.map(u => db.updatePermohonanStok(u.id, { qty: u.qty, catatan: u.catatan })));
+        if (toInsert.length > 0) await db.addPermohonanStokBulk(toInsert);
+        const stale = existingRecs.filter(r => !plannedKeys.has(`${r.outletId}|${r.produkId}`) && r.status !== "Disetujui");
+        await Promise.all(stale.map(r => db.deletePermohonanStok(r.id)));
+      };
 
       const batch: any[] = [];
       Object.entries(planGrid).forEach(([outletId, vals]) => {
@@ -613,17 +635,10 @@ export default function Produksi() {
       });
 
       // Save main batch for tanggal
-      if (batch.length > 0) {
-        await db.addPermohonanStokBulk(batch);
-      }
+      await upsertPlan(tanggal, batch);
 
       // If 2-day plan is active, build tanggal2 batch too
       if (isTwoDayPlan && tanggal2) {
-        const existing2 = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal2);
-        if (existing2.length > 0) {
-          await Promise.all(existing2.map((r: any) => db.deletePermohonanStok(r.id)));
-        }
-
         const batch2: any[] = [];
         Object.entries(planGrid2).forEach(([outletId, vals]) => {
           const totalBubur = (vals.bubur_d || 0) + (vals.bubur_i || 0);
@@ -661,9 +676,7 @@ export default function Produksi() {
           }
         });
 
-        if (batch2.length > 0) {
-          await db.addPermohonanStokBulk(batch2);
-        }
+        await upsertPlan(tanggal2, batch2);
       }
 
       toast.success("Rencana Pra-Produksi berhasil disimpan!");
@@ -1932,7 +1945,6 @@ export default function Produksi() {
                               min={0}
                               value={row.bubur_d || ""}
                               disabled={isReadOnlyGudang}
-                              disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "bubur_d", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-amber-300/80 focus-visible:ring-amber-500 bg-amber-500/5"
                               placeholder="0"
@@ -1944,7 +1956,6 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.bubur_i || ""}
-                              disabled={isReadOnlyGudang}
                               disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "bubur_i", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-blue-300/80 focus-visible:ring-blue-500 bg-blue-500/5"
@@ -1958,7 +1969,6 @@ export default function Produksi() {
                               min={0}
                               value={row.tim_d || ""}
                               disabled={isReadOnlyGudang}
-                              disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "tim_d", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-amber-300/80 focus-visible:ring-amber-500 bg-amber-500/5"
                               placeholder="0"
@@ -1970,7 +1980,6 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.tim_i || ""}
-                              disabled={isReadOnlyGudang}
                               disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "tim_i", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-semibold border-blue-300/80 focus-visible:ring-blue-500 bg-blue-500/5"
@@ -1984,7 +1993,6 @@ export default function Produksi() {
                               min={0}
                               value={row.oatmeal || ""}
                               disabled={isReadOnlyGudang}
-                              disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "oatmeal", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"
                               placeholder="0"
@@ -1997,7 +2005,6 @@ export default function Produksi() {
                               min={0}
                               value={row.puding || ""}
                               disabled={isReadOnlyGudang}
-                              disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "puding", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"
                               placeholder="0"
@@ -2009,7 +2016,6 @@ export default function Produksi() {
                               type="number"
                               min={0}
                               value={row.abon || ""}
-                              disabled={isReadOnlyGudang}
                               disabled={isReadOnlyGudang}
                             onChange={(e) => handlePlanChange(o.id, "abon", parseInt(e.target.value) || 0)}
                               className="w-16 h-8 text-center text-xs p-1 mx-auto font-medium"

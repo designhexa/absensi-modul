@@ -242,7 +242,7 @@ export default function Laporan() {
                 {rekapByProduk.map((r) => (
                   <div key={r.produkId} className="bg-muted/30 p-3 rounded-xl border text-center">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase">{r.produkId.replace("p-", "").replace("nasitim", "Nasi Tim")}</div>
-                    <div className="text-lg font-bold mt-1">{r.qty} <span className="text-xs font-normal text-muted-foreground">cup</span></div>
+                    <div className="text-lg font-bold mt-1">{r.qty} <span className="text-xs font-normal text-muted-foreground">{r.produkId === "p-abon" ? "pcs" : "cup"}</span></div>
                     <div className="text-xs font-semibold text-primary">{rupiah(r.omzet)}</div>
                   </div>
                 ))}
@@ -344,20 +344,30 @@ function useOHData(
       }
     });
 
-    const result: { date: string; outletId: string; outletName: string; distributed: number; sold: number; oh: number; ohPercent: number }[] = [];
+    // Tandai (tanggal, outlet) yang SUDAH diinput outlet (punya record penjualan).
+    // Hari tanpa input TIDAK dihitung dalam rata-rata OH% bulanan agar tidak
+    // merusak kelolosan bonus OH — konsisten dgn tab Riwayat (badge "Belum Input").
+    const inputKeys = new Set<string>();
+    sales.forEach((p: any) => inputKeys.add(`${p.tanggal}|${p.outletId}`));
+
+    const result: { date: string; outletId: string; outletName: string; distributed: number; sold: number; oh: number; ohPercent: number; hasInput: boolean }[] = [];
     const outletNames = new Map(outlets.map((o: any) => [o.id, o.nama]));
 
     dateOutletMap.forEach((outletMap, date) => {
       outletMap.forEach((data, outletId) => {
         const oh = Math.max(0, data.distributed - data.sold);
         const ohPercent = data.distributed > 0 ? (oh / data.distributed) * 100 : 0;
-        result.push({ date, outletId, outletName: outletNames.get(outletId) || "-", distributed: data.distributed, sold: data.sold, oh, ohPercent: Math.round(ohPercent * 100) / 100 });
+        result.push({ date, outletId, outletName: outletNames.get(outletId) || "-", distributed: data.distributed, sold: data.sold, oh, ohPercent: Math.round(ohPercent * 100) / 100, hasInput: inputKeys.has(`${date}|${outletId}`) });
       });
       let totalDist = 0, totalSold = 0;
-      outletMap.forEach((data) => { totalDist += data.distributed; totalSold += data.sold; });
+      outletMap.forEach((data, outletId) => {
+        if (!inputKeys.has(`${date}|${outletId}`)) return; // outlet belum input tidak dihitung
+        totalDist += data.distributed; totalSold += data.sold;
+      });
+      const totalHasInput = totalDist > 0;
       const totalOh = Math.max(0, totalDist - totalSold);
       const totalOhPercent = totalDist > 0 ? (totalOh / totalDist) * 100 : 0;
-      result.push({ date, outletId: "__total__", outletName: outletFilter ? "Outlet Saya" : "📊 TOTAL", distributed: totalDist, sold: totalSold, oh: totalOh, ohPercent: Math.round(totalOhPercent * 100) / 100 });
+      result.push({ date, outletId: "__total__", outletName: outletFilter ? "Outlet Saya" : "📊 TOTAL", distributed: totalDist, sold: totalSold, oh: totalOh, ohPercent: Math.round(totalOhPercent * 100) / 100, hasInput: totalHasInput });
     });
 
     return result.sort((a, b) => b.date.localeCompare(a.date));
@@ -368,6 +378,7 @@ function useOHData(
     const overallMonthMap = new Map<string, { totalOhPercent: number; days: number }>();
 
     dailyOHData.forEach((row) => {
+      if (!row.hasInput) return; // outlet belum input hari tsb — jangan hitung rata-rata
       if (row.outletId === "__total__") {
         const month = row.date.slice(0, 7);
         const cur = overallMonthMap.get(month) || { totalOhPercent: 0, days: 0 };
@@ -450,6 +461,19 @@ function SisaProduksiOH({
       r.status === "Disetujui" &&
       PRODUCTION_PRODUCTS.includes(r.produkId) &&
       r.tanggalKirim === tanggal
+    );
+  }, [permohonanStok, user.outletId, tanggal]);
+
+  // Distribusi utk tanggal ini yang MASIH Pending (belum dikirim admin/produksi).
+  // Form OH hanya menampilkan distribusi ber-status Disetujui, jadi jika hanya ada
+  // Pending, outlet akan melihat "(no dist)" — banner ini menjelaskan penyebabnya.
+  const pendingDistributions = useMemo(() => {
+    return (permohonanStok || []).filter((r: any) =>
+      r.outletId === user.outletId &&
+      r.status === "Pending" &&
+      PRODUCTION_PRODUCTS.includes(r.produkId) &&
+      r.tanggalKirim === tanggal &&
+      Number(r.qty) > 0
     );
   }, [permohonanStok, user.outletId, tanggal]);
 
@@ -603,8 +627,13 @@ function SisaProduksiOH({
       }
 
       const terjual = distQty > 0 ? Math.max(0, distQty - Math.min(sisaCups, distQty)) : 0;
+      // Pakai harga TERSIMPAN dari record penjualan bila sudah ada (agar omzet konsisten
+      // dgn tab Rekap & Riwayat). Fallback ke harga master produk hanya untuk input baru.
+      const existingSale = (penjualan || []).find(
+        (p: any) => p.outletId === user.outletId && p.tanggal === tanggal && p.produkId === item.baseId && p.variant === item.subId
+      );
       const prod = produk.find((p: any) => p.id === item.baseId);
-      const harga = prod?.harga || 0;
+      const harga = existingSale?.harga ?? (prod?.harga || 0);
       const omset = terjual * harga;
 
       return {
@@ -622,7 +651,7 @@ function SisaProduksiOH({
         omset,
       };
     });
-  }, [distMap, tanggal, sisaGrid, produk]);
+  }, [distMap, tanggal, sisaGrid, produk, penjualan, user.outletId]);
 
   // Summary
   const summary = useMemo(() => {
@@ -789,6 +818,25 @@ function SisaProduksiOH({
         </div>
       )}
 
+      {/* Pending Distribution Warning — distribusi ada tapi belum dikirim admin */}
+      {!isLocked && pendingDistributions.length > 0 && distributions.length === 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 border border-yellow-200 dark:border-yellow-800/30 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <Clock className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="text-xs text-muted-foreground">
+              <p className="font-bold text-amber-700 dark:text-amber-300 text-sm mb-1">
+                ⏳ Distribusi Belum Dikirim
+              </p>
+              <p>
+                Distribusi untuk tanggal ini masih ber-status <strong>Pending</strong> — belum dikirim oleh
+                admin/produksi. Input sisa produksi (OH) baru bisa dilakukan setelah distribusi ber-status{" "}
+                <strong>Disetujui</strong>. Silakan hubungi admin/produksi jika distribusi seharusnya sudah dikirim.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card className="glass border-0 shadow-card">
         <CardContent className="p-4 md:p-6 space-y-4">
           {/* Toolbar: Date picker + Summary + Save */}
@@ -923,7 +971,9 @@ function SisaProduksiOH({
           {/* Helper text */}
           {rows.every(r => r.distribusi <= 0) && (
             <p className="text-xs text-muted-foreground text-center py-2">
-              Belum ada distribusi untuk tanggal ini. Input sisa akan tersimpan saat ada distribusi.
+              {pendingDistributions.length > 0
+                ? "Distribusi untuk tanggal ini masih menunggu persetujuan admin/produksi. Input sisa akan tersedia setelah distribusi ber-status Disetujui."
+                : "Belum ada distribusi untuk tanggal ini. Input sisa akan tersimpan saat ada distribusi."}
             </p>
           )}
         </CardContent>
@@ -1190,7 +1240,12 @@ function SisaProduksiAdminView({
             sisaCups = item.gramPerCup > 0 ? Math.floor(sisaGram / item.gramPerCup) : 0;
           }
           const terjual = Math.max(0, info.distQty - Math.min(sisaCups, info.distQty));
-          const omset = terjual * info.harga;
+          // Harga tersimpan dari record penjualan (konsisten dgn Rekap/Riwayat)
+          const existingSale = (penjualan || []).find(
+            (p: any) => p.outletId === outlet.id && p.tanggal === tanggal && p.produkId === item.baseId && p.variant === item.subId
+          );
+          const harga = existingSale?.harga ?? info.harga;
+          const omset = terjual * harga;
 
           return {
             key,
@@ -1199,7 +1254,7 @@ function SisaProduksiAdminView({
             label: item.label,
             gramPerCup: item.gramPerCup,
             distQty: info.distQty,
-            harga: info.harga,
+            harga,
             sisaGram,
             sisaCups,
             terjual,
@@ -1210,7 +1265,7 @@ function SisaProduksiAdminView({
         return { outlet, items };
       })
       .filter(Boolean) as { outlet: any; items: any[] }[];
-  }, [outlets, outletDataMap, sisaGrid]);
+  }, [outlets, outletDataMap, sisaGrid, penjualan, tanggal]);
 
   // Lock check: apakah siklus sudah ditutup (berdasarkan jurnal OUT-SALES)
   const isCycleClosed = useMemo(() => {
@@ -1633,16 +1688,24 @@ function OHPercentSection({
                       <TableCell className="whitespace-nowrap">{row.date}</TableCell>
                       {!outletFilter && <TableCell>{row.outletName}</TableCell>}
                       <TableCell className="text-right">{row.distributed}</TableCell>
-                      <TableCell className="text-right text-success font-medium">{row.sold}</TableCell>
-                      <TableCell className="text-right text-warning font-medium">{row.oh}</TableCell>
+                      <TableCell className="text-right text-success font-medium">{row.hasInput ? row.sold : <span className="text-muted-foreground">—</span>}</TableCell>
+                      <TableCell className="text-right text-warning font-medium">{row.hasInput ? row.oh : <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell className="text-right font-bold tabular-nums">
-                        <span className={row.ohPercent > 2 ? "text-destructive" : "text-success"}>
-                          {row.ohPercent.toFixed(2)}%
-                        </span>
+                        {row.hasInput ? (
+                          <span className={row.ohPercent > 2 ? "text-destructive" : "text-success"}>
+                            {row.ohPercent.toFixed(2)}%
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {row.outletId === "__total__" ? (
                           <Badge variant="outline" className="text-[10px]">TOTAL</Badge>
+                        ) : !row.hasInput ? (
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px]">
+                            Belum Input
+                          </Badge>
                         ) : row.ohPercent <= 2 ? (
                           <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">
                             ✅ ≤ 2%
@@ -1773,7 +1836,7 @@ function RiwayatTransaksiTab({
     });
   }, [permohonanStok, user.outletId, outletId, range, isOutlet]);
 
-  // Read actual sales from penjualan table (by base produkId)
+  // Read actual sales from penjualan table (by base produkId) — total terjual per base
   const salesMap = useMemo(() => {
     const map = new Map<string, number>();
     (penjualan || []).forEach((p: any) => {
@@ -1786,16 +1849,19 @@ function RiwayatTransaksiTab({
     return map;
   }, [penjualan, user.outletId, range, isOutlet]);
 
-  // Read sisaGram per variant from penjualan (for accurate gram display)
-  const sisaGramMap = useMemo(() => {
-    const map = new Map<string, number>();
+  // Read per-variant record from penjualan: qty TERSIMPAN, harga TERSIMPAN, sisaGram
+  // Harga & qty tersimpan = sumber kebenaran omzet (sama dgn tab Rekap), bukan harga master terkini
+  const variantRecordMap = useMemo(() => {
+    const map = new Map<string, { qty: number; harga: number; sisaGram?: number }>();
     (penjualan || []).forEach((p: any) => {
-      if (p.sisaGram === undefined || p.sisaGram === null) return;
       const matchOutlet = isOutlet ? p.outletId === user.outletId : true;
       if (!matchOutlet) return;
       if (!inRange(p.tanggal, range)) return;
       const key = `${p.tanggal}-${p.outletId}-${p.produkId}-${p.variant || ""}`;
-      map.set(key, p.sisaGram);
+      const cur = map.get(key) || { qty: 0, harga: p.harga, sisaGram: undefined };
+      cur.qty += p.qty;
+      if (p.sisaGram !== undefined && p.sisaGram !== null) cur.sisaGram = p.sisaGram;
+      map.set(key, cur);
     });
     return map;
   }, [penjualan, user.outletId, range, isOutlet]);
@@ -1922,37 +1988,60 @@ function RiwayatTransaksiTab({
       };
       const variantSubId = SUBID_TO_VARIANT[row.subId] || row.subId;
       const variantKey = `${row.tanggal}-${row.outletId}-${row.baseId}-${variantSubId}`;
-      const dbSisaGram = sisaGramMap.get(variantKey);
-      
-      if (dbSisaGram !== undefined) {
-        // Found exact per-variant sisaGram — use it directly!
+      const dbRec = variantRecordMap.get(variantKey);
+
+      if (dbRec !== undefined) {
+        // Found exact per-variant record — use stored qty & harga & sisaGram directly!
+        // Ini membuat Riwayat identik dgn Rekap (qty & harga tersimpan = omzet tersimpan).
         // Determine if this is a cup/pcs-based item (oatmeal, puding, abon) vs gram-based (bubur/tim)
         // For cup/pcs items, sisaGram stores the cups/pcs count directly, NOT grams.
         const isCupUnit = row.subId === "p-oatmeal" || row.subId === "p-puding" || row.subId === "p-abon";
         let dbSisaCups: number;
         let displayGr: number;
-        if (isCupUnit) {
-          // sisaGram stores cups/pcs directly for these items
-          dbSisaCups = dbSisaGram;
-          displayGr = dbSisaCups * gramPerCup;
+        if (dbRec.sisaGram !== undefined) {
+          if (isCupUnit) {
+            // sisaGram stores cups/pcs directly for these items
+            dbSisaCups = dbRec.sisaGram;
+            displayGr = dbSisaCups * gramPerCup;
+          } else {
+            // sisaGram stores grams for bubur/tim
+            dbSisaCups = gramPerCup > 0 ? Math.floor(dbRec.sisaGram / gramPerCup) : 0;
+            displayGr = dbRec.sisaGram;
+          }
         } else {
-          // sisaGram stores grams for bubur/tim
-          dbSisaCups = gramPerCup > 0 ? Math.floor(dbSisaGram / gramPerCup) : 0;
-          displayGr = dbSisaGram;
+          // Record tanpa sisaGram (legacy) — hitung retur dari qty tersimpan
+          dbSisaCups = Math.max(0, row.stokAwalPcs - dbRec.qty);
+          displayGr = dbSisaCups * gramPerCup;
         }
-        const dbSold = Math.max(0, row.stokAwalPcs - Math.min(dbSisaCups, row.stokAwalPcs));
+        const dbSold = dbRec.qty; // qty tersimpan = terjual (sumber kebenaran)
         return {
           ...row,
+          harga: dbRec.harga,
           actualSold: dbSold,
           actualReturPcs: dbSisaCups,
           actualReturGram: displayGr,
           displayReturGr: displayGr,
           displayReturPcs: dbSisaCups,
           displayTerjual: dbSold,
+          belumInput: false,
         };
       }
 
-      // Fallback: distribute totalSold proportionally across variants
+      // Tidak ada record penjualan sama sekali utk base ini → outlet belum menginput
+      if (totalSold === 0) {
+        return {
+          ...row,
+          actualSold: 0,
+          actualReturPcs: 0,
+          actualReturGram: 0,
+          displayReturGr: 0,
+          displayReturPcs: 0,
+          displayTerjual: 0,
+          belumInput: true,
+        };
+      }
+
+      // Fallback: data lama tanpa variant — distribute totalSold proportionally
       const proportion = totalStok > 0 ? row.stokAwalPcs / totalStok : 0;
       const actualSold = Math.round(totalSold * proportion);
       const actualReturPcs = Math.max(0, row.stokAwalPcs - actualSold);
@@ -1966,20 +2055,25 @@ function RiwayatTransaksiTab({
         displayReturGr: actualReturGram,
         displayReturPcs: actualReturPcs,
         displayTerjual: actualSold,
+        belumInput: false,
       };
     });
-  }, [transaksiRows, salesMap]);
+  }, [transaksiRows, salesMap, variantRecordMap]);
 
-  // Summary
+  // Summary — hanya menghitung baris yang SUDAH diinput (belumInput tidak dihitung)
   const summary = useMemo(() => {
-    let totalStok = 0, totalReturPcs = 0, totalTerjual = 0, totalOmset = 0;
+    let totalStok = 0, totalReturPcs = 0, totalTerjual = 0, totalOmset = 0, belumInputCount = 0;
     rowsWithActuals.forEach((row) => {
+      if (row.belumInput) {
+        belumInputCount++;
+        return;
+      }
       totalStok += row.stokAwalPcs;
       totalReturPcs += row.displayReturPcs;
       totalTerjual += row.displayTerjual;
       totalOmset += row.displayTerjual * row.harga;
     });
-    return { totalStok, totalReturPcs, totalTerjual, totalOmset };
+    return { totalStok, totalReturPcs, totalTerjual, totalOmset, belumInputCount };
   }, [rowsWithActuals]);
 
   // Note: Penjualan input done via SisaProduksiOH tab, not here
@@ -2021,6 +2115,11 @@ function RiwayatTransaksiTab({
             <span className="text-warning">Retur: <strong>{summary.totalReturPcs}</strong> cup</span>
             <span className="text-success">Terjual: <strong>{summary.totalTerjual}</strong> cup</span>
             <span className="text-primary">Omset: <strong>{rupiah(summary.totalOmset)}</strong></span>
+            {summary.belumInputCount > 0 && (
+              <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px]">
+                {summary.belumInputCount} baris belum input — tidak dihitung
+              </Badge>
+            )}
           </div>
 
           {/* Main Table */}
@@ -2064,9 +2163,10 @@ function RiwayatTransaksiTab({
                       : row.actualSold;
                     const omset = terjual * row.harga;
                     const returPcsLabel = row.baseId === "p-abon" ? "pcs" : "cup";
+                    const belumInput = !!row.belumInput;
 
                     return (
-                      <TableRow key={`${row.tanggal}-${row.outletId}-${row.subId}`}>
+                      <TableRow key={`${row.tanggal}-${row.outletId}-${row.subId}`} className={belumInput ? "opacity-70" : ""}>
                         <TableCell className="whitespace-nowrap">{row.tanggal}</TableCell>
                         {!isOutlet && (
                           <TableCell className="whitespace-nowrap font-medium">{row.outletNama}</TableCell>
@@ -2077,10 +2177,20 @@ function RiwayatTransaksiTab({
                           {stokAwalGram.toLocaleString()} g
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="text-sm">{displayReturGr > 0 ? `${displayReturGr} g` : "-"}</span>
+                          {belumInput ? (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px]">
+                              Belum Input
+                            </Badge>
+                          ) : displayReturGr > 0 ? (
+                            <span className="text-sm">{displayReturGr} g</span>
+                          ) : (
+                            <span className="text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {returPcs > 0 ? (
+                          {belumInput ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : returPcs > 0 ? (
                             <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">
                               {returPcs} {returPcsLabel}
                             </Badge>
@@ -2088,9 +2198,13 @@ function RiwayatTransaksiTab({
                             <span className="text-xs text-muted-foreground">0</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-bold text-success">{terjual}</TableCell>
+                        <TableCell className="text-right font-bold text-success">
+                          {belumInput ? <span className="text-muted-foreground">—</span> : terjual}
+                        </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">{rupiah(row.harga)}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">{rupiah(omset)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">
+                          {belumInput ? <span className="text-muted-foreground">—</span> : rupiah(omset)}
+                        </TableCell>
                       </TableRow>
                     );
                   })}

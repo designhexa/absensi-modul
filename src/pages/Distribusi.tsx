@@ -13,7 +13,7 @@ import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "l
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid } from "@/lib/produksi-utils";
+import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, type OutletGrid } from "@/lib/produksi-utils";
 
 export default function Distribusi() {
   const navigate = useNavigate();
@@ -111,7 +111,7 @@ export default function Distribusi() {
       const existingSales = penjualan.filter((p: any) => p.tanggal === tanggal);
       if (existingSales.length > 0) {
         outlets.forEach((o) => {
-          const sent = dGrid[o.id] || {};
+          const sent = dGrid[o.id] || { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
           if (!sent) return;
 
           const calcRetur = (baseId: string, dField: string, iField: string, dSent: number, iSent: number) => {
@@ -159,7 +159,7 @@ export default function Distribusi() {
     setReturGrid(prev => ({ ...prev, [outletId]: { ...prev[outletId], [field]: isNaN(val) ? 0 : val } }));
   };
 
-  const distTotals = useMemo(() => sumGrid(distGrid), [distGrid]);
+  const distTotals = useMemo(() => sumGrid(distGrid as OutletGrid), [distGrid]);
 
   // STEP 4 Action
   const saveStep4 = async () => {
