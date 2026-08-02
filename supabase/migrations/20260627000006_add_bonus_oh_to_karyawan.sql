@@ -1,1 +1,1 @@
-ALTER TABLE karyawan ADD COLUMN bonus_oh integer DEFAULT 0;
+ALTER TABLE karyawan ADD COLUMN IF NOT EXISTS bonus_oh integer DEFAULT 0;
