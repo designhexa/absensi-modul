@@ -115,6 +115,14 @@ async function resetKaryawanUsers() {
         karyawan_id: "k-produksi"
       },
       {
+        username: "gudang",
+        password: "gudang123",
+        nama: "Pegawai Gudang",
+        role: "gudang",
+        outlet_id: null,
+        karyawan_id: "k-gudang"
+      },
+      {
         username: "tl",
         password: "tl123",
         nama: "Tenaga Lapangan",
