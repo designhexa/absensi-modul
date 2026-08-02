@@ -155,7 +155,7 @@ export const SEED_USERS: UserAccount[] = [
   { username: "khazana", password: "Fazana@10", nama: "Super Admin", role: "admin" },
   { username: "produksi", password: "produksi123", nama: "Kepala Produksi", role: "admin", karyawanId: "k-produksi" },
   { username: "gudang", password: "gudang123", nama: "Pegawai Gudang", role: "gudang", karyawanId: "k-gudang" },
-  { username: "tl", password: "tl123", nama: "Tenaga Lapangan", role: "tl" },
+  { username: "tl", password: "tl123", nama: "Tenaga Lapangan", role: "tl", karyawanId: "k-tl" },
   ...SEED_OUTLETS.map((o) => {
     const username = o.id.replace("o-", "");
     return {
@@ -200,6 +200,23 @@ const RAW_BAHAN = [
 export const SEED_BAHAN: BahanBaku[] = RAW_BAHAN.map((b) => ({ ...b, id: `b-${slug(b.kode)}` }));
 
 export const SEED_KARYAWAN: Karyawan[] = [
+  {
+    id: "k-tl",
+    nama: "Tenaga Lapangan",
+    posisi: "TL (Tenaga Lapangan)",
+    role: "tl",
+    outletId: undefined,
+    gajiPokok: 0,
+    bonusOmset: 0,
+    bonusUlasan: 0,
+    bonusOH: 0,
+    tunjanganHarian: 0,
+    overtimeRate: 0,
+    jamMasuk: "07:00",
+    jamPulang: "15:00",
+    username: "tl",
+    password: "tl123"
+  },
   {
     id: "k-gudang",
     nama: "Pegawai Gudang",

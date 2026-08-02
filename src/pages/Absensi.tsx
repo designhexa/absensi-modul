@@ -128,32 +128,19 @@ export default function Absensi() {
         },
         (error) => {
           console.error("GPS error:", error);
-          // Fallback to outlet's configured GPS coordinates
-          const loc = myOutletLocation;
-          if (loc) {
-            setCoordinates({ lat: loc.lat, lng: loc.lng });
-            setAddress(`${loc.nama}, ${loc.alamat || "Lokasi outlet"} (${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)})`);
-          } else {
-            const fallbackLat = -7.641234;
-            const fallbackLng = 112.906123;
-            setCoordinates({ lat: fallbackLat, lng: fallbackLng });
-            const locName = user?.role === "outlet" ? (user?.nama || "Outlet") : "Dapur Utama Buba Healthy";
-            setAddress(`${locName} (${fallbackLat.toFixed(6)}, ${fallbackLng.toFixed(6)})`);
-          }
+          // ❌ TIDAK pakai fallback koordinat outlet lagi — itu celah yang membuat
+          // absensi bisa dilakukan dari mana pun. Saat GPS gagal, koordinat tetap null
+          // sehingga validateGPSDistance() memblokir absensi.
+          setCoordinates(null);
+          setAddress("Gagal mendapatkan lokasi GPS — absensi diblokir");
           setGpsLoading(false);
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      const loc = myOutletLocation;
-      if (loc) {
-        setCoordinates({ lat: loc.lat, lng: loc.lng });
-        setAddress(`${loc.nama}, ${loc.alamat || "Lokasi outlet"} (${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)})`);
-      } else {
-        setCoordinates({ lat: -7.641234, lng: 112.906123 });
-        const locName = user?.role === "outlet" ? (user?.nama || "Outlet") : "Dapur Utama Buba Healthy";
-        setAddress(`${locName} (${-7.641234.toFixed(6)}, ${112.906123.toFixed(6)})`);
-      }
+      // Geolocation tidak didukung — koordinat tetap null, absensi diblokir.
+      setCoordinates(null);
+      setAddress("Perangkat tidak mendukung GPS — absensi diblokir");
       setGpsLoading(false);
     }
   };
@@ -215,21 +202,28 @@ export default function Absensi() {
   const validateGPSDistance = () => {
     if (user?.role !== "outlet" || !user?.outletId) return true;
     const myOutlet = outlets.find((o: any) => o.id === user.outletId);
-    if (!myOutlet || !myOutlet.lokasi) return true;
-    
+    // SEMENTARA: jika koordinat GPS outlet belum diatur (format "alamat @ lat,lng,radius"),
+    // absensi tetap DIIZINKAN dari mana pun sampai admin mengisi Latitude & Longitude
+    // di Master Data. Setelah koordinat terisi, batasan radius GPS langsung aktif.
+    if (!myOutlet || !myOutlet.lokasi || !myOutlet.lokasi.includes("@")) {
+      toast.info("Koordinat GPS outlet belum diatur — absensi diterima tanpa verifikasi lokasi (sementara).");
+      return true;
+    }
+
     // Parse lokasi
     const parts = myOutlet.lokasi.split(" @ ");
-    if (parts.length < 2) return true; // No GPS target set yet
-    
     const [latStr, lngStr, radStr] = parts[1].split(",");
     const targetLat = parseFloat(latStr);
     const targetLng = parseFloat(lngStr);
     const radius = parseFloat(radStr || "100");
-    
-    if (isNaN(targetLat) || isNaN(targetLng)) return true;
-    
+
+    if (isNaN(targetLat) || isNaN(targetLng)) {
+      toast.error("Koordinat GPS outlet tidak valid. Hubungi admin.");
+      return false;
+    }
+
     if (!coordinates) {
-      toast.error("Gagal mendapatkan koordinat GPS Anda!");
+      toast.error("Gagal mendapatkan koordinat GPS Anda! Pastikan GPS aktif dan izin lokasi diberikan.");
       return false;
     }
     
@@ -511,11 +505,15 @@ export default function Absensi() {
                   </div>
                   {(() => {
                     const loc = myOutletLocation;
+                    const gpsSet = !!(user?.role === "outlet" && outlets.find((o: any) => o.id === user.outletId)?.lokasi?.includes("@"));
+                    if (!gpsSet) {
+                      return <p className="text-[10px] text-amber-600">GPS outlet belum diatur — absensi tanpa verifikasi lokasi</p>;
+                    }
                     if (coordinates && loc) {
                       const dist = getDistanceMeters(coordinates.lat, coordinates.lng, loc.lat, loc.lng);
                       return <p className="text-[10px] text-muted-foreground">Anda berada ±{Math.round(dist)} meter dari lokasi outlet</p>;
                     }
-                    return <p className="text-[10px] text-muted-foreground">Anda berada ±0 meter dari lokasi outlet</p>;
+                    return <p className="text-[10px] text-destructive">Lokasi tidak terkunci — absensi diblokir</p>;
                   })()}
                 </div>
               )}

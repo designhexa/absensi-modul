@@ -74,7 +74,7 @@ async function runSeed() {
       { username: "khazana", password: "Fazana@10", nama: "Super Admin", role: "admin", outlet_id: null, karyawan_id: null },
       { username: "produksi", password: "produksi123", nama: "Kepala Produksi", role: "admin", outlet_id: null, karyawan_id: "k-produksi" },
       { username: "gudang", password: "gudang123", nama: "Pegawai Gudang", role: "gudang", outlet_id: null, karyawan_id: "k-gudang" },
-      { username: "tl", password: "tl123", nama: "Tenaga Lapangan", role: "tl", outlet_id: null, karyawan_id: null },
+      { username: "tl", password: "tl123", nama: "Tenaga Lapangan", role: "tl", outlet_id: null, karyawan_id: "k-tl" },
       ...SEED_OUTLETS.map((o) => ({
         username: o.nama.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
         password: "buba123",

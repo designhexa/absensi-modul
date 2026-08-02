@@ -1,7 +1,11 @@
 /**
  * apply-tl-migration.cjs
- * Menerapkan migrasi 20260627000011 (role 'tl' di constraint users_role_check)
- * dan membuat akun TL (Tenaga Lapangan).
+ * Menerapkan migrasi 20260627000011 (role 'tl' di constraint users_role_check),
+ * membuat karyawan k-tl (Tenaga Lapangan) di daftar karyawan,
+ * dan membuat/menautkan akun TL ke karyawan tsb (users.karyawan_id = 'k-tl').
+ *
+ * Catatan: akun TL TIDAK lagi menjadi "akun admin" — ia terdaftar sebagai
+ * karyawan (seksi Karyawan di Master Data), bukan di seksi Akun Admin.
  *
  * Cara pakai: node scripts/apply-tl-migration.cjs
  *
@@ -164,7 +168,51 @@ async function main() {
     }
   }
 
-  // --- Step 2: Buat / update akun TL (via REST — tidak butuh DDL) ---
+  // --- Step 2: Pastikan karyawan 'k-tl' ada (agar user TL bisa di-link) ---
+  console.log("\n▶ Memastikan karyawan k-tl (Tenaga Lapangan) ada di daftar karyawan ...");
+  const { data: karyawanExisting, error: karyawanCheckErr } = await supabase
+    .from("karyawan")
+    .select("id")
+    .eq("id", "k-tl")
+    .maybeSingle();
+
+  if (karyawanCheckErr) {
+    console.log("  ⚠️ Gagal mengecek karyawan k-tl:", karyawanCheckErr.message);
+  } else if (karyawanExisting) {
+    const { error: karyawanUpdErr } = await supabase
+      .from("karyawan")
+      .update({ nama: "Tenaga Lapangan", posisi: "TL (Tenaga Lapangan)", role: "tl" })
+      .eq("id", "k-tl");
+    if (karyawanUpdErr) {
+      console.log("  ⚠️ Gagal update karyawan k-tl:", karyawanUpdErr.message);
+    } else {
+      console.log("  ✅ Karyawan 'k-tl' sudah ada — role & posisi di-update.");
+    }
+  } else {
+    const { error: karyawanInsErr } = await supabase.from("karyawan").insert({
+      id: "k-tl",
+      nama: "Tenaga Lapangan",
+      posisi: "TL (Tenaga Lapangan)",
+      role: "tl",
+      outlet_id: null,
+      gaji_pokok: 0,
+      bonus_omset: 0,
+      bonus_ulasan: 0,
+      bonus_oh: 0,
+      tunjangan_harian: 0,
+      overtime_rate: 0,
+      jam_masuk: "07:00",
+      jam_pulang: "15:00"
+    });
+    if (karyawanInsErr) {
+      console.log("  ❌ Gagal insert karyawan k-tl:", karyawanInsErr.message);
+      console.log("     Hint: pastikan kolom karyawan sesuai schema DB (role 'tl' harus diterima).");
+    } else {
+      console.log("  ✅ Karyawan 'k-tl' berhasil dibuat (Tenaga Lapangan).");
+    }
+  }
+
+  // --- Step 3: Buat / update akun TL (via REST — tidak butuh DDL) ---
   console.log("\n▶ Membuat akun TL (Tenaga Lapangan) ...");
   const { data: existing, error: checkErr } = await supabase
     .from("users")
@@ -177,7 +225,7 @@ async function main() {
   } else if (existing) {
     const { error: updErr } = await supabase
       .from("users")
-      .update({ nama: "Tenaga Lapangan", role: "tl", password: "tl123" })
+      .update({ nama: "Tenaga Lapangan", role: "tl", password: "tl123", karyawan_id: "k-tl" })
       .eq("username", "tl");
     if (updErr) {
       console.log("  ❌ Gagal update user tl:", updErr.message);
@@ -194,7 +242,7 @@ async function main() {
       nama: "Tenaga Lapangan",
       role: "tl",
       outlet_id: null,
-      karyawan_id: null,
+      karyawan_id: "k-tl",
     });
     if (insErr) {
       console.log("  ❌ Gagal insert user tl:", insErr.message);
@@ -206,11 +254,11 @@ async function main() {
     }
   }
 
-  // --- Step 3: Verifikasi akhir ---
+  // --- Step 4: Verifikasi akhir ---
   console.log("\n▶ Verifikasi akhir ...");
   const { data: users, error: uErr } = await supabase
     .from("users")
-    .select("username, nama, role")
+    .select("username, nama, role, karyawan_id")
     .order("username");
   if (uErr) {
     console.log("  ❌ Gagal membaca users:", uErr.message);
@@ -218,12 +266,26 @@ async function main() {
     const tl = users.find((u) => u.username === "tl");
     console.log(`  Total users: ${users.length}`);
     if (tl) {
-      console.log(`  ✅ Akun TL terdaftar: ${tl.username} | ${tl.nama} | role=${tl.role}`);
+      console.log(`  ✅ Akun TL terdaftar: ${tl.username} | ${tl.nama} | role=${tl.role} | karyawan=${tl.karyawan_id || "— (belum ter-link)"}`);
     } else {
       console.log("  ❌ Akun TL tidak ditemukan!");
     }
     console.log("\n  Daftar role di users:");
     [...new Set(users.map((u) => u.role))].forEach((r) => console.log("   -", r));
+  }
+
+  const { data: karyawanTl, error: kErr } = await supabase
+    .from("karyawan")
+    .select("id, nama, posisi, role")
+    .eq("id", "k-tl")
+    .maybeSingle();
+  if (kErr) {
+    console.log("  ❌ Gagal membaca karyawan k-tl:", kErr.message);
+  } else if (karyawanTl) {
+    console.log(`  ✅ Karyawan k-tl terdaftar: ${karyawanTl.nama} | ${karyawanTl.posisi} | role=${karyawanTl.role}`);
+    console.log("  ℹ️ Akun TL kini tampil di seksi Karyawan Master Data (bukan Akun Admin).");
+  } else {
+    console.log("  ⚠️ Karyawan k-tl belum ada di tabel karyawan.");
   }
 }
 

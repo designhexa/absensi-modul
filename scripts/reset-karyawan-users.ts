@@ -120,7 +120,7 @@ async function resetKaryawanUsers() {
         nama: "Tenaga Lapangan",
         role: "tl",
         outlet_id: null,
-        karyawan_id: null
+        karyawan_id: "k-tl"
       },
       ...SEED_OUTLETS.map((o) => ({
         username: o.nama.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),

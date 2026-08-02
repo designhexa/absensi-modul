@@ -22,7 +22,7 @@ import {
 import { db, useDB, getBubaSettings, saveAppSettings } from "@/lib/store";
 import { rupiah } from "@/lib/format";
 
-import { Plus, Trash2, RotateCcw, Pencil, Sliders, Warehouse, Store, ShoppingCart, BookOpen, UserCheck, Users } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Pencil, Sliders, Warehouse, Store, ShoppingCart, BookOpen, UserCheck, Users, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { usePagination } from "@/hooks/usePagination";
@@ -245,11 +245,16 @@ export default function MasterData() {
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
-                        if (!oNama) return;
-                        let lokasiCombined = oLokasi;
-                        if (oLat && oLng) {
-                          lokasiCombined += ` @ ${oLat},${oLng},${oRadius || 100}`;
+                        if (!oNama) {
+                          toast.error("Nama outlet diperlukan");
+                          return;
                         }
+                        // Wajibkan koordinat GPS — dipakai sebagai batasan absensi GPS outlet.
+                        if (!oLat || !oLng) {
+                          toast.error("Latitude & Longitude GPS wajib diisi (untuk absensi GPS outlet)");
+                          return;
+                        }
+                        const lokasiCombined = `${oLokasi} @ ${oLat},${oLng},${oRadius || 100}`;
                         db.addOutlet({ nama: oNama, lokasi: lokasiCombined });
                         setONama("");
                         setOLokasi("");
@@ -263,10 +268,13 @@ export default function MasterData() {
                       <Input value={oNama} onChange={(e) => setONama(e.target.value)} placeholder="Nama Outlet" />
                       <Input value={oLokasi} onChange={(e) => setOLokasi(e.target.value)} placeholder="Alamat" />
                       <div className="grid grid-cols-2 gap-2">
-                        <Input value={oLat} onChange={(e) => setOLat(e.target.value)} placeholder="Latitude GPS" />
-                        <Input value={oLng} onChange={(e) => setOLng(e.target.value)} placeholder="Longitude GPS" />
+                        <Input value={oLat} onChange={(e) => setOLat(e.target.value)} placeholder="Latitude GPS *" />
+                        <Input value={oLng} onChange={(e) => setOLng(e.target.value)} placeholder="Longitude GPS *" />
                       </div>
                       <Input type="number" value={oRadius} onChange={(e) => setORadius(e.target.value)} placeholder="Radius Absensi (M)" />
+                      <p className="text-[10px] text-muted-foreground">
+                        * Lat &amp; Lng wajib — dipakai sebagai batasan lokasi absensi GPS outlet.
+                      </p>
                       <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground">
                         <Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Outlet
                       </Button>
@@ -315,9 +323,13 @@ export default function MasterData() {
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground">{parsed.alamat || "-"}</div>
-                            {parsed.lat !== "" && parsed.lng !== "" && (
+                            {parsed.lat !== "" && parsed.lng !== "" ? (
                               <div className="text-[10px] text-primary font-mono">
                                 GPS: {parsed.lat}, {parsed.lng} (R:{parsed.rad}m)
+                              </div>
+                            ) : (
+                              <div className="text-[10px] font-medium text-amber-600 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> GPS belum diatur — absensi tanpa verifikasi lokasi (sementara)
                               </div>
                             )}
                           </div>
@@ -1070,10 +1082,12 @@ function EditOutletDialog({ outlet }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              let lokasiCombined = alamat;
-              if (lat && lng) {
-                lokasiCombined += ` @ ${lat},${lng},${rad || 100}`;
+              // Wajibkan koordinat GPS — dipakai sebagai batasan absensi GPS outlet.
+              if (!lat || !lng) {
+                toast.error("Latitude & Longitude GPS wajib diisi (untuk absensi GPS outlet)");
+                return;
               }
+              const lokasiCombined = `${alamat} @ ${lat},${lng},${rad || 100}`;
               db.updateOutlet(outlet.id, { nama, lokasi: lokasiCombined });
               toast.success("Outlet diperbarui");
               setOpen(false);
@@ -1090,14 +1104,17 @@ function EditOutletDialog({ outlet }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>Latitude GPS</Label>
+                <Label>Latitude GPS <span className="text-destructive">*</span></Label>
                 <Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Contoh: -7.641234" />
               </div>
               <div>
-                <Label>Longitude GPS</Label>
+                <Label>Longitude GPS <span className="text-destructive">*</span></Label>
                 <Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Contoh: 112.906123" />
               </div>
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              * Wajib diisi — dipakai sebagai batasan lokasi absensi GPS outlet. Format: alamat @ lat,lng,radius
+            </p>
             <div>
               <Label>Radius Absensi (Meter)</Label>
               <Input type="number" value={rad} onChange={(e) => setRad(e.target.value)} />
