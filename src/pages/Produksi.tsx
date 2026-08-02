@@ -21,6 +21,7 @@ import { TablePagination } from "@/components/TablePagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
+import { matchVariantRecords, scaleGridToActual } from "@/lib/produksi-utils";
 
 // Base ratios for Bubur (per 100gr beras = 6 cup)
 // Base ratio: Beras:Daging:Air:S.Hijau:S.Brokoli:S.Putih = 100:5:700:8:5:1.5
@@ -338,24 +339,28 @@ export default function Produksi() {
       const dayProds = produksi.filter((p: any) => p.tanggal === tanggal);
       const newActualGrams = { bubur_1: 0, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
       const newActualCups = { bubur_1: 0, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
-      
+
+      // Rencana Step 1 (dari permohonan_stok) — hanya acuan bahan & pembeda varian D/I.
+      // Setelah distribusi disetujui, permohonan_stok berisi angka distribusi final,
+      // jadi qty_rencana di produksi tidak selalu cocok → matchVariantRecords fallback.
+      const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
+      let planBuburD = 0, planBuburI = 0, planTimD = 0, planTimI = 0;
+      let planOatmeal = 0, planPuding = 0, planAbon = 0;
+      dayReqs.forEach((r: any) => {
+        const split = parseSplit(r.catatan || "");
+        if (r.produkId === "p-bubur") {
+          planBuburD += split.d || r.qty;
+          planBuburI += split.i || 0;
+        } else if (r.produkId === "p-nasitim") {
+          planTimD += split.d || r.qty;
+          planTimI += split.i || 0;
+        } else if (r.produkId === "p-oatmeal") planOatmeal += r.qty;
+        else if (r.produkId === "p-puding") planPuding += r.qty;
+        else if (r.produkId === "p-abon") planAbon += r.qty;
+      });
+
       if (dayProds.length === 0) {
         // 🔄 Auto-fill dari rencana Step 1 jika belum ada data realisasi
-        const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
-        let planBuburD = 0, planBuburI = 0, planTimD = 0, planTimI = 0;
-        let planOatmeal = 0, planPuding = 0, planAbon = 0;
-        dayReqs.forEach((r: any) => {
-          const split = parseSplit(r.catatan || "");
-          if (r.produkId === "p-bubur") {
-            planBuburD += split.d || r.qty;
-            planBuburI += split.i || 0;
-          } else if (r.produkId === "p-nasitim") {
-            planTimD += split.d || r.qty;
-            planTimI += split.i || 0;
-          } else if (r.produkId === "p-oatmeal") planOatmeal += r.qty;
-          else if (r.produkId === "p-puding") planPuding += r.qty;
-          else if (r.produkId === "p-abon") planAbon += r.qty;
-        });
         // Gramasi: Bubur=118gr/cup, Tim=108gr/cup, Oatmeal=100gr/cup, Puding=80gr/cup, Abon=10gr/pcs
         newActualCups.bubur_1 = planBuburD;
         newActualCups.bubur_2 = planBuburI;
@@ -372,24 +377,27 @@ export default function Produksi() {
         newActualGrams.puding = planPuding * 80;
         newActualGrams.abon = planAbon * 10;
       } else {
-        // Load existing produksi data
+        // Load existing produksi data — petakan varian D/I berdasarkan qty_rencana
+        // (rencana D vs rencana I), bukan posisi array [0]/[1] yang tidak dijamin urutannya.
         const buburProds = dayProds.filter((p: any) => p.produkId === "p-bubur");
         const timProds = dayProds.filter((p: any) => p.produkId === "p-nasitim");
-        if (buburProds.length > 0) {
-          newActualCups.bubur_1 = buburProds[0].qtyRealisasi;
-          newActualGrams.bubur_1 = buburProds[0].qtyRealisasi * 118;
-          if (buburProds.length > 1) {
-            newActualCups.bubur_2 = buburProds[1].qtyRealisasi;
-            newActualGrams.bubur_2 = buburProds[1].qtyRealisasi * 118;
-          }
+        const buburMap = matchVariantRecords(buburProds, planBuburD, planBuburI);
+        if (buburMap.rec1) {
+          newActualCups.bubur_1 = buburMap.rec1.qtyRealisasi;
+          newActualGrams.bubur_1 = buburMap.rec1.qtyRealisasi * 118;
         }
-        if (timProds.length > 0) {
-          newActualCups.tim_1 = timProds[0].qtyRealisasi;
-          newActualGrams.tim_1 = timProds[0].qtyRealisasi * 108;
-          if (timProds.length > 1) {
-            newActualCups.tim_2 = timProds[1].qtyRealisasi;
-            newActualGrams.tim_2 = timProds[1].qtyRealisasi * 108;
-          }
+        if (buburMap.rec2) {
+          newActualCups.bubur_2 = buburMap.rec2.qtyRealisasi;
+          newActualGrams.bubur_2 = buburMap.rec2.qtyRealisasi * 118;
+        }
+        const timMap = matchVariantRecords(timProds, planTimD, planTimI);
+        if (timMap.rec1) {
+          newActualCups.tim_1 = timMap.rec1.qtyRealisasi;
+          newActualGrams.tim_1 = timMap.rec1.qtyRealisasi * 108;
+        }
+        if (timMap.rec2) {
+          newActualCups.tim_2 = timMap.rec2.qtyRealisasi;
+          newActualGrams.tim_2 = timMap.rec2.qtyRealisasi * 108;
         }
         const oatmealProd = dayProds.find((p: any) => p.produkId === "p-oatmeal");
         if (oatmealProd) {
@@ -411,8 +419,10 @@ export default function Produksi() {
       setActualGrams(newActualGrams);
       setActualCups(newActualCups);
 
-      // Load Step 4
-      const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
+      // Load Step 4 — distribusi mengacu realisasi pasca produksi (bukan rencana).
+      // Grid awal dari permohonan_stok (angka rencana); jika belum disetujui/dikirim,
+      // skala proporsional ke hasil masak aktual agar total tidak melebihi realisasi
+      // (mencegah blokir validasi palsu "melebihi hasil masak aktual").
       const dGrid: Record<string, Record<string, number>> = {};
       outlets.forEach(o => {
         dGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
@@ -434,6 +444,10 @@ export default function Produksi() {
           dGrid[r.outletId].abon = r.qty;
         }
       });
+      if (!dayReqs.some((r: any) => r.status === "Disetujui")) {
+        const scaled = scaleGridToActual(dGrid, newActualCups);
+        Object.keys(scaled).forEach((k) => { dGrid[k] = { ...scaled[k] }; });
+      }
       setDistGrid(dGrid);
 
       // Load Step 5 — returGrid from penjualan data (sent - sold)
@@ -1049,6 +1063,8 @@ export default function Produksi() {
   };
 
   const initDistribution = () => {
+    // Grid awal dari rencana Step 1 (proporsi per outlet), lalu diskala ke
+    // realisasi pasca produksi — distribusi mengacu hasil masak aktual, bukan rencana.
     const grid: Record<string, Record<string, number>> = {};
     outlets.forEach(o => {
       const plan = planGrid[o.id] || {};
@@ -1062,7 +1078,8 @@ export default function Produksi() {
         abon: plan.abon || 0
       };
     });
-    setDistGrid(grid);
+    const scaled = scaleGridToActual(grid, actualCups);
+    setDistGrid(scaled);
   };
 
   // STEP 4 Action

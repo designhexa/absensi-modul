@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { BUBUR_BASE, buburCalc, formatDecimal, sumGrid } from "@/lib/produksi-utils";
+import { BUBUR_BASE, buburCalc, formatDecimal, sumGrid, matchVariantRecords, allocateProportionally, scaleGridToActual } from "@/lib/produksi-utils";
 
 // =============================================================================
 // Pure logic extracted from Distribusi.tsx
@@ -731,5 +731,140 @@ describe("sumGrid integration", () => {
     expect(totals.oatmeal).toBe(0);
     expect(totals.puding).toBe(0);
     expect(totals.abon).toBe(0);
+  });
+});
+
+describe("matchVariantRecords", () => {
+  it("should map D/I records by qty_rencana even when array order is swapped", () => {
+    const records = [
+      { id: "recI", qtyRencana: 106, qtyRealisasi: 106 },
+      { id: "recD", qtyRencana: 135, qtyRealisasi: 135 }
+    ];
+    const { rec1, rec2 } = matchVariantRecords(records, 135, 106);
+    expect(rec1?.id).toBe("recD");
+    expect(rec2?.id).toBe("recI");
+  });
+
+  it("should fall back to array order when plans are equal", () => {
+    const records = [
+      { id: "a", qtyRencana: 50, qtyRealisasi: 48 },
+      { id: "b", qtyRencana: 50, qtyRealisasi: 52 }
+    ];
+    const { rec1, rec2 } = matchVariantRecords(records, 50, 50);
+    expect(rec1?.id).toBe("a");
+    expect(rec2?.id).toBe("b");
+  });
+
+  it("should handle single record (only D planned)", () => {
+    const records = [{ id: "recD", qtyRencana: 135, qtyRealisasi: 140 }];
+    const { rec1, rec2 } = matchVariantRecords(records, 135, 0);
+    expect(rec1?.id).toBe("recD");
+    expect(rec2).toBeUndefined();
+  });
+
+  it("should handle single record (only I planned)", () => {
+    const records = [{ id: "recI", qtyRencana: 106, qtyRealisasi: 110 }];
+    const { rec1, rec2 } = matchVariantRecords(records, 0, 106);
+    expect(rec2?.id).toBe("recI");
+    expect(rec1).toBeUndefined();
+  });
+
+  it("should return empty object for no records", () => {
+    const { rec1, rec2 } = matchVariantRecords([], 135, 106);
+    expect(rec1).toBeUndefined();
+    expect(rec2).toBeUndefined();
+  });
+});
+
+describe("allocateProportionally", () => {
+  it("should allocate exactly to the total with largest remainder", () => {
+    // 80 + 72 = 152 rencana → total 135
+    const alloc = allocateProportionally([
+      { key: "o1", weight: 80 },
+      { key: "o2", weight: 72 }
+    ], 135);
+    const sum = alloc.o1 + alloc.o2;
+    expect(sum).toBe(135);
+    expect(alloc.o1).toBeGreaterThan(0);
+    expect(alloc.o2).toBeGreaterThan(0);
+  });
+
+  it("should keep proportions roughly intact when scaling down", () => {
+    // 60:40 split → target 76
+    // o1: 60*76/100 = 45.6 → floor 45, frac 0.6 (terbesar)
+    // o2: 40*76/100 = 30.4 → floor 30, frac 0.4
+    // sisa 1 diberikan ke sisa pecahan terbesar → o1 = 46, o2 = 30
+    const alloc = allocateProportionally([
+      { key: "o1", weight: 60 },
+      { key: "o2", weight: 40 }
+    ], 76);
+    expect(alloc.o1 + alloc.o2).toBe(76);
+    expect(alloc.o1).toBe(46);
+    expect(alloc.o2).toBe(30);
+  });
+
+  it("should return empty when total is 0", () => {
+    const alloc = allocateProportionally([{ key: "o1", weight: 10 }], 0);
+    expect(alloc).toEqual({});
+  });
+
+  it("should return empty when all weights are 0", () => {
+    const alloc = allocateProportionally([{ key: "o1", weight: 0 }], 10);
+    expect(alloc).toEqual({});
+  });
+
+  it("should distribute remainder to largest fractional parts", () => {
+    const alloc = allocateProportionally([
+      { key: "a", weight: 1 },
+      { key: "b", weight: 1 },
+      { key: "c", weight: 1 }
+    ], 4);
+    const sum = alloc.a + alloc.b + alloc.c;
+    expect(sum).toBe(4);
+    expect(Math.max(alloc.a, alloc.b, alloc.c)).toBe(2);
+  });
+});
+
+describe("scaleGridToActual", () => {
+  it("should scale distribution grid so totals match actual realisasi", () => {
+    const grid = {
+      o1: { bubur_d: 80, bubur_i: 60, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 },
+      o2: { bubur_d: 72, bubur_i: 46, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }
+    };
+    const actual = { bubur_1: 135, bubur_2: 125, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
+    const scaled = scaleGridToActual(grid, actual);
+    const totals = sumGrid(scaled);
+    expect(totals.buburD).toBe(135);
+    expect(totals.buburI).toBe(125);
+  });
+
+  it("should keep zero allocations at zero", () => {
+    const grid = {
+      o1: { bubur_d: 100, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 },
+      o2: { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }
+    };
+    const actual = { bubur_1: 90, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
+    const scaled = scaleGridToActual(grid, actual);
+    expect(scaled.o1.bubur_d).toBe(90);
+    expect(scaled.o2.bubur_d).toBe(0);
+  });
+
+  it("should zero out field when nothing was cooked (target 0)", () => {
+    const grid = {
+      o1: { bubur_d: 50, bubur_i: 30, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }
+    };
+    const actual = { bubur_1: 0, bubur_2: 30, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
+    const scaled = scaleGridToActual(grid, actual);
+    expect(scaled.o1.bubur_d).toBe(0);
+    expect(scaled.o1.bubur_i).toBe(30);
+  });
+
+  it("should scale up when actual exceeds plan", () => {
+    const grid = {
+      o1: { bubur_d: 100, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }
+    };
+    const actual = { bubur_1: 152, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
+    const scaled = scaleGridToActual(grid, actual);
+    expect(scaled.o1.bubur_d).toBe(152);
   });
 });

@@ -13,7 +13,7 @@ import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "l
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, type OutletGrid } from "@/lib/produksi-utils";
+import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, matchVariantRecords, scaleGridToActual, type OutletGrid } from "@/lib/produksi-utils";
 
 export default function Distribusi() {
   const navigate = useNavigate();
@@ -77,23 +77,26 @@ export default function Distribusi() {
     if (tanggal && outlets.length > 0) {
       // Load distGrid from permohonanStok
       const dGrid = loadGridFromReqs(outlets, permohonanStok, tanggal);
-      setDistGrid(dGrid);
 
-      // Load actual cups from produksi table
+      // Load actual cups from produksi table — petakan varian D/I berdasarkan
+      // qty_rencana (rencana D vs rencana I), bukan posisi array [0]/[1].
       const dayProds = produksi.filter((p: any) => p.tanggal === tanggal);
       const newCups = { bubur_1: 0, bubur_2: 0, tim_1: 0, tim_2: 0, oatmeal: 0, puding: 0, abon: 0 };
 
+      // Rencana D/I dari grid (sebelum disetujui, permohonan_stok = angka rencana)
+      const planBuburD = Object.values(dGrid).reduce((s: number, v: any) => s + (v.bubur_d || 0), 0);
+      const planBuburI = Object.values(dGrid).reduce((s: number, v: any) => s + (v.bubur_i || 0), 0);
+      const planTimD = Object.values(dGrid).reduce((s: number, v: any) => s + (v.tim_d || 0), 0);
+      const planTimI = Object.values(dGrid).reduce((s: number, v: any) => s + (v.tim_i || 0), 0);
+
       const buburProds = dayProds.filter((p: any) => p.produkId === "p-bubur");
       const timProds = dayProds.filter((p: any) => p.produkId === "p-nasitim");
-
-      if (buburProds.length > 0) {
-        newCups.bubur_1 = buburProds[0].qtyRealisasi;
-        if (buburProds.length > 1) newCups.bubur_2 = buburProds[1].qtyRealisasi;
-      }
-      if (timProds.length > 0) {
-        newCups.tim_1 = timProds[0].qtyRealisasi;
-        if (timProds.length > 1) newCups.tim_2 = timProds[1].qtyRealisasi;
-      }
+      const buburMap = matchVariantRecords(buburProds, planBuburD, planBuburI);
+      if (buburMap.rec1) newCups.bubur_1 = buburMap.rec1.qtyRealisasi;
+      if (buburMap.rec2) newCups.bubur_2 = buburMap.rec2.qtyRealisasi;
+      const timMap = matchVariantRecords(timProds, planTimD, planTimI);
+      if (timMap.rec1) newCups.tim_1 = timMap.rec1.qtyRealisasi;
+      if (timMap.rec2) newCups.tim_2 = timMap.rec2.qtyRealisasi;
       const oatmealProd = dayProds.find((p: any) => p.produkId === "p-oatmeal");
       if (oatmealProd) newCups.oatmeal = oatmealProd.qtyRealisasi;
       const pudingProd = dayProds.find((p: any) => p.produkId === "p-puding");
@@ -102,6 +105,15 @@ export default function Distribusi() {
       if (abonProd) newCups.abon = abonProd.qtyRealisasi;
 
       setActualCups(newCups);
+
+      // Distribusi mengacu realisasi pasca produksi (bukan rencana): jika permohonan
+      // belum disetujui/dikirim, grid masih berisi angka rencana → skala proporsional
+      // ke hasil masak aktual agar validasi tidak memblokir distribusi yang valid.
+      if (!permohonanStok.some((r: any) => r.tanggalKirim === tanggal && r.status === "Disetujui")) {
+        const scaled = scaleGridToActual(dGrid, newCups);
+        Object.keys(scaled).forEach((k) => { dGrid[k] = { ...scaled[k] }; });
+      }
+      setDistGrid(dGrid);
 
       // Load returGrid from penjualan
       const rGrid: Record<string, Record<string, number>> = {};

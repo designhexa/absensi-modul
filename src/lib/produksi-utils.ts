@@ -132,3 +132,100 @@ export function sumGrid(grid: OutletGrid) {
   });
   return { buburD, buburI, timD, timI, oatmeal, puding, abon };
 }
+
+// =============================================================================
+// VARIANT MAPPING & DISTRIBUTION SCALING (referensi pasca produksi)
+// =============================================================================
+//
+// Masalah lama: tabel `produksi` menyimpan Bubur 1 & Bubur 2 (dan Tim 1 & Tim 2)
+// sebagai 2 baris identik dengan produk_id sama (p-bubur / p-nasitim), dibedakan
+// hanya oleh qty_rencana (rencana D vs rencana I). Saat load ulang, kode lama
+// mengandalkan urutan array [0]/[1] yang TIDAK dijamin (fetch tanpa ORDER BY,
+// id string acak) sehingga realisasi D/I bisa tertukar → error palsu
+// "Distribusi melebihi hasil masak aktual!" dan outlet terkunci (status Pending).
+//
+// Solusi: petakan record ke varian D/I berdasarkan qty_rencana, bukan posisi array.
+
+// Petakan record produksi (bubur/tim) ke varian 1 (D) dan varian 2 (I)
+// berdasarkan qty_rencana yang disimpan saat saveStep3 (= rencana D vs rencana I).
+// Fallback ke urutan array jika rencana tidak bisa membedakan (mis. D == I).
+export function matchVariantRecords(
+  records: any[],
+  plan1: number, // rencana D (bubur_1 / tim_1)
+  plan2: number  // rencana I (bubur_2 / tim_2)
+): { rec1?: any; rec2?: any } {
+  const recs = [...(records || [])];
+  if (recs.length === 0) return {};
+  const getRencana = (r: any) => Number(r?.qtyRencana ?? r?.qty_rencana ?? 0);
+  if (plan1 !== plan2) {
+    const rec1 = recs.find((r) => getRencana(r) === plan1);
+    const rec2 = recs.find((r) => getRencana(r) === plan2);
+    if (rec1 && rec2) return { rec1, rec2 };
+    // Hanya satu yang cocok — varian satunya pakai urutan array sebagai fallback
+    if (rec1) return { rec1, rec2: recs.find((r) => r !== rec1) };
+    if (rec2) return { rec1: recs.find((r) => r !== rec2), rec2 };
+  }
+  // Fallback: urutan array (record di-insert berurutan D, I saat saveStep3)
+  return { rec1: recs[0], rec2: recs[1] };
+}
+
+// Alokasikan `total` ke item-item secara proporsional (largest remainder)
+// sehingga jumlah persis sama dengan `total`.
+export function allocateProportionally(
+  items: { key: string; weight: number }[],
+  total: number
+): Record<string, number> {
+  const weighted = items.filter((it) => it.weight > 0);
+  const result: Record<string, number> = {};
+  const sumWeight = weighted.reduce((s, w) => s + w.weight, 0);
+  if (sumWeight <= 0 || total <= 0) return result;
+  const floors = weighted.map((it) => {
+    const share = (it.weight * total) / sumWeight;
+    return { key: it.key, value: Math.floor(share), frac: share - Math.floor(share) };
+  });
+  const allocated = floors.reduce((s, f) => s + f.value, 0);
+  // Clamp ke 0 jika error float membuat sisa negatif — total tidak boleh terlampaui
+  let remaining = Math.max(0, total - allocated);
+  floors.sort((a, b) => b.frac - a.frac);
+  let i = 0;
+  while (remaining > 0 && floors.length > 0) {
+    floors[i % floors.length].value += 1;
+    remaining -= 1;
+    i += 1;
+  }
+  floors.forEach((f) => { result[f.key] = f.value; });
+  return result;
+}
+
+// Skala grid distribusi agar total per produk mengikuti hasil masak aktual
+// (pasca produksi), proporsional per outlet. Outlet dengan alokasi 0 tetap 0.
+// Hasilnya total == target (tidak akan memicu validasi "melebihi hasil masak").
+export function scaleGridToActual<T extends Record<string, any>>(
+  grid: T,
+  actualCups: { bubur_1: number; bubur_2: number; tim_1: number; tim_2: number; oatmeal: number; puding: number; abon: number }
+): T {
+  const out: Record<string, any> = {};
+  Object.keys(grid).forEach((k) => { out[k] = { ...grid[k] }; });
+  const fieldPairs: [string, keyof typeof actualCups][] = [
+    ["bubur_d", "bubur_1"],
+    ["bubur_i", "bubur_2"],
+    ["tim_d", "tim_1"],
+    ["tim_i", "tim_2"],
+    ["oatmeal", "oatmeal"],
+    ["puding", "puding"],
+    ["abon", "abon"]
+  ];
+  fieldPairs.forEach(([gridField, actualField]) => {
+    const target = actualCups[actualField] ?? 0;
+    const currentTotal = Object.values(grid).reduce((s: number, v: any) => s + (v?.[gridField] || 0), 0);
+    if (currentTotal <= 0) return;
+    const items = Object.keys(grid)
+      .filter((k) => (grid[k]?.[gridField] || 0) > 0)
+      .map((k) => ({ key: k, weight: grid[k]?.[gridField] || 0 }));
+    const alloc = allocateProportionally(items, target);
+    Object.keys(grid).forEach((k) => {
+      out[k][gridField] = alloc[k] ?? 0;
+    });
+  });
+  return out as T;
+}
