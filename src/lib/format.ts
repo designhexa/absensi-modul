@@ -1,7 +1,12 @@
 export const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+// Tanggal lokal (bukan UTC) — penting untuk WIB (UTC+7): toISOString() bisa mundur 1 hari
+// sebelum jam 07:00 pagi. Offset negatif dibalik karena getTimezoneOffset = UTC - lokal.
+export const todayISO = () => {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
 
 export const monthKey = (iso: string) => iso.slice(0, 7);
 
@@ -19,7 +24,7 @@ export const inRange = (iso: string, r: DateRange) => {
 export const daysAgoISO = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 };
 
 // Hitung harga per gram dari harga beli per satuan dan konversi gram

@@ -949,6 +949,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1353,6 +1354,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1487,12 +1489,13 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
             </div>
             <div>
               <Label>Role / Peran</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as "admin" | "outlet" | "produksi")}>
+              <Select value={role} onValueChange={(v) => setRole(v as "admin" | "outlet" | "produksi" | "tl")}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrator</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
+                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

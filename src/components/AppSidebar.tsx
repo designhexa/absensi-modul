@@ -43,6 +43,13 @@ export function AppSidebar() {
         { title: "Laporan", url: "/laporan", icon: FileBarChart },
         { title: "Profile", url: "/profile", icon: User },
       ];
+    } else if (user?.role === "tl") {
+      return [
+        { title: "Dashboard", url: "/", icon: LayoutDashboard },
+        { title: "Laporan", url: "/laporan", icon: FileBarChart },
+        { title: "Request & Retur", url: "/stok", icon: Warehouse },
+        { title: "Profile", url: "/profile", icon: User },
+      ];
     } else { // outlet
       return [
         { title: "Dashboard", url: "/", icon: LayoutDashboard },

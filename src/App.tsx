@@ -41,8 +41,8 @@ const App = () => (
                   <Route path="/distribusi" element={<Distribusi />} />
                 </Route>
 
-                {/* Pages accessible to Admin, Outlet, Produksi, and Gudang */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "outlet", "produksi", "gudang"]} />}>
+                {/* Pages accessible to Admin, Outlet, Produksi, Gudang, and TL */}
+                <Route element={<ProtectedRoute allowedRoles={["admin", "outlet", "produksi", "gudang", "tl"]} />}>
                   <Route path="/laporan" element={<Laporan />} />
                 </Route>
                 
@@ -56,12 +56,16 @@ const App = () => (
                   <Route path="/master" element={<MasterData />} />
                 </Route>
 
-                {/* Pages accessible to all logged in users (Admin, Produksi, Outlet) */}
+                {/* Pages accessible to all logged in users */}
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/stok" element={<StokGudang />} />
-                <Route path="/absensi" element={<Absensi />} />
-                <Route path="/slip-gaji" element={<SlipGaji />} />
                 <Route path="/profile" element={<Profile />} />
+
+                {/* Absensi & Slip Gaji — not accessible to TL (read-only role) */}
+                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang", "outlet"]} />}>
+                  <Route path="/absensi" element={<Absensi />} />
+                  <Route path="/slip-gaji" element={<SlipGaji />} />
+                </Route>
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />

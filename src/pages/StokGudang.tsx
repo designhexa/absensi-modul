@@ -687,6 +687,36 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   );
 }
 
+// === SUBCOMPONENT: TL VIEW (Tenaga Lapangan - Read Only) ===
+// Hanya bisa melihat Request & Retur dari semua outlet, tidak bisa edit/menyetujui
+function TLView({ dbState }: { dbState: any }) {
+  const [activeTab, setActiveTab] = useState("request");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold text-gradient">Request &amp; Retur Outlet</h1>
+        <p className="text-sm text-muted-foreground">Pantau permohonan dan retur perlengkapan dari semua outlet (read-only)</p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 gap-0">
+          <TabsTrigger value="request" className="rounded-t-lg">Request Perlengkapan</TabsTrigger>
+          <TabsTrigger value="retur" className="rounded-t-lg">Retur Perlengkapan</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="request" className="space-y-6">
+          <AdminPermohonanOutletInner dbState={dbState} readOnly />
+        </TabsContent>
+
+        <TabsContent value="retur" className="space-y-6">
+          <AdminReturPerlengkapanInner dbState={dbState} readOnly />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 // === MAIN COMPONENT ===
 export default function StokGudang() {
   const dbState = useDB();
@@ -699,6 +729,10 @@ export default function StokGudang() {
 
   if (user?.role === "gudang") {
     return <GudangView dbState={dbState} user={user} />;
+  }
+
+  if (user?.role === "tl") {
+    return <TLView dbState={dbState} />;
   }
 
   // Produksi role: hanya lihat saldo & riwayat, tidak bisa input
@@ -1678,7 +1712,7 @@ export default function StokGudang() {
 }
 
 // === SUBCOMPONENT FOR PERMOHONAN OUTLET TAB ===
-function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
+function AdminPermohonanOutletInner({ dbState, readOnly = false }: { dbState: any; readOnly?: boolean }) {
   const { permohonanStok = [], outlets = [], produk = [] } = dbState;
   const PRODUCTION_PRODUCTS = ["p-bubur", "p-nasitim", "p-oatmeal", "p-puding", "p-abon"];
 
@@ -1713,7 +1747,11 @@ function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <CardTitle className="text-sm">Daftar Permohonan Outlet</CardTitle>
-          <p className="text-[10px] text-muted-foreground">Setujui atau tolak permohonan perlengkapan — stok otomatis terpotong</p>
+          <p className="text-[10px] text-muted-foreground">
+            {readOnly
+              ? "Pantau permohonan perlengkapan dari outlet (read-only)"
+              : "Setujui atau tolak permohonan perlengkapan — stok otomatis terpotong"}
+          </p>
         </div>
         <div className="flex gap-2">
           <DateRangeFilter value={range} onChange={setRange} />
@@ -1738,13 +1776,13 @@ function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
                   <TableHead>Perlengkapan</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[130px]">Aksi</TableHead>
+                  {!readOnly && <TableHead className="w-[130px]">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedRequests.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={readOnly ? 4 : 5} className="text-center text-muted-foreground py-8">
                       Tidak ada permohonan
                     </TableCell>
                   </TableRow>
@@ -1762,6 +1800,7 @@ function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
                         {r.status === "Disetujui" && <Badge className="bg-success text-success-foreground text-[10px]"><Check className="h-3 w-3" /> OK</Badge>}
                         {r.status === "Ditolak" && <Badge variant="destructive" className="text-[10px]"><X className="h-3 w-3" /> Tolak</Badge>}
                       </TableCell>
+                      {!readOnly && (
                       <TableCell>
                         {r.status === "Pending" && (
                           <div className="flex gap-1">
@@ -1789,6 +1828,7 @@ function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
                           </div>
                         )}
                       </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -1803,7 +1843,7 @@ function AdminPermohonanOutletInner({ dbState }: { dbState: any }) {
 }
 
 // === SUBCOMPONENT FOR RETUR PERLENGKAPAN TAB ===
-function AdminReturPerlengkapanInner({ dbState }: { dbState: any }) {
+function AdminReturPerlengkapanInner({ dbState, readOnly = false }: { dbState: any; readOnly?: boolean }) {
   const { permohonanStok = [], outlets = [], produk = [], bahan = [] } = dbState;
 
   const [range, setRange] = useState<DateRange>({
@@ -1836,7 +1876,11 @@ function AdminReturPerlengkapanInner({ dbState }: { dbState: any }) {
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <CardTitle className="text-sm">Retur Perlengkapan Outlet</CardTitle>
-          <p className="text-[10px] text-muted-foreground">Setujui retur perlengkapan — stok otomatis bertambah (IN)</p>
+          <p className="text-[10px] text-muted-foreground">
+            {readOnly
+              ? "Pantau retur perlengkapan dari outlet (read-only)"
+              : "Setujui retur perlengkapan — stok otomatis bertambah (IN)"}
+          </p>
         </div>
         <div className="flex gap-2">
           <DateRangeFilter value={range} onChange={setRange} />
@@ -1862,13 +1906,13 @@ function AdminReturPerlengkapanInner({ dbState }: { dbState: any }) {
                   <TableHead className="text-right">Jumlah</TableHead>
                   <TableHead>Tgl Retur</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[130px]">Aksi</TableHead>
+                  {!readOnly && <TableHead className="w-[130px]">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedRequests.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={readOnly ? 5 : 6} className="text-center text-muted-foreground py-8">
                       Tidak ada retur perlengkapan
                     </TableCell>
                   </TableRow>
@@ -1887,6 +1931,7 @@ function AdminReturPerlengkapanInner({ dbState }: { dbState: any }) {
                         {r.status === "Disetujui" && <Badge className="bg-success text-success-foreground text-[10px]"><Check className="h-3 w-3" /> OK</Badge>}
                         {r.status === "Ditolak" && <Badge variant="destructive" className="text-[10px]"><X className="h-3 w-3" /> Tolak</Badge>}
                       </TableCell>
+                      {!readOnly && (
                       <TableCell>
                         {r.status === "Pending" && (
                           <div className="flex gap-1">
@@ -1913,6 +1958,7 @@ function AdminReturPerlengkapanInner({ dbState }: { dbState: any }) {
                           </div>
                         )}
                       </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

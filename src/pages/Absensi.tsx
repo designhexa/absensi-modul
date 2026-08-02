@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { db, useDB } from "@/lib/store";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, UserCheck, Users, CalendarCheck, CheckCircle2, Check, FileText, MapPin, Navigation, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, UserCheck, Users, CalendarCheck, CheckCircle2, Check, FileText, MapPin, Navigation, Loader2, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
@@ -70,6 +71,7 @@ export default function Absensi() {
   const [tunjanganInput, setTunjanganInput] = useState(0);
   const [overtimeInput, setOvertimeInput] = useState(0);
   const [range, setRange] = useState<DateRange>({});
+  const [editingAbsensi, setEditingAbsensi] = useState<any>(null);
 
   // GPS State
   const [gpsLoading, setGpsLoading] = useState(true);
@@ -664,9 +666,11 @@ export default function Absensi() {
           </div>
         </CardHeader>
         <CardContent>
-          <AbsensiTable filtered={filtered} karyawan={karyawan} outlets={outlets} />
+          <AbsensiTable filtered={filtered} karyawan={karyawan} outlets={outlets} isAdmin={isAdmin} onEdit={setEditingAbsensi} />
         </CardContent>
       </Card>
+
+      <EditAbsensiDialog record={editingAbsensi} onClose={() => setEditingAbsensi(null)} karyawan={karyawan} />
 
       <Card className="glass border-0 shadow-card">
         <CardHeader><CardTitle>Rekap Gaji (sesuai filter tanggal)</CardTitle></CardHeader>
@@ -739,7 +743,7 @@ export default function Absensi() {
   );
 }
 
-function AbsensiTable({ filtered, karyawan, outlets }: any) {
+function AbsensiTable({ filtered, karyawan, outlets, isAdmin, onEdit }: any) {
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 10);
   return (
     <div className="rounded-2xl border overflow-hidden max-w-full">
@@ -756,7 +760,7 @@ function AbsensiTable({ filtered, karyawan, outlets }: any) {
               <TableHead className="text-right">Tunjangan</TableHead>
               <TableHead className="text-right">Lembur</TableHead>
               <TableHead>Catatan</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[90px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -782,9 +786,16 @@ function AbsensiTable({ filtered, karyawan, outlets }: any) {
                   <TableCell className="text-right font-medium">{a.overtime ?? 0} jam</TableCell>
                   <TableCell className="max-w-[150px] truncate text-xs text-muted-foreground" title={a.catatan}>{a.catatan || "-"}</TableCell>
                   <TableCell>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => db.deleteAbsensi(a.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      {isAdmin && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => onEdit?.(a)}>
+                          <Pencil className="h-4 w-4 text-primary" />
+                        </Button>
+                      )}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => db.deleteAbsensi(a.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -794,5 +805,131 @@ function AbsensiTable({ filtered, karyawan, outlets }: any) {
       </div>
       <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
     </div>
+  );
+}
+
+function EditAbsensiDialog({ record, onClose, karyawan }: any) {
+  const { absensi = [] } = useDB();
+  const [tanggal, setTanggal] = useState("");
+  const [karyawanId, setKaryawanId] = useState("");
+  const [jamMasuk, setJamMasuk] = useState("");
+  const [jamPulang, setJamPulang] = useState("");
+  const [status, setStatus] = useState<StatusAbsen>("Hadir");
+  const [bonus, setBonus] = useState(0);
+  const [tunjangan, setTunjangan] = useState(0);
+  const [overtime, setOvertime] = useState(0);
+  const [catatan, setCatatan] = useState("");
+
+  // Isi form dari record yang sedang diedit
+  useEffect(() => {
+    if (record) {
+      setTanggal(record.tanggal || "");
+      setKaryawanId(record.karyawanId || "");
+      setJamMasuk(record.jamMasuk || "");
+      setJamPulang(record.jamPulang || "");
+      setStatus(record.status || "Hadir");
+      setBonus(record.bonus ?? 0);
+      setTunjangan(record.tunjangan ?? 0);
+      setOvertime(record.overtime ?? 0);
+      setCatatan(record.catatan || "");
+    }
+  }, [record]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!record) return;
+    if (!karyawanId) return toast.error("Pilih karyawan");
+    // Cegah duplikat (tanggal, karyawan_id): jangan izinkan menyimpan jika record lain
+    // sudah ada utk kombinasi yg sama (anti double-input, konsisten dgn addAbsensi).
+    const clash = absensi.find(
+      (a: any) => a.tanggal === tanggal && a.karyawanId === karyawanId && a.id !== record.id
+    );
+    if (clash) {
+      return toast.error("Data absensi utk karyawan & tanggal tsb sudah ada (duplikat ditolak)");
+    }
+    await db.updateAbsensi(record.id, {
+      tanggal,
+      karyawanId,
+      jamMasuk: status === "Hadir" ? jamMasuk || null : null,
+      jamPulang: status === "Hadir" ? jamPulang || null : null,
+      status,
+      bonus,
+      tunjangan,
+      overtime,
+      catatan: catatan || null
+    });
+    toast.success("Data absensi diperbarui");
+    onClose();
+  };
+
+  return (
+    <Dialog open={!!record} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5 text-primary" />
+            Edit Data Absensi
+          </DialogTitle>
+          <DialogDescription>Perbaiki data kehadiran karyawan</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSave} className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Tanggal</Label>
+            <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Karyawan</Label>
+            <Select value={karyawanId || ""} onValueChange={setKaryawanId}>
+              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+              <SelectContent>
+                {karyawan.map((k: any) => (
+                  <SelectItem key={k.id} value={k.id}>{k.nama} ({k.posisi})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as StatusAbsen)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Jam Masuk</Label>
+            <Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} disabled={status !== "Hadir"} />
+          </div>
+          <div className="space-y-2">
+            <Label>Jam Pulang</Label>
+            <Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} disabled={status !== "Hadir"} />
+          </div>
+          <div className="space-y-2">
+            <Label>Bonus (Rp)</Label>
+            <Input type="number" min={0} value={bonus || ""} onChange={(e) => setBonus(Number(e.target.value))} placeholder="0" />
+          </div>
+          <div className="space-y-2">
+            <Label>Tunjangan (Rp)</Label>
+            <Input type="number" min={0} value={tunjangan || ""} onChange={(e) => setTunjangan(Number(e.target.value))} placeholder="0" />
+          </div>
+          <div className="space-y-2">
+            <Label>Overtime (Jam)</Label>
+            <Input type="number" min={0} value={overtime || ""} onChange={(e) => setOvertime(Number(e.target.value))} placeholder="0" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Catatan</Label>
+            <Input value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Catatan (opsional)" />
+          </div>
+          <DialogFooter className="md:col-span-2">
+            <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
+            <Button type="submit" className="gradient-primary text-primary-foreground hover-lift">
+              <Check className="mr-1 h-4 w-4" />Simpan Perubahan
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

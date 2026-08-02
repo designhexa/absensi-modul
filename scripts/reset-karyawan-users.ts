@@ -114,6 +114,14 @@ async function resetKaryawanUsers() {
         outlet_id: null,
         karyawan_id: "k-produksi"
       },
+      {
+        username: "tl",
+        password: "tl123",
+        nama: "Tenaga Lapangan",
+        role: "tl",
+        outlet_id: null,
+        karyawan_id: null
+      },
       ...SEED_OUTLETS.map((o) => ({
         username: o.nama.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
         password: "buba123",

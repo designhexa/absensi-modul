@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useDB } from "@/lib/store";
-import { LogOut, User, ShieldAlert, Store, ShieldCheck, MapPin } from "lucide-react";
+import { LogOut, User, ShieldAlert, Store, ShieldCheck, MapPin, Warehouse } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
@@ -19,8 +19,12 @@ export default function Profile() {
         return "Administrator";
       case "produksi":
         return "Kepala Produksi";
+      case "gudang":
+        return "Pegawai Gudang";
       case "outlet":
         return "Staff Outlet";
+      case "tl":
+        return "TL (Tenaga Lapangan)";
       default:
         return role;
     }
@@ -32,8 +36,12 @@ export default function Profile() {
         return <ShieldAlert className="h-5 w-5 text-red-500" />;
       case "produksi":
         return <ShieldCheck className="h-5 w-5 text-amber-500" />;
+      case "gudang":
+        return <Warehouse className="h-5 w-5 text-green-500" />;
       case "outlet":
         return <Store className="h-5 w-5 text-emerald-500" />;
+      case "tl":
+        return <MapPin className="h-5 w-5 text-sky-500" />;
       default:
         return <User className="h-5 w-5" />;
     }
@@ -45,8 +53,12 @@ export default function Profile() {
         return "bg-red-500/10 text-red-500 border-red-500/20";
       case "produksi":
         return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+      case "gudang":
+        return "bg-green-500/10 text-green-600 border-green-500/20";
       case "outlet":
         return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+      case "tl":
+        return "bg-sky-500/10 text-sky-600 border-sky-500/20";
       default:
         return "";
     }

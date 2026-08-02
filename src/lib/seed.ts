@@ -155,6 +155,7 @@ export const SEED_USERS: UserAccount[] = [
   { username: "khazana", password: "Fazana@10", nama: "Super Admin", role: "admin" },
   { username: "produksi", password: "produksi123", nama: "Kepala Produksi", role: "admin", karyawanId: "k-produksi" },
   { username: "gudang", password: "gudang123", nama: "Pegawai Gudang", role: "gudang", karyawanId: "k-gudang" },
+  { username: "tl", password: "tl123", nama: "Tenaga Lapangan", role: "tl" },
   ...SEED_OUTLETS.map((o) => {
     const username = o.id.replace("o-", "");
     return {

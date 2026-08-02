@@ -684,6 +684,20 @@ export const db = {
   },
 
   async addAbsensi(a: Omit<Absensi, "id">) {
+    // Idempoten: hapus dulu absensi lama utk (tanggal, karyawan) yg sama agar TIDAK double input.
+    // Data lama otomatis tertimpa (re-save = replace) — konsisten dgn pola fix OH abon.
+    // Catatan: UI GPS menjamin tombol "Absen Masuk" hanya muncul saat belum ada record hari ini
+    // (todayRecord), jadi delete+insert ini tidak menghapus data bonus/tunjangan yg diinput admin.
+    const { error: delErr } = await supabase
+      .from("absensi")
+      .delete()
+      .eq("tanggal", a.tanggal)
+      .eq("karyawan_id", a.karyawanId);
+    if (delErr) {
+      console.error(`addAbsensi delete lama error (tanggal=${a.tanggal}, karyawan=${a.karyawanId}):`, delErr);
+      throw delErr; // jangan lanjut insert agar tidak terjadi duplikat saat delete gagal
+    }
+
     const id = uid();
     await supabase.from("absensi").insert([{
       id,

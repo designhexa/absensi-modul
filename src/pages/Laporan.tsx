@@ -90,6 +90,7 @@ export default function Laporan() {
   const isOutlet = user?.role === "outlet";
   const isProduksi = user?.role === "produksi";
   const isGudang = user?.role === "gudang";
+  const isTl = user?.role === "tl";
 
   const [periode, setPeriode] = useState<Periode>("harian");
   const [outletId, setOutletId] = useState<string>(isOutlet ? user!.outletId! : "all");
@@ -151,7 +152,7 @@ export default function Laporan() {
         </div>
       </div>
 
-      <Tabs defaultValue={isOutlet || isProduksi || isGudang ? "sisa-produksi" : "riwayat"} className="space-y-6">
+      <Tabs defaultValue={isOutlet || isProduksi || isGudang || isTl ? "sisa-produksi" : "riwayat"} className="space-y-6">
         <TabsList className={`grid w-full ${isProduksi ? "grid-cols-1" : "grid-cols-3"} gap-0`}>
           <TabsTrigger value="sisa-produksi" className="rounded-t-lg">Sisa (OH)</TabsTrigger>
           {!isProduksi && <TabsTrigger value="riwayat" className="rounded-t-lg">Riwayat</TabsTrigger>}
@@ -637,7 +638,7 @@ function SisaProduksiOH({
 
   // Lock check: waktu (dinamis dari master data via useDB) dan status siklus
   // Settings reaktif otomatis karena useDB() update saat fetchFromSupabase atau saveAppSettings
-  const appSettings = useDB().settings;
+  const { settings: appSettings, stokMov = [] } = useDB();
   const isLockEnabled = appSettings.lockEnabled === true;
 
   const isPastTimeDeadline = useMemo(() => {
@@ -659,6 +660,9 @@ function SisaProduksiOH({
   const isLocked = (isPastTimeDeadline && isLockEnabled) || isCycleClosed;
 
   const handleSubmit = useCallback(async () => {
+    if (isLocked) {
+      return toast.error("Input sisa untuk tanggal ini sudah dikunci oleh admin/produksi");
+    }
     setSaving(true);
     try {
       // Create per-VARIANT penjualan records (no merging D+I)
@@ -710,7 +714,15 @@ function SisaProduksiOH({
       // === OH Abon → Stok Gudang (dalam GRAM, sesuai saldoBahan) ===
       // OH abon (sisa penjualan) bisa dijual lagi besok, jadi harus masuk stok gudang
       // sisaCups = pcs, sisa = sisaCups * 10 = gram (saldoBahan expects gram)
+      // Hapus dulu movement OH abon lama utk outlet+tanggal ini agar TIDAK double input.
+      // Data lama otomatis tertimpa (re-save = replace) sampai admin/produksi mengunci hari tsb.
       const abonRow = rows.find(r => r.subId === "abon");
+      const existingAbonMovs = (stokMov || []).filter(
+        (m: any) => m.keterangan === `OH abon dari ${user.outletId} tanggal ${tanggal}`
+      );
+      for (const m of existingAbonMovs) {
+        await db.deleteStokMov(m.id);
+      }
       if (abonRow && abonRow.sisaCups > 0) {
         await db.addStokMov({
           tanggal,
@@ -741,7 +753,7 @@ function SisaProduksiOH({
     } finally {
       setSaving(false);
     }
-  }, [rows, tanggal, user.outletId, penjualan]);
+  }, [rows, tanggal, user.outletId, penjualan, isLocked, stokMov]);
 
   return (
     <div className="space-y-4">
@@ -1020,7 +1032,8 @@ function SisaProduksiAdminView({
   permohonanStok: any[];
   jurnal: any[];
 }) {
-  const readOnly = user?.role === "gudang";
+  const readOnly = user?.role === "gudang" || user?.role === "tl";
+  const { stokMov = [] } = useDB();
   const [tanggal, setTanggal] = useState(todayISO());
   const [sisaGrid, setSisaGrid] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
@@ -1270,8 +1283,16 @@ function SisaProduksiAdminView({
       }
 
       // === OH Abon → Stok Gudang (dalam GRAM, sesuai saldoBahan) ===
+      // Hapus movement OH abon lama utk tiap outlet+tanggal ini agar TIDAK double input.
+      // Data lama otomatis tertimpa (re-save = replace) sampai hari tsb dikunci.
       for (const { outlet, items } of outletRows) {
         const abonRow = items.find((i: any) => i.subId === "abon");
+        const existingAbonMovs = (stokMov || []).filter(
+          (m: any) => m.keterangan === `OH abon dari ${outlet.id} tanggal ${tanggal}`
+        );
+        for (const m of existingAbonMovs) {
+          await db.deleteStokMov(m.id);
+        }
         if (abonRow && abonRow.sisaCups > 0) {
           await db.addStokMov({
             tanggal,
@@ -1303,7 +1324,7 @@ function SisaProduksiAdminView({
     } finally {
       setSaving(false);
     }
-  }, [outletRows, tanggal, penjualan]);
+  }, [outletRows, tanggal, penjualan, stokMov]);
 
   return (
     <div className="space-y-4">
@@ -1360,15 +1381,17 @@ function SisaProduksiAdminView({
                 </div>
               )}
             </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={saving || outletRows.length === 0}
-              size="sm"
-              className="gradient-primary text-primary-foreground h-9 shrink-0"
-            >
-              <Save className="h-4 w-4 mr-1.5" />
-              {saving ? "Menyimpan..." : "Simpan Semua Outlet"}
-            </Button>
+            {!readOnly && (
+              <Button
+                onClick={handleSubmit}
+                disabled={saving || outletRows.length === 0}
+                size="sm"
+                className="gradient-primary text-primary-foreground h-9 shrink-0"
+              >
+                <Save className="h-4 w-4 mr-1.5" />
+                {saving ? "Menyimpan..." : "Simpan Semua Outlet"}
+              </Button>
+            )}
           </div>
 
           {outletRows.length === 0 ? (
@@ -1438,6 +1461,7 @@ function SisaProduksiAdminView({
                                           // Store directly in natural unit: grams for bubur/tim, cups/pcs for others
                                           handleSisaChange(row.key, clamped);
                                         }}
+                                        disabled={readOnly}
                                         className="w-20 h-8 text-xs text-center"
                                         placeholder="0"
                                       />
