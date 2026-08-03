@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "./supabaseClient";
+import { DEFAULT_LOCK_DEADLINE } from "./produksi-utils";
 import { Outlet, Produk, Penjualan, Produksi, Jurnal, AkunCOA, BahanBaku, StokMovement, Karyawan, Absensi, PermohonanStok, PermohonanStokStatus, UserAccount } from "./types";
 import { SEED_OUTLETS, SEED_PRODUK, SEED_COA, SEED_BAHAN, SEED_KARYAWAN, SEED_JURNAL, SEED_USERS } from "./seed";
 
@@ -84,7 +85,7 @@ export const DEFAULT_SETTINGS: BubaSettings = {
   pudingCup: 13.00,
   abonCup: 10.00,
 
-  lockDeadlineTime: "11:00",
+  lockDeadlineTime: DEFAULT_LOCK_DEADLINE,
   lockEnabled: false,
 };
 

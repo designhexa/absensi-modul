@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { computeIsLocked, DEFAULT_LOCK_DEADLINE } from "@/lib/produksi-utils";
 
 type Periode = "harian" | "mingguan" | "bulanan";
 
@@ -667,18 +668,8 @@ function SisaProduksiOH({
 
   // Lock check: waktu (dinamis dari master data via useDB) dan status siklus
   // Settings reaktif otomatis karena useDB() update saat fetchFromSupabase atau saveAppSettings
+  // Logika dipindah ke produksi-utils (computeIsLocked) agar bisa diuji unit.
   const { settings: appSettings, stokMov = [] } = useDB();
-  const isLockEnabled = appSettings.lockEnabled === true;
-
-  const isPastTimeDeadline = useMemo(() => {
-    const today = todayISO();
-    if (tanggal !== today) return false;
-    const [h, m] = (appSettings.lockDeadlineTime || "11:00").split(":").map(Number);
-    const now = new Date();
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    return hour > h || (hour === h && minute >= m);
-  }, [tanggal, appSettings.lockDeadlineTime]);
 
   const isCycleClosed = useMemo(() => {
     return (jurnal || []).some(
@@ -686,7 +677,14 @@ function SisaProduksiOH({
     );
   }, [tanggal, jurnal]);
 
-  const isLocked = (isPastTimeDeadline && isLockEnabled) || isCycleClosed;
+  const isLocked = computeIsLocked({
+    lockEnabled: appSettings.lockEnabled === true,
+    lockDeadlineTime: appSettings.lockDeadlineTime,
+    tanggal,
+    today: todayISO(),
+    now: new Date(),
+    isCycleClosed,
+  });
 
   const handleSubmit = useCallback(async () => {
     if (isLocked) {
@@ -811,7 +809,7 @@ function SisaProduksiOH({
               <p>
                 {isCycleClosed
                   ? "Siklus produksi untuk tanggal ini sudah ditutup oleh admin. Data sisa produksi tidak dapat diubah lagi."
-                  : `Batas input sisa produksi harian adalah pukul ${appSettings.lockDeadlineTime || "11:00"}. Saat ini sudah melewati batas waktu, data tidak dapat diubah.`}
+                  : `Batas input sisa produksi harian adalah pukul ${appSettings.lockDeadlineTime || DEFAULT_LOCK_DEADLINE}. Saat ini sudah melewati batas waktu, data tidak dapat diubah.`}
               </p>
             </div>
           </div>

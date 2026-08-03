@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 
 import { db, useDB, getBubaSettings, saveAppSettings } from "@/lib/store";
+import { DEFAULT_LOCK_DEADLINE } from "@/lib/produksi-utils";
 import { rupiah } from "@/lib/format";
 
 import { Plus, Trash2, RotateCcw, Pencil, Sliders, Warehouse, Store, ShoppingCart, BookOpen, UserCheck, Users, AlertTriangle } from "lucide-react";
@@ -132,7 +133,7 @@ export default function MasterData() {
   const [sOatmealCup, setSOatmealCup] = useState(globalSettings.oatmealCup);
   const [sPudingCup, setSPudingCup] = useState(globalSettings.pudingCup);
   const [sAbonCup, setSAbonCup] = useState(globalSettings.abonCup);
-  const [sLockDeadline, setSLockDeadline] = useState(globalSettings.lockDeadlineTime || "11:00");
+  const [sLockDeadline, setSLockDeadline] = useState(globalSettings.lockDeadlineTime || DEFAULT_LOCK_DEADLINE);
   const [sLockEnabled, setSLockEnabled] = useState(globalSettings.lockEnabled !== false);
 
   useEffect(() => {
@@ -154,7 +155,7 @@ export default function MasterData() {
       setSOatmealCup(gs.oatmealCup);
       setSPudingCup(gs.pudingCup);
       setSAbonCup(gs.abonCup);
-      setSLockDeadline(gs.lockDeadlineTime || "11:00");
+      setSLockDeadline(gs.lockDeadlineTime || DEFAULT_LOCK_DEADLINE);
       setSLockEnabled(gs.lockEnabled !== false);
     };
     window.addEventListener("buba_settings_changed", handler);
@@ -183,7 +184,7 @@ export default function MasterData() {
       oatmealCup: Number(sOatmealCup),
       pudingCup: Number(sPudingCup),
       abonCup: Number(sAbonCup),
-      lockDeadlineTime: sLockDeadline || "11:00",
+      lockDeadlineTime: sLockDeadline || DEFAULT_LOCK_DEADLINE,
       lockEnabled: sLockEnabled,
     });
     toast.success("Pengaturan aplikasi berhasil disimpan!");
@@ -764,7 +765,7 @@ export default function MasterData() {
                             </button>
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            {sLockEnabled ? `Outlet tidak dapat mengubah sisa produksi setelah pukul ${sLockDeadline || "11:00"}.` : "Outlet dapat menginput sisa produksi kapan saja."}
+                            {sLockEnabled ? `Outlet tidak dapat mengubah sisa produksi setelah pukul ${sLockDeadline || DEFAULT_LOCK_DEADLINE}.` : "Outlet dapat menginput sisa produksi kapan saja."}
                           </p>
                         </div>
                         <div>

@@ -1,4 +1,41 @@
 // =============================================================================
+// LOCK / DEADLINE — penguncian input sisa (OH) outlet
+// =============================================================================
+//
+// Default batas waktu input sisa produksi harian. Dulu 11:00, sekarang 13:00.
+// Nilai ini dipakai sebagai fallback bila setting belum disimpan di localStorage.
+export const DEFAULT_LOCK_DEADLINE = "13:00";
+
+// True jika tanggal yg dipilih = hari ini DAN waktu sekarang sudah lewat deadline.
+// Dipakai outlet view supaya bisa diuji terpisah dari React.
+export function isPastLockDeadline(
+  lockDeadlineTime: string | undefined,
+  tanggal: string,
+  today: string,
+  now: Date
+): boolean {
+  if (tanggal !== today) return false;
+  const [h, m] = (lockDeadlineTime || DEFAULT_LOCK_DEADLINE).split(":").map(Number);
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  return hour > h || (hour === h && minute >= m);
+}
+
+// Status penguncian final: terkunci hanya jika (sudah lewat deadline DAN
+// penguncian diaktifkan admin) ATAU siklus sudah ditutup. Saat toggle
+// penguncian NONAKTIF, outlet TETAP bisa input meski sudah lewat deadline.
+export function computeIsLocked(opts: {
+  lockEnabled: boolean;
+  lockDeadlineTime: string | undefined;
+  tanggal: string;
+  today: string;
+  now: Date;
+  isCycleClosed: boolean;
+}): boolean {
+  return (isPastLockDeadline(opts.lockDeadlineTime, opts.tanggal, opts.today, opts.now) && opts.lockEnabled) || opts.isCycleClosed;
+}
+
+// =============================================================================
 // BASE RATIOS & HELPERS for Bubur & Nasi Tim calculations
 // =============================================================================
 //
@@ -219,6 +256,41 @@ export function scaleGridToActual<T extends Record<string, any>>(
     const target = actualCups[actualField] ?? 0;
     const currentTotal = Object.values(grid).reduce((s: number, v: any) => s + (v?.[gridField] || 0), 0);
     if (currentTotal <= 0) return;
+    const items = Object.keys(grid)
+      .filter((k) => (grid[k]?.[gridField] || 0) > 0)
+      .map((k) => ({ key: k, weight: grid[k]?.[gridField] || 0 }));
+    const alloc = allocateProportionally(items, target);
+    Object.keys(grid).forEach((k) => {
+      out[k][gridField] = alloc[k] ?? 0;
+    });
+  });
+  return out as T;
+}
+
+// Kembalikan salinan grid yang sudah diklamp ke hasil masak aktual: hanya
+// menurunkan field yang totalnya MELEBIHI aktual (skala proporsional per outlet).
+// Field yang sudah ≤ aktual dibiarkan apa adanya (tidak menaikkan distribusi).
+// Dipakai di saveStep4 agar distribusi tidak hard-block saat realisasi < rencana
+// (produk tidak sesuai rencana) — stok awal tetap bisa terkirim ke outlet.
+export function clampGridToActual<T extends Record<string, any>>(
+  grid: T,
+  actualCups: { bubur_1: number; bubur_2: number; tim_1: number; tim_2: number; oatmeal: number; puding: number; abon: number }
+): T {
+  const out: Record<string, any> = {};
+  Object.keys(grid).forEach((k) => { out[k] = { ...grid[k] }; });
+  const fieldPairs: [string, keyof typeof actualCups][] = [
+    ["bubur_d", "bubur_1"],
+    ["bubur_i", "bubur_2"],
+    ["tim_d", "tim_1"],
+    ["tim_i", "tim_2"],
+    ["oatmeal", "oatmeal"],
+    ["puding", "puding"],
+    ["abon", "abon"]
+  ];
+  fieldPairs.forEach(([gridField, actualField]) => {
+    const target = actualCups[actualField] ?? 0;
+    const currentTotal = Object.values(grid).reduce((s: number, v: any) => s + (v?.[gridField] || 0), 0);
+    if (currentTotal <= target) return; // sudah aman — jangan ubah
     const items = Object.keys(grid)
       .filter((k) => (grid[k]?.[gridField] || 0) > 0)
       .map((k) => ({ key: k, weight: grid[k]?.[gridField] || 0 }));

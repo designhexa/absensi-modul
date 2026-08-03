@@ -13,7 +13,7 @@ import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "l
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, matchVariantRecords, scaleGridToActual, type OutletGrid } from "@/lib/produksi-utils";
+import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, matchVariantRecords, scaleGridToActual, clampGridToActual, type OutletGrid } from "@/lib/produksi-utils";
 
 export default function Distribusi() {
   const navigate = useNavigate();
@@ -104,6 +104,18 @@ export default function Distribusi() {
       const abonProd = dayProds.find((p: any) => p.produkId === "p-abon");
       if (abonProd) newCups.abon = abonProd.qtyRealisasi;
 
+      // Jika belum ada data realisasi (Step 3 belum disimpan), gunakan rencana
+      // dari grid sebagai acuan aktual agar distribusi tidak dianggap 0 & terblokir.
+      if (dayProds.length === 0) {
+        newCups.bubur_1 = planBuburD;
+        newCups.bubur_2 = planBuburI;
+        newCups.tim_1 = planTimD;
+        newCups.tim_2 = planTimI;
+        newCups.oatmeal = Object.values(dGrid).reduce((s: number, v: any) => s + (v.oatmeal || 0), 0);
+        newCups.puding = Object.values(dGrid).reduce((s: number, v: any) => s + (v.puding || 0), 0);
+        newCups.abon = Object.values(dGrid).reduce((s: number, v: any) => s + (v.abon || 0), 0);
+      }
+
       setActualCups(newCups);
 
       // Distribusi mengacu realisasi pasca produksi (bukan rencana): jika permohonan
@@ -175,31 +187,31 @@ export default function Distribusi() {
 
   // STEP 4 Action
   const saveStep4 = async () => {
-    if (distTotals.buburD > actualCups.bubur_1) {
-      return toast.error(`Distribusi Bubur 1 (${bubur1Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.buburD} cup, Masak: ${actualCups.bubur_1} cup)`);
-    }
-    if (distTotals.buburI > actualCups.bubur_2) {
-      return toast.error(`Distribusi Bubur 2 (${bubur2Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.buburI} cup, Masak: ${actualCups.bubur_2} cup)`);
-    }
-    if (distTotals.timD > actualCups.tim_1) {
-      return toast.error(`Distribusi Nasi Tim 1 (${tim1Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.timD} cup, Masak: ${actualCups.tim_1} cup)`);
-    }
-    if (distTotals.timI > actualCups.tim_2) {
-      return toast.error(`Distribusi Nasi Tim 2 (${tim2Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.timI} cup, Masak: ${actualCups.tim_2} cup)`);
-    }
-    if (distTotals.oatmeal > actualCups.oatmeal) {
-      return toast.error(`Distribusi Oatmeal melebihi hasil masak aktual! (Terdistribusi: ${distTotals.oatmeal} cup, Masak: ${actualCups.oatmeal} cup)`);
-    }
-    if (distTotals.puding > actualCups.puding) {
-      return toast.error(`Distribusi Puding melebihi hasil masak aktual! (Terdistribusi: ${distTotals.puding} cup, Masak: ${actualCups.puding} cup)`);
-    }
-    if (distTotals.abon > actualCups.abon) {
-      return toast.error(`Distribusi Abon melebihi hasil masak aktual! (Terdistribusi: ${distTotals.abon} pcs, Masak: ${actualCups.abon} pcs)`);
+    // Jika hasil masak aktual (realisasi) lebih kecil dari rencana, jangan
+    // hard-block — sesuaikan otomatis (clamp proporsional per outlet) agar
+    // distribusi tetap terkirim & stok awal di outlet bisa diinput OH.
+    const clamped = clampGridToActual(distGrid, actualCups);
+    const overTotals: string[] = [];
+    if (distTotals.buburD > actualCups.bubur_1) overTotals.push(`Bubur 1 (${bubur1Name}): ${distTotals.buburD} cup`);
+    if (distTotals.buburI > actualCups.bubur_2) overTotals.push(`Bubur 2 (${bubur2Name}): ${distTotals.buburI} cup`);
+    if (distTotals.timD > actualCups.tim_1) overTotals.push(`Nasi Tim 1 (${tim1Name}): ${distTotals.timD} cup`);
+    if (distTotals.timI > actualCups.tim_2) overTotals.push(`Nasi Tim 2 (${tim2Name}): ${distTotals.timI} cup`);
+    if (distTotals.oatmeal > actualCups.oatmeal) overTotals.push(`Oatmeal: ${distTotals.oatmeal} cup`);
+    if (distTotals.puding > actualCups.puding) overTotals.push(`Puding: ${distTotals.puding} cup`);
+    if (distTotals.abon > actualCups.abon) overTotals.push(`Abon: ${distTotals.abon} pcs`);
+
+    const grid = overTotals.length > 0 ? clamped : distGrid;
+    if (overTotals.length > 0) {
+      setDistGrid(grid);
+      toast.warning(
+        `Hasil masak aktual lebih kecil dari rencana untuk: ${overTotals.join(", ")}. ` +
+        `Jumlah distribusi disesuaikan otomatis ke hasil masak aktual agar stok awal tetap terkirim ke outlet.`
+      );
     }
 
     const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
     await Promise.all(dayReqs.map(async (r: any) => {
-      const outletAlloc = distGrid[r.outletId] || {};
+      const outletAlloc = grid[r.outletId] || {};
       let sentQty = 0;
       let notes = r.catatan || "";
 
@@ -235,7 +247,7 @@ export default function Distribusi() {
     const existingSales = penjualan.filter((p: any) => p.tanggal === tanggal);
     if (existingSales.length > 0) {
       outlets.forEach((o) => {
-        const sent = distGrid[o.id] || {};
+        const sent = grid[o.id] || {};
         if (!sent) return;
 
         const calcRetur = (baseId: string, dField: string, iField: string, dSent: number, iSent: number) => {

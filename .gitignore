@@ -37,3 +37,6 @@ backups/
 nul
 scratch-*.js
 supabase/.temp/
+
+# TypeScript incremental build info
+*.tsbuildinfo

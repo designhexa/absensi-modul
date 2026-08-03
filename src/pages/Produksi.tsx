@@ -21,7 +21,7 @@ import { TablePagination } from "@/components/TablePagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
-import { matchVariantRecords, scaleGridToActual } from "@/lib/produksi-utils";
+import { matchVariantRecords, scaleGridToActual, clampGridToActual } from "@/lib/produksi-utils";
 
 // Base ratios for Bubur (per 100gr beras = 6 cup)
 // Base ratio: Beras:Daging:Air:S.Hijau:S.Brokoli:S.Putih = 100:5:700:8:5:1.5
@@ -73,6 +73,9 @@ export default function Produksi() {
   // polling/real-time updates from resetting user input mid-edit.
   useEffect(() => {
     hasUserModifiedGrids.current = false;
+    // Reset status auto-konfirmasi OH abon saat ganti tanggal siklus
+    setOhAbonApplied(false);
+    setOhAbonAutoConfirmed(false);
   }, [tanggal]);
 
   const [step, setStep] = useState(1);
@@ -80,6 +83,9 @@ export default function Produksi() {
   const [range, setRange] = useState<DateRange>({});
   const [requestingWarehouse, setRequestingWarehouse] = useState(false);
   const [warehouseConfirmOpen, setWarehouseConfirmOpen] = useState(false);
+  // OH abon yang disalin ke rencana (Langkah 1) → auto-konfirmasi ke distribusi saat stok dipotong (Langkah 2)
+  const [ohAbonApplied, setOhAbonApplied] = useState(false);
+  const [ohAbonAutoConfirmed, setOhAbonAutoConfirmed] = useState(false);
 
   const [step1OutletId, setStep1OutletId] = useState("");
   const [expandedOutlets, setExpandedOutlets] = useState<Record<string, boolean>>({});
@@ -726,6 +732,22 @@ export default function Produksi() {
     };
   }, [planGrid]);
 
+  // Ada produk selain abon yang direncanakan? (penentu lewati Langkah 3 bila hanya abon OH)
+  const hasOtherProducts = totals.buburD + totals.buburI + totals.timD + totals.timI + totals.oatmeal + totals.puding > 0;
+
+  // Grid distribusi khusus hanya-abon OH (dipakai saat melewati Langkah 3)
+  const buildAbonDistGrid = (): Record<string, Record<string, number>> => {
+    const grid: Record<string, Record<string, number>> = {};
+    outlets.forEach(o => {
+      const plan = planGrid[o.id] || {};
+      grid[o.id] = {
+        bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0,
+        abon: plan.abon || 0
+      };
+    });
+    return grid;
+  };
+
   // Combined totals (planGrid + planGrid2) — used in Step 2 for material calculation
   const combinedTotals = useMemo(() => {
     let buburD = 0, buburI = 0, timD = 0, timI = 0;
@@ -997,12 +1019,53 @@ export default function Produksi() {
 
       toast.success(`Bahan baku untuk ${datesLabel} berhasil dipotong dari stok gudang!`);
       setWarehouseConfirmOpen(false);
-      setStep(3);
+
+      // === AUTO-KONFIRMASI OH ABON KE DISTRIBUSI ===
+      // Abon OH (sisa kemarin) sudah matang — realisasi = rencana & permohonan langsung
+      // Disetujui, sehingga melewati input realisasi masak di Langkah 3.
+      let autoConfirmed = false;
+      if (ohAbonApplied && totals.abon > 0) {
+        try {
+          setActualCups(prev => ({ ...prev, abon: totals.abon }));
+          setActualGrams(prev => ({ ...prev, abon: totals.abon * 10 }));
+          const abonReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal && r.produkId === "p-abon");
+          await Promise.all(abonReqs.map((r: any) => db.updatePermohonanStok(r.id, { qty: r.qty, status: "Disetujui", catatan: r.catatan || "" })));
+          const existingAbonProd = produksi.filter((p: any) => p.tanggal === tanggal && p.produkId === "p-abon");
+          if (existingAbonProd.length > 0) {
+            await Promise.all(existingAbonProd.map((p: any) => db.deleteProduksi(p.id)));
+          }
+          await db.addProduksiBulk([{ tanggal, produkId: "p-abon", qtyRencana: totals.abon, qtyRealisasi: totals.abon }]);
+          setOhAbonAutoConfirmed(true);
+          autoConfirmed = true;
+        } catch (abonErr) {
+          console.error("Auto-konfirmasi OH abon gagal:", abonErr);
+          toast.error("Stok sudah dipotong, tetapi auto-konfirmasi OH abon gagal. Klik 'Validasi Ulang' untuk mencoba lagi.");
+        }
+      }
+
+      // Jika HANYA abon OH yang direncanakan → lewati Langkah 3, langsung ke distribusi
+      if (autoConfirmed && !hasOtherProducts) {
+        setDistGrid(buildAbonDistGrid());
+        setStep(4);
+      } else {
+        setStep(3);
+      }
     } catch (err) {
       toast.error("Gagal memotong stok gudang!");
       console.error(err);
     } finally {
       setRequestingWarehouse(false);
+    }
+  };
+
+  // Navigasi setelah stok dipotong: bila hanya abon OH yang direncanakan (sudah auto-konfirmasi),
+  // lewati Langkah 3 dan langsung ke Langkah 4 (Distribusi).
+  const nextStepAfterWarehouse = () => {
+    if (ohAbonAutoConfirmed && !hasOtherProducts) {
+      setDistGrid(buildAbonDistGrid());
+      setStep(4);
+    } else {
+      setStep(3);
     }
   };
 
@@ -1085,32 +1148,31 @@ export default function Produksi() {
   // STEP 4 Action
   const saveStep4 = async () => {
     if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan distribusi");
-    // Validation: check if distributed exceeds actual cooked
-    if (distTotals.buburD > actualCups.bubur_1) {
-      return toast.error(`Distribusi Bubur 1 (${bubur1Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.buburD} cup, Masak: ${actualCups.bubur_1} cup)`);
-    }
-    if (distTotals.buburI > actualCups.bubur_2) {
-      return toast.error(`Distribusi Bubur 2 (${bubur2Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.buburI} cup, Masak: ${actualCups.bubur_2} cup)`);
-    }
-    if (distTotals.timD > actualCups.tim_1) {
-      return toast.error(`Distribusi Nasi Tim 1 (${tim1Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.timD} cup, Masak: ${actualCups.tim_1} cup)`);
-    }
-    if (distTotals.timI > actualCups.tim_2) {
-      return toast.error(`Distribusi Nasi Tim 2 (${tim2Name}) melebihi hasil masak aktual! (Terdistribusi: ${distTotals.timI} cup, Masak: ${actualCups.tim_2} cup)`);
-    }
-    if (distTotals.oatmeal > actualCups.oatmeal) {
-      return toast.error(`Distribusi Oatmeal melebihi hasil masak aktual! (Terdistribusi: ${distTotals.oatmeal} cup, Masak: ${actualCups.oatmeal} cup)`);
-    }
-    if (distTotals.puding > actualCups.puding) {
-      return toast.error(`Distribusi Puding melebihi hasil masak aktual! (Terdistribusi: ${distTotals.puding} cup, Masak: ${actualCups.puding} cup)`);
-    }
-    if (distTotals.abon > actualCups.abon) {
-      return toast.error(`Distribusi Abon melebihi hasil masak aktual! (Terdistribusi: ${distTotals.abon} pcs, Masak: ${actualCups.abon} pcs)`);
+    // Jika hasil masak aktual (realisasi) lebih kecil dari rencana, jangan
+    // hard-block — sesuaikan otomatis (clamp proporsional per outlet) agar
+    // distribusi tetap terkirim & stok awal di outlet bisa diinput OH.
+    const clamped = clampGridToActual(distGrid, actualCups);
+    const overTotals: string[] = [];
+    if (distTotals.buburD > actualCups.bubur_1) overTotals.push(`Bubur 1 (${bubur1Name}): ${distTotals.buburD} cup`);
+    if (distTotals.buburI > actualCups.bubur_2) overTotals.push(`Bubur 2 (${bubur2Name}): ${distTotals.buburI} cup`);
+    if (distTotals.timD > actualCups.tim_1) overTotals.push(`Nasi Tim 1 (${tim1Name}): ${distTotals.timD} cup`);
+    if (distTotals.timI > actualCups.tim_2) overTotals.push(`Nasi Tim 2 (${tim2Name}): ${distTotals.timI} cup`);
+    if (distTotals.oatmeal > actualCups.oatmeal) overTotals.push(`Oatmeal: ${distTotals.oatmeal} cup`);
+    if (distTotals.puding > actualCups.puding) overTotals.push(`Puding: ${distTotals.puding} cup`);
+    if (distTotals.abon > actualCups.abon) overTotals.push(`Abon: ${distTotals.abon} pcs`);
+
+    const grid = overTotals.length > 0 ? clamped : distGrid;
+    if (overTotals.length > 0) {
+      setDistGrid(grid);
+      toast.warning(
+        `Hasil masak aktual lebih kecil dari rencana untuk: ${overTotals.join(", ")}. ` +
+        `Jumlah distribusi disesuaikan otomatis ke hasil masak aktual agar stok awal tetap terkirim ke outlet.`
+      );
     }
 
     const dayReqs = permohonanStok.filter((r: any) => r.tanggalKirim === tanggal);
     await Promise.all(dayReqs.map(async (r: any) => {
-      const outletAlloc = distGrid[r.outletId] || {};
+      const outletAlloc = grid[r.outletId] || {};
       let sentQty = 0;
       let notes = r.catatan || "";
 
@@ -1155,7 +1217,7 @@ export default function Produksi() {
     const existingSales = penjualan.filter((p: any) => p.tanggal === tanggal);
     if (existingSales.length > 0) {
       outlets.forEach((o) => {
-        const sent = distGrid[o.id] || {};
+        const sent = grid[o.id] || {};
         if (!sent) return;
 
         const calcRetur = (baseId: string, dField: string, iField: string, dSent: number, iSent: number) => {
@@ -1708,6 +1770,54 @@ export default function Produksi() {
     return outlets.filter(o => o.id === outletFilterId);
   }, [outlets, outletFilterId]);
 
+  // ===== INDIKATOR STOK ABON OH KEMARIN =====
+  // OH abon (sisa tidak terjual) sudah otomatis kembali ke stok gudang saat outlet
+  // menyimpan sisa di Laporan (stok_movement IN b-ab01 + sisaGram di penjualan).
+  // Di sini kita tampilkan jumlah abon yang tersedia dari OH KEMARIN (relatif thd
+  // tanggal produksi yang dipilih) per outlet, agar bisa direncanakan ulang hari ini.
+  // sisaGram untuk abon disimpan dalam PCS (bukan gram), jadi langsung dijumlahkan.
+  const kemarin = useMemo(() => {
+    if (!tanggal) return "";
+    const d = new Date(tanggal);
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }, [tanggal]);
+
+  const ohAbonKemarin = useMemo(() => {
+    const perOutlet: Record<string, number> = {};
+    (penjualan || []).forEach((p: any) => {
+      if (p.produkId === "p-abon" && p.tanggal === kemarin && p.sisaGram && p.sisaGram > 0) {
+        perOutlet[p.outletId] = (perOutlet[p.outletId] || 0) + p.sisaGram;
+      }
+    });
+    const total = Object.values(perOutlet).reduce((s, v) => s + v, 0);
+    return { perOutlet, total };
+  }, [penjualan, kemarin]);
+
+  // Salin stok abon OH kemarin ke kolom Abon di rencana (grid tanggal aktif).
+  // Bersifat ADITIF — nilai rencana yang sudah diisi tetap dipertahankan.
+  const applyOhAbonToPlan = () => {
+    if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
+    if (ohAbonKemarin.total <= 0) return toast.info("Tidak ada stok abon OH dari kemarin");
+    hasUserModifiedGrids.current = true;
+    // Tandai bila abon OH disalin ke rencana TANGGAL 1 — hanya itu yang memicu
+    // auto-konfirmasi ke distribusi saat stok dipotong (alur siklus harian).
+    if (activePlanDate === "date1") setOhAbonApplied(true);
+    const setter = activePlanDate === "date1" ? setPlanGrid : setPlanGrid2;
+    setter(prev => {
+      const next: Record<string, Record<string, number>> = {};
+      Object.keys(prev).forEach(k => { next[k] = { ...prev[k] }; });
+      Object.entries(ohAbonKemarin.perOutlet).forEach(([outletId, pcs]) => {
+        if (!next[outletId]) {
+          next[outletId] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
+        }
+        next[outletId].abon = (next[outletId].abon || 0) + pcs;
+      });
+      return next;
+    });
+    toast.success(`${ohAbonKemarin.total} pcs abon OH ${kemarin} ditambahkan ke rencana`);
+  };
+
   function renderStep1() {
     return (
       <Card className="glass border-0 shadow-card">
@@ -1788,7 +1898,49 @@ export default function Produksi() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          
+
+          {/* Indikator Stok Abon OH Kemarin — tersedia utk direncanakan ulang hari ini */}
+          {ohAbonKemarin.total > 0 && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800/30 rounded-2xl p-4">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center shrink-0">
+                    <ShoppingBag className="h-5 w-5 text-green-600 dark:text-green-300" />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <p className="font-bold text-green-700 dark:text-green-300 text-sm mb-1">📦 Stok Abon OH {kemarin}</p>
+                    <p>
+                      <strong className="text-green-700 dark:text-green-300">{ohAbonKemarin.total} pcs</strong> abon tidak terjual kemarin sudah kembali ke stok gudang dan bisa direncanakan ulang hari ini.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {Object.entries(ohAbonKemarin.perOutlet).map(([outletId, pcs]) => {
+                        const o = outlets.find((x: any) => x.id === outletId);
+                        return (
+                          <span
+                            key={outletId}
+                            className="text-[10px] font-semibold bg-green-100/70 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800/40"
+                          >
+                            {o?.nama ?? outletId}: {pcs} pcs
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={applyOhAbonToPlan}
+                  disabled={isReadOnlyGudang}
+                  size="sm"
+                  className="h-9 shrink-0"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  Salin ke Rencana
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Read-only Total Summary Dashboard */}
           <div className="bg-muted/35 p-5 rounded-2xl border space-y-4 shadow-sm">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -2195,6 +2347,32 @@ export default function Produksi() {
         </CardHeader>
         <CardContent className="space-y-6">
           
+          {ohAbonApplied && totals.abon > 0 && (
+            <div className={`flex items-start gap-2.5 p-3.5 rounded-xl border text-xs font-medium ${
+              ohAbonAutoConfirmed
+                ? "bg-green-600/10 border-green-600/20 text-green-700 dark:text-green-400"
+                : "bg-sky-500/10 border-sky-500/25 text-sky-700 dark:text-sky-400"
+            }`}>
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">
+                  {ohAbonAutoConfirmed
+                    ? "Abon OH sudah terkonfirmasi ke distribusi"
+                    : `Abon OH (${totals.abon} pcs) akan otomatis terkonfirmasi ke distribusi`}
+                </p>
+                <p className="text-[11px] opacity-90">
+                  {ohAbonAutoConfirmed
+                    ? hasOtherProducts
+                      ? "Realisasi abon disamakan dengan rencana (abon OH sudah matang) — lanjut isi realisasi menu lain di Langkah 3."
+                      : "Semua menu hanya abon — lanjut langsung ke Langkah 4 (Distribusi)."
+                    : isWarehouseRequested
+                      ? "Stok sudah divalidasi sebelum abon OH disalin — klik 'Validasi Ulang' agar auto-konfirmasi OH abon aktif."
+                      : "Saat stok dipotong, realisasi abon diset = rencana dan permohonan langsung Disetujui — melewati input realisasi di Langkah 3."}
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* Detailed Recipe Breakdown for Cooking */}
           <div className="bg-muted/15 p-4 rounded-2xl border space-y-3">
             <div 
@@ -2419,8 +2597,8 @@ export default function Produksi() {
                     <span className="hidden md:inline">{isWarehouseRequested ? 'Buka Validasi' : 'Validasi Pemotongan Stok'}</span>
                   </Button>
                   {isWarehouseRequested && (
-                    <Button onClick={() => setStep(3)} className="h-10 gradient-primary text-primary-foreground shrink-0">
-                      <span className="hidden md:inline">Lanjutkan</span>
+                    <Button onClick={nextStepAfterWarehouse} className="h-10 gradient-primary text-primary-foreground shrink-0">
+                      <span className="hidden md:inline">{ohAbonAutoConfirmed && !hasOtherProducts ? "Lanjut ke Distribusi" : "Lanjutkan"}</span>
                       <ArrowRight className="h-4 w-4 md:ml-2" />
                     </Button>
                   )}
@@ -2441,6 +2619,18 @@ export default function Produksi() {
           <p className="text-xs text-muted-foreground mt-1">Input berat matang hasil masak (gram) untuk dikonversi otomatis ke jumlah cup stok awal</p>
         </CardHeader>
         <CardContent className="space-y-6">
+          {ohAbonAutoConfirmed && (
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-green-600/10 border border-green-600/20 text-green-700 dark:text-green-400 text-xs font-medium">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Abon OH terkonfirmasi otomatis ke distribusi</p>
+                <p className="text-[11px] opacity-90">
+                  Abon dari sisa kemarin sudah matang — realisasi disamakan dengan rencana ({totals.abon} pcs) saat stok dipotong.
+                  {hasOtherProducts ? " Isi realisasi menu lain lalu lanjutkan." : " Semua menu hanya abon — lanjut langsung ke Langkah 4 (Distribusi)."}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
               { id: "bubur_1", label: `Bubur 1 (${bubur1Name})`, unitWeight: 118, targetCups: totals.buburD },
@@ -2453,22 +2643,27 @@ export default function Produksi() {
             ].map((p) => {
               const grams = actualGrams[p.id as keyof typeof actualGrams] || 0;
               const cups = actualCups[p.id as keyof typeof actualCups] || 0;
+              const isAutoAbon = p.id === "abon" && ohAbonAutoConfirmed;
               return (
-                <div key={p.id} className="p-4 rounded-2xl border bg-card/40 space-y-4">
+                <div key={p.id} className={`p-4 rounded-2xl border bg-card/40 space-y-4 ${isAutoAbon ? "border-green-500/40 bg-green-500/5" : ""}`}>
                   <div className="flex justify-between items-start gap-2">
                     <div className="space-y-1 min-w-0">
                       <span className="font-bold text-sm block truncate">{p.label}</span>
                       <Badge
                         variant="outline"
                         className={`text-[10px] border ${
-                          cups === p.targetCups
+                          isAutoAbon
+                            ? "bg-green-500/10 text-green-600 border-green-500/30"
+                            : cups === p.targetCups
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : p.targetCups > 0 && Math.abs(cups - p.targetCups) / p.targetCups > DEVIASI_THRESHOLD
                             ? "bg-destructive/10 text-destructive border-destructive/30"
                             : "bg-amber-500/10 text-amber-600 border-amber-500/30"
                         }`}
                       >
-                        {cups === p.targetCups
+                        {isAutoAbon
+                          ? "✓ Auto OH — Terkonfirmasi"
+                          : cups === p.targetCups
                           ? "✓ Sesuai rencana"
                           : p.targetCups > 0
                           ? `${cups > p.targetCups ? "+" : ""}${cups - p.targetCups} cup dari rencana`
@@ -2481,15 +2676,17 @@ export default function Produksi() {
                       <Badge variant="outline" className="text-[10px] text-muted-foreground">
                         Target: {p.targetCups} cup ({(p.targetCups * p.unitWeight).toLocaleString("id-ID")} g)
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[11px] text-muted-foreground hover:text-primary"
-                        onClick={() => resetToPlan(p.id, p.targetCups, p.unitWeight)}
-                        title="Kembalikan ke nilai rencana"
-                      >
-                        <RotateCcw className="h-3 w-3 mr-1" /> Pakai Rencana
-                      </Button>
+                      {!isAutoAbon && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] text-muted-foreground hover:text-primary"
+                          onClick={() => resetToPlan(p.id, p.targetCups, p.unitWeight)}
+                          title="Kembalikan ke nilai rencana"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" /> Pakai Rencana
+                        </Button>
+                      )}
                     </div>
                   </div>
                   
@@ -2503,6 +2700,7 @@ export default function Produksi() {
                         onChange={(e) => handleGramsChange(p.id, parseInt(e.target.value))}
                         className="h-10"
                         placeholder="Contoh: 11800"
+                        disabled={isAutoAbon}
                       />
                       <span className="text-xs text-muted-foreground font-semibold">g</span>
                     </div>
@@ -2522,6 +2720,7 @@ export default function Produksi() {
                         value={cups || ""}
                         onChange={(e) => handleCupsChange(p.id, parseInt(e.target.value))}
                         className="h-10 font-bold text-primary border-primary/40 focus-visible:ring-primary"
+                        disabled={isAutoAbon}
                       />
                       <span className="text-xs text-muted-foreground">cup</span>
                     </div>
