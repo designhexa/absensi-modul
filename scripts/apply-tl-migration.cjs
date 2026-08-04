@@ -1,7 +1,7 @@
 /**
  * apply-tl-migration.cjs
  * Menerapkan migrasi 20260627000011 (role 'tl' di constraint users_role_check),
- * membuat karyawan k-tl (Tenaga Lapangan) di daftar karyawan,
+ * membuat karyawan k-tl (Tim Leader) di daftar karyawan,
  * dan membuat/menautkan akun TL ke karyawan tsb (users.karyawan_id = 'k-tl').
  *
  * Catatan: akun TL TIDAK lagi menjadi "akun admin" — ia terdaftar sebagai
@@ -60,7 +60,7 @@ const supabase = createClient(supabaseUrl, serviceKey);
 
 // --- Migration SQL (20260627000011_add_tl_to_role_check.sql) ---
 const TL_MIGRATION_SQL = `
--- Migration: Allow 'tl' (Tenaga Lapangan) as a valid role in users table
+-- Migration: Allow 'tl' (Tim Leader) as a valid role in users table
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS check_role;
 ALTER TABLE users
@@ -169,7 +169,7 @@ async function main() {
   }
 
   // --- Step 2: Pastikan karyawan 'k-tl' ada (agar user TL bisa di-link) ---
-  console.log("\n▶ Memastikan karyawan k-tl (Tenaga Lapangan) ada di daftar karyawan ...");
+  console.log("\n▶ Memastikan karyawan k-tl (Tim Leader) ada di daftar karyawan ...");
   const { data: karyawanExisting, error: karyawanCheckErr } = await supabase
     .from("karyawan")
     .select("id")
@@ -181,7 +181,7 @@ async function main() {
   } else if (karyawanExisting) {
     const { error: karyawanUpdErr } = await supabase
       .from("karyawan")
-      .update({ nama: "Tenaga Lapangan", posisi: "TL (Tenaga Lapangan)", role: "tl" })
+      .update({ nama: "Tim Leader", posisi: "TL (Tim Leader)", role: "tl" })
       .eq("id", "k-tl");
     if (karyawanUpdErr) {
       console.log("  ⚠️ Gagal update karyawan k-tl:", karyawanUpdErr.message);
@@ -191,8 +191,8 @@ async function main() {
   } else {
     const { error: karyawanInsErr } = await supabase.from("karyawan").insert({
       id: "k-tl",
-      nama: "Tenaga Lapangan",
-      posisi: "TL (Tenaga Lapangan)",
+      nama: "Tim Leader",
+      posisi: "TL (Tim Leader)",
       role: "tl",
       outlet_id: null,
       gaji_pokok: 0,
@@ -208,12 +208,12 @@ async function main() {
       console.log("  ❌ Gagal insert karyawan k-tl:", karyawanInsErr.message);
       console.log("     Hint: pastikan kolom karyawan sesuai schema DB (role 'tl' harus diterima).");
     } else {
-      console.log("  ✅ Karyawan 'k-tl' berhasil dibuat (Tenaga Lapangan).");
+      console.log("  ✅ Karyawan 'k-tl' berhasil dibuat (Tim Leader).");
     }
   }
 
   // --- Step 3: Buat / update akun TL (via REST — tidak butuh DDL) ---
-  console.log("\n▶ Membuat akun TL (Tenaga Lapangan) ...");
+  console.log("\n▶ Membuat akun TL (Tim Leader) ...");
   const { data: existing, error: checkErr } = await supabase
     .from("users")
     .select("username")
@@ -225,7 +225,7 @@ async function main() {
   } else if (existing) {
     const { error: updErr } = await supabase
       .from("users")
-      .update({ nama: "Tenaga Lapangan", role: "tl", password: "tl123", karyawan_id: "k-tl" })
+      .update({ nama: "Tim Leader", role: "tl", password: "tl123", karyawan_id: "k-tl" })
       .eq("username", "tl");
     if (updErr) {
       console.log("  ❌ Gagal update user tl:", updErr.message);
@@ -239,7 +239,7 @@ async function main() {
     const { error: insErr } = await supabase.from("users").insert({
       username: "tl",
       password: "tl123",
-      nama: "Tenaga Lapangan",
+      nama: "Tim Leader",
       role: "tl",
       outlet_id: null,
       karyawan_id: "k-tl",
