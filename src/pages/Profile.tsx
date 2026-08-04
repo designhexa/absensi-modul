@@ -24,7 +24,7 @@ export default function Profile() {
       case "outlet":
         return "Staff Outlet";
       case "tl":
-        return "TL (Tenaga Lapangan)";
+        return "TL (Tim Leader)";
       default:
         return role;
     }

@@ -962,7 +962,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
+                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1372,7 +1372,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
+                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1513,7 +1513,7 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
                   <SelectItem value="admin">Administrator</SelectItem>
                   <SelectItem value="produksi">Produksi</SelectItem>
                   <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
-                  <SelectItem value="tl">TL (Tenaga Lapangan)</SelectItem>
+                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -687,7 +687,7 @@ function GudangView({ dbState, user }: { dbState: any; user: any }) {
   );
 }
 
-// === SUBCOMPONENT: TL VIEW (Tenaga Lapangan - Read Only) ===
+// === SUBCOMPONENT: TL VIEW (Tim Leader - Read Only) ===
 // Hanya bisa melihat Request & Retur dari semua outlet, tidak bisa edit/menyetujui
 function TLView({ dbState }: { dbState: any }) {
   const [activeTab, setActiveTab] = useState("request");

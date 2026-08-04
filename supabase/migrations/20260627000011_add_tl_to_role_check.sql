@@ -1,4 +1,4 @@
--- Migration: Allow 'tl' (Tenaga Lapangan) as a valid role in users table
+-- Migration: Allow 'tl' (Tim Leader) as a valid role in users table
 -- Date: 2026-08-02
 -- TL role: read-only akses ke Rekap OH & Omset per outlet serta Request & Retur
 --

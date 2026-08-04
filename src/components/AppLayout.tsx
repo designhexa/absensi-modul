@@ -54,7 +54,7 @@ export default function AppLayout() {
                         {user?.role === "outlet" && <Store className="h-3 w-3" />}
                         {user?.role === "gudang" && <Warehouse className="h-3 w-3 text-green-500" />}
                         {user?.role === "tl" && <MapPin className="h-3 w-3 text-sky-500" />}
-                        {user?.role === "admin" ? "Admin" : user?.role === "produksi" ? "Produksi" : user?.role === "gudang" ? "Pegawai Gudang" : user?.role === "tl" ? "TL (Tenaga Lapangan)" : "Outlet"}
+                        {user?.role === "admin" ? "Admin" : user?.role === "produksi" ? "Produksi" : user?.role === "gudang" ? "Pegawai Gudang" : user?.role === "tl" ? "TL (Tim Leader)" : "Outlet"}
                       </div>
                     </div>
                   </Button>
