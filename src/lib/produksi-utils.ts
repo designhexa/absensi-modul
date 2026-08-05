@@ -171,6 +171,43 @@ export function sumGrid(grid: OutletGrid) {
 }
 
 // =============================================================================
+// KEMASAN (CUP & TUTUP) — dihitung dari HASIL PRODUKSI AKTUAL (Langkah 3)
+// =============================================================================
+//
+// Bahan utama dipotong di Langkah 2 langsung dari rencana dan TIDAK terpengaruh
+// hasil produksi. Kemasan (cup & tutup Oatmeal/Puding) justru dihitung dari
+// hasil produksi AKTUAL karena hasil bisa MENYUSUT (cup lebih sedikit) atau
+// MELUBER (cup lebih banyak) dari rencana.
+
+// Daftar bahan kemasan yang mengikuti hasil aktual: 1 cup/1 tutup per porsi.
+// `produk` = sumber jumlah:
+//   - puding   → CUP PUDING & PLASTIK SELER
+//   - oatmeal  → CUP OAT & TUTUP OAT
+// Kemasan BUBUR & NASI TIM tidak ada di daftar ini — cup & tutup Bubur/Tim
+// (stok sama: CUP BUBUR CB01 & TUTUP TTP01) dipenuhi lewat permohonan/retur
+// perlengkapan outlet (Stok Gudang): stok berkurang saat request outlet disetujui,
+// BUKAN dipotong saat produksi. Hanya Puding & Oatmeal yang dipotong di
+// pasca produksi (Langkah 3) sesuai hasil aktual.
+export const KEMASAN_BAHAN = [
+  { bahanId: "b-cuppud01", kode: "CUPPUD01", nama: "CUP PUDING", produk: "puding" },
+  { bahanId: "b-plas01", kode: "PLAS01", nama: "PLASTIK SELER", produk: "puding" },
+  { bahanId: "b-cupoat1", kode: "CUPOAT1", nama: "CUP OAT", produk: "oatmeal" },
+  { bahanId: "b-ttoat01", kode: "TTOAT01", nama: "TUTUP OAT", produk: "oatmeal" }
+] as const;
+
+// Hitung kebutuhan kemasan dari jumlah cup aktual (hasil produksi pasca masak).
+// Menyusut → kebutuhan < rencana; meluber → kebutuhan > rencana.
+export function calcKemasanKebutuhan(actualCups: { puding: number; oatmeal: number }) {
+  return KEMASAN_BAHAN.map((k) => ({
+    bahanId: k.bahanId,
+    kode: k.kode,
+    nama: k.nama,
+    qty: Math.max(0, actualCups[k.produk] || 0),
+    satuan: "pcs"
+  })).filter((k) => k.qty > 0);
+}
+
+// =============================================================================
 // VARIANT MAPPING & DISTRIBUTION SCALING (referensi pasca produksi)
 // =============================================================================
 //

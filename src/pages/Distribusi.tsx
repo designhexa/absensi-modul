@@ -374,8 +374,16 @@ export default function Distribusi() {
         }
       }
 
-      // Recovered ingredients
-      const recoveredIngredients = { beras: 0, puding: 0, oat: 0, abon: 0, sayurHijau: 0, sayurBuah: 0, sayurProtein: 0 };
+      // Hitung OH (sisa tidak terjual di outlet) per bahan baku.
+      // Aturan baru: OH Bubur/Nasi Tim/Puding/Oatmeal → otomatis RUSAK (bahan
+      // baku sudah terpotong saat Langkah 2 & tidak dikembalikan); OH Abon →
+      // kembali ke stok gudang (bisa dijual lagi).
+      const ohRusak = { beras: 0, puding: 0, oat: 0, sayurHijau: 0, sayurBuah: 0, sayurProtein: 0 };
+      let abonKembali = 0;
+      // Kemasan OH (sisa tidak terjual) — cup & tutup Puding/Oatmeal ikut RUSAK:
+      // Puding → CUP PUDING & PLASTIK SELER; Oatmeal → CUP OAT & TUTUP OAT.
+      // (Cup & tutup BUBUR & NASI TIM tidak ikut — via retur perlengkapan outlet.)
+      const kemasanRusak = { puding: 0, oatmeal: 0 };
 
       outlets.forEach((o) => {
         const sent = distGrid[o.id] || {};
@@ -385,12 +393,13 @@ export default function Distribusi() {
           [dSent, iSent].forEach((s, idx) => {
             const retField = idx === 0 ? retur.bubur_d ?? 0 : retur.bubur_i ?? 0;
             if (s > 0) {
-              const actualRet = Math.min(retField, s);
+              // retur dalam gram → konversi ke cup (118 gr/cup) agar sejalan dgn Produksi
+              const actualRet = Math.min(Math.floor((retField || 0) / 118), s);
               if (actualRet > 0) {
-                recoveredIngredients.beras += buburCalc(actualRet, BUBUR_BASE.beras);
-                recoveredIngredients.sayurHijau += buburCalc(actualRet, BUBUR_BASE.sayurHijau);
-                recoveredIngredients.sayurBuah += buburCalc(actualRet, BUBUR_BASE.sayurBuah);
-                recoveredIngredients.sayurProtein += buburCalc(actualRet, BUBUR_BASE.sayurProtein);
+                ohRusak.beras += buburCalc(actualRet, BUBUR_BASE.beras);
+                ohRusak.sayurHijau += buburCalc(actualRet, BUBUR_BASE.sayurHijau);
+                ohRusak.sayurBuah += buburCalc(actualRet, BUBUR_BASE.sayurBuah);
+                ohRusak.sayurProtein += buburCalc(actualRet, BUBUR_BASE.sayurProtein);
               }
             }
           });
@@ -399,12 +408,13 @@ export default function Distribusi() {
           [dSent, iSent].forEach((s, idx) => {
             const retField = idx === 0 ? retur.tim_d ?? 0 : retur.tim_i ?? 0;
             if (s > 0) {
-              const actualRet = Math.min(retField, s);
+              // retur dalam gram → konversi ke cup (108 gr/cup) agar sejalan dgn Produksi
+              const actualRet = Math.min(Math.floor((retField || 0) / 108), s);
               if (actualRet > 0) {
-                recoveredIngredients.beras += actualRet * settings.berasTim;
-                recoveredIngredients.sayurHijau += actualRet * settings.sayurHijauTim;
-                recoveredIngredients.sayurBuah += actualRet * settings.sayurBuahTim;
-                recoveredIngredients.sayurProtein += actualRet * settings.sayurProteinTim;
+                ohRusak.beras += actualRet * settings.berasTim;
+                ohRusak.sayurHijau += actualRet * settings.sayurHijauTim;
+                ohRusak.sayurBuah += actualRet * settings.sayurBuahTim;
+                ohRusak.sayurProtein += actualRet * settings.sayurProteinTim;
               }
             }
           });
@@ -413,9 +423,9 @@ export default function Distribusi() {
         processBubur(sent.bubur_d || 0, sent.bubur_i || 0);
         processTim(sent.tim_d || 0, sent.tim_i || 0);
 
-        if (sent.oatmeal > 0) { const ar = Math.min(retur.oatmeal || 0, sent.oatmeal); if (ar > 0) recoveredIngredients.oat += ar * settings.oatmealCup; }
-        if (sent.puding > 0) { const ar = Math.min(retur.puding || 0, sent.puding); if (ar > 0) recoveredIngredients.puding += ar * settings.pudingCup; }
-        if (sent.abon > 0) { const ar = Math.min(retur.abon || 0, sent.abon); if (ar > 0) recoveredIngredients.abon += ar * settings.abonCup; }
+        if (sent.oatmeal > 0) { const ar = Math.min(retur.oatmeal || 0, sent.oatmeal); if (ar > 0) { ohRusak.oat += ar * settings.oatmealCup; kemasanRusak.oatmeal += ar; } }
+        if (sent.puding > 0) { const ar = Math.min(retur.puding || 0, sent.puding); if (ar > 0) { ohRusak.puding += ar * settings.pudingCup; kemasanRusak.puding += ar; } }
+        if (sent.abon > 0) { const ar = Math.min(retur.abon || 0, sent.abon); if (ar > 0) abonKembali += ar * settings.abonCup; }
       });
 
       // Jurnal
@@ -428,22 +438,52 @@ export default function Distribusi() {
         ]);
       }
 
-      // Stok retur movements
+      // Bersihkan movement lama agar re-save tidak dobel:
+      //  - OUT "RUSAK:OH" (pencatatan OH rusak versi sekarang)
+      //  - IN "Retur Bahan" / "OH abon" (retur bahan lama & OH abon dari outlet)
+      const existingOhRusakMov = (stokMov || []).filter((m: any) => m.tanggal === tanggal && m.tipe === "OUT" && m.keterangan?.startsWith("RUSAK:OH"));
+      for (const m of existingOhRusakMov) { await supabase.from("stok_movement").delete().eq("id", m.id); }
       const existingReturMov = (stokMov || []).filter((m: any) => m.tanggal === tanggal && m.tipe === "IN" && (m.keterangan?.includes("Retur Bahan") || m.keterangan?.includes("OH abon")));
       for (const m of existingReturMov) { await supabase.from("stok_movement").delete().eq("id", m.id); }
 
+      // Stok movements hasil OH (sisa tidak terjual di outlet):
+      //  - OH Bubur/Nasi Tim/Puding/Oatmeal → RUSAK (OUT). Bahan baku sudah
+      //    terpotong saat Langkah 2 (sesuai rencana) & TIDAK dikembalikan.
+      //  - OH Abon → KEMBALI ke stok gudang (IN) — bisa dijual lagi besok.
       const movPromises: Promise<any>[] = [];
-      if (recoveredIngredients.beras > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-brs01", tipe: "IN", qty: Math.ceil(recoveredIngredients.beras), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.puding > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-pud01", tipe: "IN", qty: Math.ceil(recoveredIngredients.puding), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.oat > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "IN", qty: Math.ceil(recoveredIngredients.oat), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.abon > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ab01", tipe: "IN", qty: Math.ceil(recoveredIngredients.abon), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.sayurHijau > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sh01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurHijau), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.sayurBuah > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurBuah), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
-      if (recoveredIngredients.sayurProtein > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "IN", qty: Math.ceil(recoveredIngredients.sayurProtein), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (ohRusak.beras > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-brs01", tipe: "OUT", qty: Math.ceil(ohRusak.beras), keterangan: `RUSAK:OH Beras (sisa Bubur/Tim) (${Math.ceil(ohRusak.beras)} gr) [${tanggal}]` }));
+      if (ohRusak.puding > 1) {
+        const pudingBahanRetur = bahan.find((x: any) => x.id === "b-pud01");
+        const pudingKonvRetur = pudingBahanRetur?.konversiGram || 130;
+        const qtyPuding = Math.ceil(ohRusak.puding / pudingKonvRetur);
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-pud01", tipe: "OUT", qty: qtyPuding, keterangan: `RUSAK:OH Puding (sisa) (${qtyPuding} pcs) [${tanggal}]` }));
+      }
+      if (ohRusak.oat > 1) {
+        const oatBahanRetur = bahan.find((x: any) => x.id === "b-oat01");
+        const oatKonvRetur = oatBahanRetur?.konversiGram || 154;
+        const qtyOat = Math.ceil(ohRusak.oat / oatKonvRetur);
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "OUT", qty: qtyOat, keterangan: `RUSAK:OH Oatmeal (sisa) (${qtyOat} pcs) [${tanggal}]` }));
+      }
+      if (abonKembali > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ab01", tipe: "IN", qty: Math.ceil(abonKembali), keterangan: `Retur Bahan Baku (g) [${tanggal}]` }));
+      if (ohRusak.sayurHijau > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sh01", tipe: "OUT", qty: Math.ceil(ohRusak.sayurHijau), keterangan: `RUSAK:OH Sayur Hijau (sisa) (${Math.ceil(ohRusak.sayurHijau)} gr) [${tanggal}]` }));
+      if (ohRusak.sayurBuah > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sb01", tipe: "OUT", qty: Math.ceil(ohRusak.sayurBuah), keterangan: `RUSAK:OH Sayur Buah (sisa) (${Math.ceil(ohRusak.sayurBuah)} gr) [${tanggal}]` }));
+      if (ohRusak.sayurProtein > 1) movPromises.push(db.addStokMov({ tanggal, bahanId: "b-sp01", tipe: "OUT", qty: Math.ceil(ohRusak.sayurProtein), keterangan: `RUSAK:OH Sayur Protein (sisa) (${Math.ceil(ohRusak.sayurProtein)} gr) [${tanggal}]` }));
+
+      // Kemasan OH → RUSAK (OUT) — cup & tutup produk yang tidak laku:
+      // Puding (CUP PUDING & PLASTIK SELER) & Oatmeal (CUP OAT & TUTUP OAT).
+      // Cup & tutup BUBUR & NASI TIM tidak ikut (via retur perlengkapan outlet).
+      if (kemasanRusak.puding > 0) {
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-cuppud01", tipe: "OUT", qty: kemasanRusak.puding, keterangan: `RUSAK:OH Cup Puding (sisa) (${kemasanRusak.puding} pcs) [${tanggal}]` }));
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-plas01", tipe: "OUT", qty: kemasanRusak.puding, keterangan: `RUSAK:OH Plastik Seler (sisa) (${kemasanRusak.puding} pcs) [${tanggal}]` }));
+      }
+      if (kemasanRusak.oatmeal > 0) {
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-cupoat1", tipe: "OUT", qty: kemasanRusak.oatmeal, keterangan: `RUSAK:OH Cup Oat (sisa) (${kemasanRusak.oatmeal} pcs) [${tanggal}]` }));
+        movPromises.push(db.addStokMov({ tanggal, bahanId: "b-ttoat01", tipe: "OUT", qty: kemasanRusak.oatmeal, keterangan: `RUSAK:OH Tutup Oat (sisa) (${kemasanRusak.oatmeal} pcs) [${tanggal}]` }));
+      }
 
       if (movPromises.length > 0) { await Promise.all(movPromises); }
 
-      toast.success("Siklus distribusi harian berhasil ditutup! Penjualan dari outlet & retur tercatat.");
+      toast.success("Siklus distribusi harian ditutup! Penjualan outlet tercatat — OH (sisa) otomatis rusak & OH abon kembali ke stok.");
       setStep(4);
     } catch (err) {
       toast.error("Gagal menutup siklus distribusi");

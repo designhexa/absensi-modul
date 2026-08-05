@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy, Package } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
@@ -21,7 +21,7 @@ import { TablePagination } from "@/components/TablePagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
-import { matchVariantRecords, scaleGridToActual, clampGridToActual } from "@/lib/produksi-utils";
+import { matchVariantRecords, scaleGridToActual, clampGridToActual, calcKemasanKebutuhan, KEMASAN_BAHAN } from "@/lib/produksi-utils";
 
 // Base ratios for Bubur (per 100gr beras = 6 cup)
 // Base ratio: Beras:Daging:Air:S.Hijau:S.Brokoli:S.Putih = 100:5:700:8:5:1.5
@@ -928,56 +928,21 @@ export default function Produksi() {
       });
     }
 
-    // Cup Puding
-    if (t.puding > 0) {
-      reqs.push({
-        bahanId: "b-cuppud01",
-        kode: "CUPPUD01",
-        nama: "CUP PUDING",
-        qty: t.puding,
-        rawQtyGrams: t.puding, // 1:1
-        satuan: "pcs"
-      });
-    }
-
-    // Plastik Sealer (1 puding = 1 pcs)
-    if (t.puding > 0) {
-      reqs.push({
-        bahanId: "b-plas01",
-        kode: "PLAS01",
-        nama: "PLASTIK SELER",
-        qty: t.puding,
-        rawQtyGrams: t.puding, // 1:1
-        satuan: "pcs"
-      });
-    }
-
-    // Cup Oat
-    if (t.oatmeal > 0) {
-      reqs.push({
-        bahanId: "b-cupoat1",
-        kode: "CUPOAT1",
-        nama: "CUP OAT",
-        qty: t.oatmeal,
-        rawQtyGrams: t.oatmeal, // 1:1
-        satuan: "pcs"
-      });
-    }
-
-    // Tutup Oat (1 oat = 1 tutup) — otomatis dipotong dari stok saat produksi
-    if (t.oatmeal > 0) {
-      reqs.push({
-        bahanId: "b-ttoat01",
-        kode: "TTOAT01",
-        nama: "TUTUP OAT",
-        qty: t.oatmeal,
-        rawQtyGrams: t.oatmeal, // 1:1
-        satuan: "pcs"
-      });
-    }
+    // KEMASAN (CUP & TUTUP) TIDAK dipotong di sini — dihitung di Langkah 3
+    // sesuai HASIL PRODUKSI AKTUAL (hasil bisa menyusut/meluber). Bahan utama
+    // di atas dipotong dari rencana dan TIDAK terpengaruh hasil produksi.
 
     return reqs;
   }, [combinedTotals, bubur1Variant, bubur2Variant, tim1Variant, tim2Variant, bahan, settings]);
+
+  // Kebutuhan kemasan (cup & tutup Puding/Oatmeal) dihitung dari HASIL PRODUKSI
+  // AKTUAL (Langkah 3) — karena hasil bisa menyusut atau meluber, jumlah cup & tutup
+  // yang dipotong mengikuti realisasi, bukan rencana.
+  // Kemasan BUBUR & NASI TIM (CUP BUBUR & TUTUP, stok sama) TIDAK dipotong di sini —
+  // stoknya berkurang lewat permohonan/retur perlengkapan outlet (Stok Gudang).
+  const packagingReqs = useMemo(() => {
+    return calcKemasanKebutuhan({ puding: actualCups.puding, oatmeal: actualCups.oatmeal });
+  }, [actualCups]);
 
   const isWarehouseRequested = useMemo(() => {
     // Check by keterangan label — this works regardless of the tanggal used
@@ -1106,7 +1071,54 @@ export default function Produksi() {
       ];
 
       await db.addProduksiBulk(batch);
+
+      // === PEMOTONGAN KEMASAN (CUP & TUTUP) SESUAI HASIL AKTUAL ===
+      // Bahan utama sudah dipotong di Langkah 2 langsung dari rencana dan TIDAK
+      // terpengaruh hasil produksi. Kemasan dihitung ulang dari cup aktual — karena
+      // hasil bisa menyusut (kebutuhan berkurang) atau meluber (kebutuhan bertambah).
+      const kemasanLabel = `Pemakaian Kemasan [${tanggal}]`;
+      const existingKemasan = (stokMov || []).filter(
+        (m: any) => m.tipe === "OUT" && m.keterangan === kemasanLabel
+      );
+      for (const m of existingKemasan) {
+        await db.deleteStokMov(m.id);
+      }
+      // Bersihkan potongan kemasan FORMAT LAMA (Langkah 2 versi sebelumnya mencampur
+      // cup & tutup ke label "Pemakaian Produksi [...]") agar tanggal lama yang
+      // diproses ulang tidak terpotong dobel (rencana lama + aktual baru).
+      const kemasanIds = new Set(KEMASAN_BAHAN.map((k) => k.bahanId));
+      const staleKemasan = (stokMov || []).filter(
+        (m: any) =>
+          m.tipe === "OUT" &&
+          kemasanIds.has(m.bahanId) &&
+          m.keterangan?.startsWith("Pemakaian Produksi [") &&
+          m.keterangan.includes(tanggal)
+      );
+      for (const m of staleKemasan) {
+        await db.deleteStokMov(m.id);
+      }
+      const shortItems: string[] = [];
+      for (const k of packagingReqs) {
+        const saldo = saldoBahan(k.bahanId, dbState);
+        if (saldo < k.qty) {
+          shortItems.push(`${k.nama}: butuh ${k.qty} pcs, stok ${Math.max(0, Math.round(saldo))} pcs`);
+        }
+        await db.addStokMov({
+          tanggal: todayISO(),
+          bahanId: k.bahanId,
+          tipe: "OUT",
+          qty: k.qty,
+          keterangan: kemasanLabel
+        });
+      }
+
       toast.success("Hasil Produksi Aktual berhasil disimpan!");
+      if (packagingReqs.length > 0 && shortItems.length > 0) {
+        toast.warning(
+          `Kemasan dipotong sesuai hasil aktual, namun stok gudang kurang untuk: ${shortItems.join("; ")}. ` +
+          `Pemotongan tetap dicatat (stok dapat minus).`
+        );
+      }
       initDistribution();
       setStep(4);
     } catch (err: any) {
@@ -1278,7 +1290,8 @@ export default function Produksi() {
   // Data penjualan sudah di-entry oleh outlet via Laporan -> SisaProduksiOH.
   // saveStep5 TIDAK menghapus/merecreate penjualan, hanya:
   // 1. Membaca penjualan dari outlet untuk revenue jurnal
-  // 2. Menggunakan returGrid (bisa diedit admin) untuk stok retur
+  // 2. Menggunakan returGrid untuk OH (sisa) — dicatat RUSAK, kecuali OH abon
+  //    yang kembali ke stok gudang
   // 3. Posting jurnal & stok movement
   // 4. Kembali ke Langkah 1 (siklus selesai)
   const saveStep5 = async () => {
@@ -1412,16 +1425,24 @@ export default function Produksi() {
         }
       }
 
-      // 4. Hitung recovered ingredients dari recalculated returGrid
-      const recoveredIngredients = {
+      // 4. Hitung OH (sisa tidak terjual di outlet) per bahan baku.
+      //    Aturan baru:
+      //    - OH Bubur / Nasi Tim / Puding / Oatmeal → otomatis RUSAK (bahan baku
+      //      sudah terpotong saat Langkah 2 sesuai rencana & TIDAK dikembalikan).
+      //    - OH Abon → KEMBALI ke stok gudang (bisa dijual lagi besok).
+      const ohRusak = {
         beras: 0,
         puding: 0,
         oat: 0,
-        abon: 0,
         sayurHijau: 0,
         sayurBuah: 0,
         sayurProtein: 0
       };
+      let abonKembali = 0;
+      // Kemasan OH (sisa tidak terjual) — cup & tutup Puding/Oatmeal ikut RUSAK:
+      // Puding → CUP PUDING & PLASTIK SELER; Oatmeal → CUP OAT & TUTUP OAT.
+      // (Cup & tutup BUBUR & NASI TIM tidak ikut — via retur perlengkapan outlet.)
+      const kemasanRusak = { puding: 0, oatmeal: 0 };
 
       outlets.forEach((o) => {
         const sent = distGrid[o.id] || {};
@@ -1432,58 +1453,65 @@ export default function Produksi() {
           if (sent.bubur_d > 0) {
             const actualReturCups = Math.min(Math.floor((retur.bubur_d || 0) / 118), sent.bubur_d);
             if (actualReturCups > 0) {
-              recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
-              recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
-              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
+              ohRusak.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
+              ohRusak.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
+              ohRusak.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              ohRusak.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }
           if (sent.bubur_i > 0) {
             const actualReturCups = Math.min(Math.floor((retur.bubur_i || 0) / 118), sent.bubur_i);
             if (actualReturCups > 0) {
-              recoveredIngredients.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
-              recoveredIngredients.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
-              recoveredIngredients.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
-              recoveredIngredients.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
+              ohRusak.beras += buburCalc(actualReturCups, BUBUR_BASE.beras);
+              ohRusak.sayurHijau += buburCalc(actualReturCups, BUBUR_BASE.sayurHijau);
+              ohRusak.sayurBuah += buburCalc(actualReturCups, BUBUR_BASE.sayurBuah);
+              ohRusak.sayurProtein += buburCalc(actualReturCups, BUBUR_BASE.sayurProtein);
             }
           }
 
-          // Tim D & I
+          // Tim D & I — bahan baku ikut RUSAK sesuai cup OH. Kemasan TIDAK ikut
+          // (cup & tutup Nasi Tim via request outlet, bukan potongan produksi).
           if (sent.tim_d > 0) {
             const actualReturCups = Math.min(Math.floor((retur.tim_d || 0) / 108), sent.tim_d);
             if (actualReturCups > 0) {
-              recoveredIngredients.beras += actualReturCups * settings.berasTim;
-              recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
-              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
+              ohRusak.beras += actualReturCups * settings.berasTim;
+              ohRusak.sayurHijau += actualReturCups * settings.sayurHijauTim;
+              ohRusak.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              ohRusak.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }
           if (sent.tim_i > 0) {
             const actualReturCups = Math.min(Math.floor((retur.tim_i || 0) / 108), sent.tim_i);
             if (actualReturCups > 0) {
-              recoveredIngredients.beras += actualReturCups * settings.berasTim;
-              recoveredIngredients.sayurHijau += actualReturCups * settings.sayurHijauTim;
-              recoveredIngredients.sayurBuah += actualReturCups * settings.sayurBuahTim;
-              recoveredIngredients.sayurProtein += actualReturCups * settings.sayurProteinTim;
+              ohRusak.beras += actualReturCups * settings.berasTim;
+              ohRusak.sayurHijau += actualReturCups * settings.sayurHijauTim;
+              ohRusak.sayurBuah += actualReturCups * settings.sayurBuahTim;
+              ohRusak.sayurProtein += actualReturCups * settings.sayurProteinTim;
             }
           }
 
-          // Oatmeal
+          // Oatmeal — kemasan CUP OAT & TUTUP OAT ikut RUSAK sesuai cup OH
           if (sent.oatmeal > 0) {
             const actualRetur = Math.min(retur.oatmeal || 0, sent.oatmeal);
-            if (actualRetur > 0) recoveredIngredients.oat += actualRetur * settings.oatmealCup;
+            if (actualRetur > 0) {
+              ohRusak.oat += actualRetur * settings.oatmealCup;
+              kemasanRusak.oatmeal += actualRetur;
+            }
           }
 
-          // Puding
+          // Puding — kemasan CUP PUDING & PLASTIK SELER ikut RUSAK sesuai cup OH
           if (sent.puding > 0) {
             const actualRetur = Math.min(retur.puding || 0, sent.puding);
-            if (actualRetur > 0) recoveredIngredients.puding += actualRetur * settings.pudingCup;
+            if (actualRetur > 0) {
+              ohRusak.puding += actualRetur * settings.pudingCup;
+              kemasanRusak.puding += actualRetur;
+            }
           }
 
           // Abon
           if (sent.abon > 0) {
             const actualRetur = Math.min(retur.abon || 0, sent.abon);
-            if (actualRetur > 0) recoveredIngredients.abon += actualRetur * settings.abonCup;
+            if (actualRetur > 0) abonKembali += actualRetur * settings.abonCup;
           }
       });
 
@@ -1520,67 +1548,107 @@ export default function Produksi() {
           ]);
       }
 
-      // 5. Delete existing retur stok movements for this tanggal, then re-create
+      // 5. Bersihkan movement lama agar re-save tidak dobel:
+      //    - OUT "RUSAK:OH" (pencatatan OH rusak versi sekarang)
+      //    - IN "Retur Bahan" / "OH abon" (retur bahan lama & OH abon dari outlet)
+      const existingOhRusakMov = (dbState.stokMov || []).filter(
+        (m: any) => m.tanggal === tanggal && m.tipe === "OUT" && m.keterangan?.startsWith("RUSAK:OH")
+      );
+      for (const m of existingOhRusakMov) {
+        await supabase.from("stok_movement").delete().eq("id", m.id);
+      }
       const existingReturMov = (dbState.stokMov || []).filter(
         (m: any) => m.tanggal === tanggal && m.tipe === "IN" && (m.keterangan?.includes("Retur Bahan") || m.keterangan?.includes("OH abon"))
       );
       for (const m of existingReturMov) {
         await supabase.from("stok_movement").delete().eq("id", m.id);
       }
-      // 6. Stok retur movements — berdasarkan returGrid (bisa diedit admin)
+      // 6. Stok movements hasil OH (sisa tidak terjual di outlet):
+      //    - OH Bubur/Nasi Tim/Puding/Oatmeal → RUSAK (OUT). Bahan baku sudah
+      //      terpotong saat Langkah 2 (sesuai rencana) dan TIDAK dikembalikan.
+      //    - OH Abon → KEMBALI ke stok gudang (IN) — bisa dijual lagi besok.
       const movPromises: Promise<any>[] = [];
-      if (recoveredIngredients.beras > 1) {
+      if (ohRusak.beras > 1) {
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-brs01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.beras), // gram
-          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
+          tanggal, bahanId: "b-brs01", tipe: "OUT",
+          qty: Math.ceil(ohRusak.beras), // gram
+          keterangan: `RUSAK:OH Beras (sisa Bubur/Tim) (${Math.ceil(ohRusak.beras)} gr) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.puding > 1) {
+      if (ohRusak.puding > 1) {
         const pudingBahanRetur = bahan.find((x: any) => x.id === "b-pud01");
         const pudingKonvRetur = pudingBahanRetur?.konversiGram || 130; // konversi master data
+        const qtyPuding = Math.ceil(ohRusak.puding / pudingKonvRetur);
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-pud01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.puding / pudingKonvRetur), // pcs
-          keterangan: `Retur Bahan Baku (pcs) [${tanggal}]`
+          tanggal, bahanId: "b-pud01", tipe: "OUT",
+          qty: qtyPuding, // pcs
+          keterangan: `RUSAK:OH Puding (sisa) (${qtyPuding} pcs) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.oat > 1) {
+      if (ohRusak.oat > 1) {
         const oatBahanRetur = bahan.find((x: any) => x.id === "b-oat01");
         const oatKonvRetur = oatBahanRetur?.konversiGram || 154; // konversi master data
+        const qtyOat = Math.ceil(ohRusak.oat / oatKonvRetur);
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-oat01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.oat / oatKonvRetur), // pcs
-          keterangan: `Retur Bahan Baku (pcs) [${tanggal}]`
+          tanggal, bahanId: "b-oat01", tipe: "OUT",
+          qty: qtyOat, // pcs
+          keterangan: `RUSAK:OH Oatmeal (sisa) (${qtyOat} pcs) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.abon > 1) {
+      if (abonKembali > 1) {
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-ab01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.abon), // gram
+          qty: Math.ceil(abonKembali), // gram
           keterangan: `Retur Bahan Baku (g) [${tanggal}]`
         }));
       }
+      if (ohRusak.sayurHijau > 1) {
+        movPromises.push(db.addStokMov({
+          tanggal, bahanId: "b-sh01", tipe: "OUT",
+          qty: Math.ceil(ohRusak.sayurHijau),
+          keterangan: `RUSAK:OH Sayur Hijau (sisa) (${Math.ceil(ohRusak.sayurHijau)} gr) [${tanggal}]`
+        }));
+      }
+      if (ohRusak.sayurBuah > 1) {
+        movPromises.push(db.addStokMov({
+          tanggal, bahanId: "b-sb01", tipe: "OUT",
+          qty: Math.ceil(ohRusak.sayurBuah),
+          keterangan: `RUSAK:OH Sayur Buah (sisa) (${Math.ceil(ohRusak.sayurBuah)} gr) [${tanggal}]`
+        }));
+      }
+      if (ohRusak.sayurProtein > 1) {
+        movPromises.push(db.addStokMov({
+          tanggal, bahanId: "b-sp01", tipe: "OUT",
+          qty: Math.ceil(ohRusak.sayurProtein),
+          keterangan: `RUSAK:OH Sayur Protein (sisa) (${Math.ceil(ohRusak.sayurProtein)} gr) [${tanggal}]`
+        }));
+      }
 
-      if (recoveredIngredients.sayurHijau > 1) {
+      // 7. Kemasan OH → RUSAK (OUT) — cup & tutup produk yang tidak laku:
+      //    Puding (CUP PUDING & PLASTIK SELER) & Oatmeal (CUP OAT & TUTUP OAT).
+      //    Cup & tutup BUBUR & NASI TIM tidak ikut (via retur perlengkapan outlet).
+      if (kemasanRusak.puding > 0) {
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-sh01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.sayurHijau),
-          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
+          tanggal, bahanId: "b-cuppud01", tipe: "OUT",
+          qty: kemasanRusak.puding,
+          keterangan: `RUSAK:OH Cup Puding (sisa) (${kemasanRusak.puding} pcs) [${tanggal}]`
+        }));
+        movPromises.push(db.addStokMov({
+          tanggal, bahanId: "b-plas01", tipe: "OUT",
+          qty: kemasanRusak.puding,
+          keterangan: `RUSAK:OH Plastik Seler (sisa) (${kemasanRusak.puding} pcs) [${tanggal}]`
         }));
       }
-      if (recoveredIngredients.sayurBuah > 1) {
+      if (kemasanRusak.oatmeal > 0) {
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-sb01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.sayurBuah),
-          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
+          tanggal, bahanId: "b-cupoat1", tipe: "OUT",
+          qty: kemasanRusak.oatmeal,
+          keterangan: `RUSAK:OH Cup Oat (sisa) (${kemasanRusak.oatmeal} pcs) [${tanggal}]`
         }));
-      }
-      if (recoveredIngredients.sayurProtein > 1) {
         movPromises.push(db.addStokMov({
-          tanggal, bahanId: "b-sp01", tipe: "IN",
-          qty: Math.ceil(recoveredIngredients.sayurProtein),
-          keterangan: `Retur Bahan Baku (gr) [${tanggal}]`
+          tanggal, bahanId: "b-ttoat01", tipe: "OUT",
+          qty: kemasanRusak.oatmeal,
+          keterangan: `RUSAK:OH Tutup Oat (sisa) (${kemasanRusak.oatmeal} pcs) [${tanggal}]`
         }));
       }
 
@@ -1588,7 +1656,7 @@ export default function Produksi() {
         await Promise.all(movPromises);
       }
 
-      toast.success("Siklus produksi harian berhasil ditutup! Penjualan dari outlet & retur tercatat.");
+      toast.success("Siklus produksi harian ditutup! Penjualan outlet tercatat — OH (sisa) otomatis rusak & OH abon kembali ke stok.");
       setStep(1);
     } catch (err) {
       toast.error("Gagal menutup siklus produksi");
@@ -2467,6 +2535,11 @@ export default function Produksi() {
 
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ringkasan Pemotongan Stok Gudang (Pcs/Sachet/Pack)</h3>
+            <p className="text-[11px] text-muted-foreground">
+              Pemotongan bahan baku utama mengikuti <strong>rencana</strong> (Langkah 1). Kemasan (cup &amp; tutup <strong>Puding/Oatmeal</strong>)
+              dipotong di <strong>Langkah 3</strong> sesuai <strong>hasil produksi aktual</strong> — bisa berbeda dari rencana karena hasil bisa menyusut atau meluber.
+              Kemasan <strong>Bubur &amp; Nasi Tim</strong> (CUP BUBUR &amp; TUTUP, stok sama) <strong>tidak</strong> dipotong dari stok produksi — stoknya berkurang saat <strong>request outlet disetujui</strong> di Stok Gudang, dan sisa kembali lewat <strong>retur perlengkapan</strong>.
+            </p>
             <div className="rounded-2xl border overflow-hidden">
               <Table>
                 <TableHeader>
@@ -2731,6 +2804,63 @@ export default function Produksi() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Kemasan sesuai hasil aktual — dipotong otomatis saat simpan */}
+          <div className="bg-muted/15 p-4 rounded-2xl border space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Package className="h-4 w-4 text-primary" /> Kemasan Sesuai Hasil Aktual (Cup &amp; Tutup)
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              Bahan utama sudah dipotong di Langkah 2 sesuai rencana dan <strong>tidak berubah</strong> oleh hasil produksi.
+              Kemasan dihitung dari hasil aktual di atas — bisa berbeda dari rencana karena hasil bisa <strong>menyusut</strong> atau <strong>meluber</strong>. Dipotong otomatis saat menyimpan Langkah 3.
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Kemasan <strong>Bubur &amp; Nasi Tim</strong> (CUP BUBUR &amp; TUTUP) <strong>tidak</strong> ikut dipotong di sini — stoknya berkurang saat <strong>request outlet disetujui</strong> di Stok Gudang, dan sisa kembali lewat <strong>retur perlengkapan</strong>.
+            </p>
+            <div className="rounded-xl border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40">
+                    <TableHead>Kemasan</TableHead>
+                    <TableHead>Kode</TableHead>
+                    <TableHead className="text-right">Kebutuhan (Aktual)</TableHead>
+                    <TableHead className="text-right">Stok Gudang</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {packagingReqs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        Tidak ada kebutuhan kemasan — hasil aktual Oatmeal &amp; Puding 0 cup.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {packagingReqs.map((r) => {
+                    const saldo = saldoBahan(r.bahanId, dbState);
+                    const isSufficient = saldo >= r.qty;
+                    return (
+                      <TableRow key={r.bahanId}>
+                        <TableCell className="font-semibold">{r.nama}</TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{r.kode}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">{r.qty} pcs</TableCell>
+                        <TableCell className="text-right">{Math.round(saldo)} pcs</TableCell>
+                        <TableCell className="text-center">
+                          {isSufficient ? (
+                            <Badge className="bg-success text-success-foreground">Aman</Badge>
+                          ) : (
+                            <Badge variant="destructive" className="gap-1 justify-center">
+                              <AlertTriangle className="h-3 w-3" /> Kurang {r.qty - Math.round(saldo)}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           <div className="flex justify-between items-center border-t pt-6">
@@ -3086,6 +3216,29 @@ export default function Produksi() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+
+          {/* Aturan OH (sisa tidak terjual) — info ringkas */}
+          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" /> Aturan OH (Sisa Tidak Terjual)
+            </h4>
+            <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+              <li>
+                OH <strong>Bubur / Nasi Tim / Puding / Oatmeal</strong> otomatis dicatat{" "}
+                <Badge variant="destructive">RUSAK</Badge> — bahan baku sudah terpotong di Langkah 2 dan <strong>tidak dikembalikan</strong> ke stok.
+              </li>
+              <li>
+                Kemasan <strong>Puding / Oatmeal</strong> (cup &amp; tutup) ikut dicatat{" "}
+                <Badge variant="destructive">RUSAK</Badge> otomatis sesuai cup yang tidak laku (dipotong di Langkah 3).
+              </li>
+              <li>
+                OH <strong>Abon</strong> <Badge className="bg-success text-success-foreground">kembali ke stok</Badge> gudang — bisa dijual lagi.
+              </li>
+              <li>
+                Kemasan <strong>Bubur &amp; Nasi Tim</strong> (cup &amp; tutup) kembali ke gudang lewat <strong>retur perlengkapan</strong> outlet (bukan otomatis).
+              </li>
+            </ul>
+          </div>
 
           {/* Dropdown Selector & Row Form */}
           <div className="bg-muted/30 p-5 rounded-2xl border space-y-4 shadow-sm">
