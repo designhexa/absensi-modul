@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db, useDB, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { Navigate } from "react-router-dom";
 import { rupiah, todayISO, DateRange, inRange, nilaiBahan } from "@/lib/format";
 import { AkunKategori } from "@/lib/types";
 import { Plus } from "lucide-react";
@@ -22,6 +24,7 @@ import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
 const KATEGORI: AkunKategori[] = ["Aset", "Kewajiban", "Ekuitas", "Pendapatan", "Beban"];
 
 export default function Keuangan() {
+  const { user } = useAuth();
   const { jurnal, penjualan, coa, bahan, stokMov } = useDB();
   const [tanggal, setTanggal] = useState(todayISO());
   const [keterangan, setKeterangan] = useState("");
@@ -182,6 +185,11 @@ export default function Keuangan() {
     db.addJurnalBulk(items);
     toast.success(`${items.length} entri jurnal diimport`);
   };
+
+  // Guard: halaman Keuangan hanya boleh diakses admin (Financial/Admin Utama)
+  if (user?.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="space-y-6">

@@ -25,6 +25,7 @@ import { rupiah } from "@/lib/format";
 
 import { Plus, Trash2, RotateCcw, Pencil, Sliders, Warehouse, Store, ShoppingCart, BookOpen, UserCheck, Users, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
 
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
@@ -190,7 +191,10 @@ export default function MasterData() {
     toast.success("Pengaturan aplikasi berhasil disimpan!");
   };
 
-
+  // Guard: halaman Master Data hanya boleh diakses admin (Admin Utama)
+  if (user?.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">

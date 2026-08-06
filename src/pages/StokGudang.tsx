@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { db, useDB, saldoBahan, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah, hargaPerGram, nilaiBahan } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, Check, X, Clock, Send, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, Eye, EyeOff, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 import BahanFilter from "@/components/BahanFilter";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -20,6 +20,14 @@ import { useAuth } from "@/lib/auth";
 import { AkunKategori } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // === SUBCOMPONENT: OUTLET VIEW FOR REQUESTING STOCK & RETUR ===
 function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
@@ -58,6 +66,39 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
   const [returProdukId, setReturProdukId] = useState("");
   const [returQty, setReturQty] = useState(0);
   const [returTanggal, setReturTanggal] = useState(todayISO());
+
+  // Edit state — edit in-place untuk request/retur ber-status Pending
+  const [editing, setEditing] = useState<any>(null);
+  const [editQty, setEditQty] = useState(1);
+  const [editTanggal, setEditTanggal] = useState("");
+  const [editCatatan, setEditCatatan] = useState("");
+
+  const openEdit = (r: any) => {
+    const isRetur = r.catatan?.startsWith("RETUR");
+    setEditing(r);
+    setEditQty(r.qty);
+    setEditTanggal(isRetur ? r.tanggal : r.tanggalKirim);
+    setEditCatatan(isRetur ? "" : (r.catatan || ""));
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!(editQty > 0)) return toast.error("Jumlah tidak valid");
+    if (!editTanggal) return toast.error("Tanggal wajib diisi");
+    const isRetur = editing.catatan?.startsWith("RETUR");
+    try {
+      await db.updatePermohonanStok(
+        editing.id,
+        isRetur
+          ? { qty: editQty, tanggal: editTanggal, tanggalKirim: editTanggal }
+          : { qty: editQty, tanggalKirim: editTanggal, catatan: editCatatan }
+      );
+      toast.success(isRetur ? "Retur perlengkapan diperbarui" : "Permohonan perlengkapan diperbarui");
+      setEditing(null);
+    } catch (err) {
+      toast.error(`Gagal memperbarui: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   const selectedProduct = useMemo(() => {
     return (produk || []).find((p: any) => p.id === produkId);
@@ -309,15 +350,20 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
                             </TableCell>
                             <TableCell>
                               {r.status === "Pending" && (
-                                <ConfirmDeleteButton
-                                  onConfirm={() => {
-                                    db.deletePermohonanStok(r.id);
-                                    toast.success("Permohonan stok dibatalkan");
-                                  }}
-                                  title="Batalkan Permohonan"
-                                  description={`Permohonan ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
-                                  confirmLabel="Batalkan"
-                                />
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit permohonan" onClick={() => openEdit(r)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <ConfirmDeleteButton
+                                    onConfirm={() => {
+                                      db.deletePermohonanStok(r.id);
+                                      toast.success("Permohonan stok dibatalkan");
+                                    }}
+                                    title="Batalkan Permohonan"
+                                    description={`Permohonan ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
+                                    confirmLabel="Batalkan"
+                                  />
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -432,15 +478,20 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
                             </TableCell>
                             <TableCell>
                               {r.status === "Pending" && (
-                                <ConfirmDeleteButton
-                                  onConfirm={() => {
-                                    db.deletePermohonanStok(r.id);
-                                    toast.success("Retur dibatalkan");
-                                  }}
-                                  title="Batalkan Retur"
-                                  description={`Retur ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
-                                  confirmLabel="Batalkan"
-                                />
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit retur" onClick={() => openEdit(r)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <ConfirmDeleteButton
+                                    onConfirm={() => {
+                                      db.deletePermohonanStok(r.id);
+                                      toast.success("Retur dibatalkan");
+                                    }}
+                                    title="Batalkan Retur"
+                                    description={`Retur ${prod?.nama ?? "perlengkapan"} (${r.qty}) akan dibatalkan dan dihapus.`}
+                                    confirmLabel="Batalkan"
+                                  />
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -455,6 +506,45 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Edit Request/Retur — edit in-place untuk yang masih Pending */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {editing?.catatan?.startsWith("RETUR") ? "Retur" : "Request"} Perlengkapan
+            </DialogTitle>
+            <DialogDescription>
+              {editing ? (() => {
+                const prod = produk.find((p: any) => p.id === editing.produkId);
+                return `Perlengkapan: ${prod?.nama ?? "-"} (saat ini ${editing.qty} ${prod?.satuan ?? "pcs"}).`;
+              })() : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Jumlah ({produk.find((p: any) => p.id === editing?.produkId)?.satuan ?? "pcs"})</Label>
+              <Input type="number" min={1} value={editQty || ""} onChange={(e) => setEditQty(Number(e.target.value))} className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Label>{editing?.catatan?.startsWith("RETUR") ? "Tanggal Retur" : "Tanggal Kirim"}</Label>
+              <Input type="date" value={editTanggal} onChange={(e) => setEditTanggal(e.target.value)} className="h-10" />
+            </div>
+            {editing && !editing.catatan?.startsWith("RETUR") && (
+              <div className="space-y-2">
+                <Label>Catatan Pengiriman</Label>
+                <Input value={editCatatan} onChange={(e) => setEditCatatan(e.target.value)} placeholder="Contoh: Titip di rombong, dll (opsional)" className="h-10" />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
+            <Button onClick={saveEdit} className="gradient-primary text-primary-foreground">
+              <Save className="h-4 w-4 mr-1.5" /> Simpan Perubahan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
