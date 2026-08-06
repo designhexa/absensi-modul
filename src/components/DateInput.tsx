@@ -1,8 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowNav } from "@/components/ArrowNav";
 import { addDays, format, parseISO } from "date-fns";
-import { cn } from "@/lib/utils";
 
 // ------------------------------------------------------------------
 // DateInput — input tanggal (yyyy-MM-dd) dengan tombol panah prev/next
@@ -24,6 +22,7 @@ interface DateInputProps {
 
 export function DateInput({ value, onChange, className, disabled }: DateInputProps) {
   const has = !!value;
+  const canShift = !disabled && has;
 
   const shift = (dir: 1 | -1) => {
     if (!value) return;
@@ -31,45 +30,24 @@ export function DateInput({ value, onChange, className, disabled }: DateInputPro
   };
 
   return (
-    <div
-      className={cn(
-        "flex w-full min-w-0 items-center gap-1.5 rounded-xl border bg-card/60 backdrop-blur px-2 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-ring/40",
-        className
-      )}
+    <ArrowNav
+      variant="pill"
+      size="sm"
+      onPrev={() => shift(-1)}
+      onNext={() => shift(1)}
+      disabledPrev={!canShift}
+      disabledNext={!canShift}
+      prevLabel="Tanggal sebelumnya"
+      nextLabel="Tanggal berikutnya"
+      className={className}
     >
-      {/* Tombol Previous */}
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0"
-        onClick={() => shift(-1)}
-        disabled={disabled || !has}
-        aria-label="Tanggal sebelumnya"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-
       <Input
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0.5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="h-8 w-full border-0 bg-transparent px-0.5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
       />
-
-      {/* Tombol Next */}
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0"
-        onClick={() => shift(1)}
-        disabled={disabled || !has}
-        aria-label="Tanggal berikutnya"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
+    </ArrowNav>
   );
 }

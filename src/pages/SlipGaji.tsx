@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDB } from "@/lib/store";
 import { rupiah, todayISO, monthKey } from "@/lib/format";
 import { addMonths, format, parseISO } from "date-fns";
-import { Printer, FileText, Landmark, User, CalendarDays, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { Printer, FileText, Landmark, User, CalendarDays, Award } from "lucide-react";
+import { ArrowNav } from "@/components/ArrowNav";
 import { useAuth } from "@/lib/auth";
 
 export default function SlipGaji() {
@@ -165,17 +166,13 @@ export default function SlipGaji() {
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-muted-foreground">Pilih Bulan</label>
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => shiftMonth(-1)}
-                aria-label="Bulan sebelumnya"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+            <ArrowNav
+              size="md"
+              onPrev={() => shiftMonth(-1)}
+              onNext={() => shiftMonth(1)}
+              prevLabel="Bulan sebelumnya"
+              nextLabel="Bulan berikutnya"
+            >
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="h-10 w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -186,17 +183,7 @@ export default function SlipGaji() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => shiftMonth(1)}
-                aria-label="Bulan berikutnya"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            </ArrowNav>
           </div>
         </CardContent>
       </Card>

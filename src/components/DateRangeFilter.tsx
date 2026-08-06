@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronLeft, ChevronRight, CalendarRange, X } from "lucide-react";
+import { CalendarRange, X } from "lucide-react";
 import { DateRange } from "@/lib/format";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowNav } from "@/components/ArrowNav";
 import type { DateRange as RDPRange } from "react-day-picker";
 
 interface Props {
@@ -67,24 +68,30 @@ export function DateRangeFilter({ value, onChange, className }: Props) {
     : `${fmt(value.from)} → ${fmt(value.to)}`;
 
   return (
-    <div
-      className={cn(
-        "flex w-full sm:w-auto sm:inline-flex items-center gap-1.5 rounded-xl border bg-card/60 backdrop-blur px-2 py-1.5 shadow-sm min-w-0",
-        className
-      )}
+    <ArrowNav
+      variant="pill"
+      size="sm"
+      onPrev={() => shiftRange("prev")}
+      onNext={() => shiftRange("next")}
+      disabledPrev={!has}
+      disabledNext={!has}
+      prevLabel="Tanggal sebelumnya"
+      nextLabel="Tanggal berikutnya"
+      className={cn("sm:w-auto sm:inline-flex", className)}
+      trailing={
+        has ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0"
+            onClick={clear}
+            aria-label="Reset filter tanggal"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        ) : undefined
+      }
     >
-      {/* Tombol Previous */}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0"
-        onClick={() => shiftRange("prev")}
-        disabled={!has}
-        aria-label="Tanggal sebelumnya"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-
       <CalendarRange className="h-4 w-4 text-primary shrink-0" />
 
       <Popover>
@@ -111,30 +118,6 @@ export function DateRangeFilter({ value, onChange, className }: Props) {
           />
         </PopoverContent>
       </Popover>
-
-      {/* Tombol Next */}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0"
-        onClick={() => shiftRange("next")}
-        disabled={!has}
-        aria-label="Tanggal berikutnya"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-
-      {has && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 shrink-0"
-          onClick={clear}
-          aria-label="Reset filter tanggal"
-        >
-          <X className="h-3.5 w-3.5" />
-        </Button>
-      )}
-    </div>
+    </ArrowNav>
   );
 }

@@ -10,7 +10,8 @@ import { db, useDB, getBubaSettings } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { DateInput } from "@/components/DateInput";
 import { todayISO } from "@/lib/format";
-import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "lucide-react";
+import { ArrowNav } from "@/components/ArrowNav";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -619,20 +620,22 @@ export default function Distribusi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="icon" onClick={() => { const idx = outlets.findIndex((o: any) => o.id === step4OutletId); if (idx > 0) setStep4OutletId(outlets[idx - 1].id); }} disabled={outlets.findIndex((o: any) => o.id === step4OutletId) <= 0} className="h-11 w-11">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
+                <ArrowNav
+                  size="lg"
+                  onPrev={() => { const idx = outlets.findIndex((o: any) => o.id === step4OutletId); if (idx > 0) setStep4OutletId(outlets[idx - 1].id); }}
+                  onNext={() => { const idx = outlets.findIndex((o: any) => o.id === step4OutletId); if (idx < outlets.length - 1) setStep4OutletId(outlets[idx + 1].id); }}
+                  disabledPrev={outlets.findIndex((o: any) => o.id === step4OutletId) <= 0}
+                  disabledNext={outlets.findIndex((o: any) => o.id === step4OutletId) >= outlets.length - 1}
+                  prevLabel="Outlet sebelumnya"
+                  nextLabel="Outlet berikutnya"
+                >
                   <Select value={step4OutletId} onValueChange={setStep4OutletId}>
                     <SelectTrigger className="h-11 font-semibold text-sm"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
                     <SelectContent>
                       {outlets.map((o: any) => <SelectItem key={o.id} value={o.id} className="font-medium text-xs">{o.nama}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button type="button" variant="outline" size="icon" onClick={() => { const idx = outlets.findIndex((o: any) => o.id === step4OutletId); if (idx < outlets.length - 1) setStep4OutletId(outlets[idx + 1].id); }} disabled={outlets.findIndex((o: any) => o.id === step4OutletId) >= outlets.length - 1} className="h-11 w-11">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                </ArrowNav>
               </div>
             </div>
 
@@ -740,21 +743,22 @@ export default function Distribusi() {
           {/* Outlet Selector */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="space-y-1.5 flex-1 min-w-[200px]">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="icon" onClick={() => { const idx = outlets.findIndex((o: any) => o.id === step5OutletId); if (idx > 0) setStep5OutletId(outlets[idx - 1].id); }} disabled={outlets.findIndex((o: any) => o.id === step5OutletId) <= 0} className="h-11 w-11">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Select value={step5OutletId} onValueChange={setStep5OutletId}>
-                  <SelectTrigger className="h-11 font-semibold text-sm"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
-                  <SelectContent>
-                    {outlets.map((o: any) => <SelectItem key={o.id} value={o.id} className="font-medium text-xs">{o.nama}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" size="icon" onClick={() => { const idx = outlets.findIndex((o: any) => o.id === step5OutletId); if (idx < outlets.length - 1) setStep5OutletId(outlets[idx + 1].id); }} disabled={outlets.findIndex((o: any) => o.id === step5OutletId) >= outlets.length - 1} className="h-11 w-11">
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>                <ArrowNav
+                  size="lg"
+                  onPrev={() => { const idx = outlets.findIndex((o: any) => o.id === step5OutletId); if (idx > 0) setStep5OutletId(outlets[idx - 1].id); }}
+                  onNext={() => { const idx = outlets.findIndex((o: any) => o.id === step5OutletId); if (idx < outlets.length - 1) setStep5OutletId(outlets[idx + 1].id); }}
+                  disabledPrev={outlets.findIndex((o: any) => o.id === step5OutletId) <= 0}
+                  disabledNext={outlets.findIndex((o: any) => o.id === step5OutletId) >= outlets.length - 1}
+                  prevLabel="Outlet sebelumnya"
+                  nextLabel="Outlet berikutnya"
+                >
+                  <Select value={step5OutletId} onValueChange={setStep5OutletId}>
+                    <SelectTrigger className="h-11 font-semibold text-sm"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
+                    <SelectContent>
+                      {outlets.map((o: any) => <SelectItem key={o.id} value={o.id} className="font-medium text-xs">{o.nama}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </ArrowNav>
             </div>
           </div>
 

@@ -10,7 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, Package } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy, Package } from "lucide-react";
+import { ArrowNav } from "@/components/ArrowNav";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { DateInput } from "@/components/DateInput";
@@ -3026,18 +3027,14 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-start gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
-                    onClick={() => cycleOutlet(-1, step4OutletId, setStep4OutletId)}
-                    title="Outlet sebelumnya"
-                    aria-label="Outlet sebelumnya"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                <ArrowNav
+                  size="md"
+                  className="items-start"
+                  onPrev={() => cycleOutlet(-1, step4OutletId, setStep4OutletId)}
+                  onNext={() => cycleOutlet(1, step4OutletId, setStep4OutletId)}
+                  prevLabel="Outlet sebelumnya"
+                  nextLabel="Outlet berikutnya"
+                >
                   <div className="flex-1">
                     <OutletFilter
                       outlets={outlets}
@@ -3046,18 +3043,7 @@ export default function Produksi() {
                       label=""
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
-                    onClick={() => cycleOutlet(1, step4OutletId, setStep4OutletId)}
-                    title="Outlet berikutnya"
-                    aria-label="Outlet berikutnya"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                </ArrowNav>
               </div>
             </div>
 
@@ -3308,18 +3294,14 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-start gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
-                    onClick={() => cycleOutlet(-1, step5OutletId, setStep5OutletId, true)}
-                    title="Outlet sebelumnya"
-                    aria-label="Outlet sebelumnya"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                <ArrowNav
+                  size="md"
+                  className="items-start"
+                  onPrev={() => cycleOutlet(-1, step5OutletId, setStep5OutletId, true)}
+                  onNext={() => cycleOutlet(1, step5OutletId, setStep5OutletId, true)}
+                  prevLabel="Outlet sebelumnya"
+                  nextLabel="Outlet berikutnya"
+                >
                   <div className="flex-1">
                     <OutletFilter
                       outlets={outlets}
@@ -3331,18 +3313,7 @@ export default function Produksi() {
                       allValue={ALL_OUTLETS_ID}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
-                    onClick={() => cycleOutlet(1, step5OutletId, setStep5OutletId, true)}
-                    title="Outlet berikutnya"
-                    aria-label="Outlet berikutnya"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                </ArrowNav>
               </div>
             </div>
             {isAllView && (
