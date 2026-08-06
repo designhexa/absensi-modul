@@ -171,6 +171,29 @@ export function sumGrid(grid: OutletGrid) {
 }
 
 // =============================================================================
+// ATURAN OH BUBUR & NASI TIM — konversi sisa gram → cup (SOP hitung terjual)
+// =============================================================================
+//
+// SOP menghitung produk Bubur & Nasi Tim terjual:
+//   Terjual = (Stok Awal gr − OH gr) ÷ Berat Rumus (118 Bubur / 108 Nasi Tim)
+//   Sisa gram ≤ 50 gr → dianggap terjual semua (0 cup sisa)
+//   Sisa gram > 50 gr → dibulatkan NAIK menjadi cup sisa (mis. 90 gr → 1 cup)
+//   Pecahan < 0,5 tidak dibulatkan naik — batas minimal sisa 50 gr.
+// Contoh: stok 3.120g − OH 90g = 3.030g; 3.030 ÷ 120 = 25,25 → terjual 25 (bukan 26).
+
+export const OH_MIN_GRAM = 50;
+
+// Konversi sisa gram (OH) → cup untuk Bubur & Nasi Tim dengan aturan 50g.
+// Nilai di atas kelipatan cup penuh dibulatkan NAIK (ceil) karena sisa > 50 gr
+// dianggap minimal 1 cup sisa (mis. 90 gr → 1 cup, 130 gr → 2 cup).
+export function sisaGramToCups(sisaGram: number, gramPerCup: number): number {
+  const grams = Math.max(0, Number(sisaGram) || 0);
+  // Di cabang ini grams > 50 > 0, jadi ceil selalu ≥ 1 — cukup ceil langsung.
+  if (grams <= OH_MIN_GRAM) return 0;
+  return Math.ceil(grams / gramPerCup);
+}
+
+// =============================================================================
 // KEMASAN (CUP & TUTUP) — dihitung dari HASIL PRODUKSI AKTUAL (Langkah 3)
 // =============================================================================
 //

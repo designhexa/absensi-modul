@@ -13,7 +13,7 @@ import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "l
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, matchVariantRecords, scaleGridToActual, clampGridToActual, type OutletGrid } from "@/lib/produksi-utils";
+import { BUBUR_BASE, formatDecimal, buburCalc, parseSplit, serializeSplit, parseVariants, getVariantNamesForDate, loadGridFromReqs, sumGrid, matchVariantRecords, scaleGridToActual, clampGridToActual, sisaGramToCups, type OutletGrid } from "@/lib/produksi-utils";
 
 export default function Distribusi() {
   const navigate = useNavigate();
@@ -336,7 +336,7 @@ export default function Distribusi() {
           const ret = freshReturGrid[o.id] || { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
 
           const buburSent = (sent.bubur_d || 0) + (sent.bubur_i || 0);
-          const buburRet = Math.floor(((ret.bubur_d || 0) + (ret.bubur_i || 0)) / 118);
+          const buburRet = sisaGramToCups((ret.bubur_d || 0) + (ret.bubur_i || 0), 118);
           if (buburSent > 0) {
             const buburSold = Math.max(0, buburSent - Math.min(buburRet, buburSent));
             if (buburSold > 0) {
@@ -346,7 +346,7 @@ export default function Distribusi() {
           }
 
           const timSent = (sent.tim_d || 0) + (sent.tim_i || 0);
-          const timRet = Math.floor(((ret.tim_d || 0) + (ret.tim_i || 0)) / 108);
+          const timRet = sisaGramToCups((ret.tim_d || 0) + (ret.tim_i || 0), 108);
           if (timSent > 0) {
             const timSold = Math.max(0, timSent - Math.min(timRet, timSent));
             if (timSold > 0) {
@@ -393,8 +393,8 @@ export default function Distribusi() {
           [dSent, iSent].forEach((s, idx) => {
             const retField = idx === 0 ? retur.bubur_d ?? 0 : retur.bubur_i ?? 0;
             if (s > 0) {
-              // retur dalam gram → konversi ke cup (118 gr/cup) agar sejalan dgn Produksi
-              const actualRet = Math.min(Math.floor((retField || 0) / 118), s);
+              // retur dalam gram → konversi ke cup (118 gr/cup) aturan OH 50g agar sejalan dgn Produksi
+              const actualRet = Math.min(sisaGramToCups(retField || 0, 118), s);
               if (actualRet > 0) {
                 ohRusak.beras += buburCalc(actualRet, BUBUR_BASE.beras);
                 ohRusak.sayurHijau += buburCalc(actualRet, BUBUR_BASE.sayurHijau);
@@ -408,8 +408,8 @@ export default function Distribusi() {
           [dSent, iSent].forEach((s, idx) => {
             const retField = idx === 0 ? retur.tim_d ?? 0 : retur.tim_i ?? 0;
             if (s > 0) {
-              // retur dalam gram → konversi ke cup (108 gr/cup) agar sejalan dgn Produksi
-              const actualRet = Math.min(Math.floor((retField || 0) / 108), s);
+              // retur dalam gram → konversi ke cup (108 gr/cup) aturan OH 50g agar sejalan dgn Produksi
+              const actualRet = Math.min(sisaGramToCups(retField || 0, 108), s);
               if (actualRet > 0) {
                 ohRusak.beras += actualRet * settings.berasTim;
                 ohRusak.sayurHijau += actualRet * settings.sayurHijauTim;
@@ -777,9 +777,11 @@ export default function Distribusi() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {returItems.map((item) => {
                     const returVal = (row as any)[item.field] || 0;
-                    const returCups = item.field === "abon" ? Math.floor(returVal / 10) : Math.floor(returVal / item.gramFactor);
-                    const sold = Math.max(0, item.sent - Math.min(returCups, item.sent));
                     const isBuburTim = ["bubur_d", "bubur_i", "tim_d", "tim_i"].includes(item.field);
+                    // returGrid: Bubur/Tim dalam gram, Oatmeal/Puding dalam cup, Abon dalam pcs.
+                    // Aturan OH 50g untuk Bubur/Tim (gram): sisa ≤ 50 gr → 0 cup, > 50 gr → bulat naik.
+                    const returCups = isBuburTim ? sisaGramToCups(returVal, item.gramFactor) : returVal;
+                    const sold = Math.max(0, item.sent - Math.min(returCups, item.sent));
                     const unitLabel = item.field === "abon" ? "pcs" : "cup";
 
                     return (
@@ -793,7 +795,7 @@ export default function Distribusi() {
                           <Input
                             type="number"
                             min={0}
-                            max={item.sent * item.gramFactor}
+                            max={isBuburTim ? item.sent * item.gramFactor : item.sent}
                             value={returVal || ""}
                             onChange={(e) => handleReturChange(step5OutletId, item.field, parseInt(e.target.value) || 0)}
                             className={`h-10 font-semibold ${item.colorClass}`}
@@ -835,13 +837,13 @@ export default function Distribusi() {
 
                       const calcSold = (sent: number, returCups: number) => Math.max(0, sent - Math.min(returCups, sent));
 
-                      const buburRet = Math.floor(((row.bubur_d || 0) + (row.bubur_i || 0)) / 118);
+                      const buburRet = sisaGramToCups((row.bubur_d || 0) + (row.bubur_i || 0), 118);
                       const buburSent = (sent.bubur_d || 0) + (sent.bubur_i || 0);
-                      const timRet = Math.floor(((row.tim_d || 0) + (row.tim_i || 0)) / 108);
+                      const timRet = sisaGramToCups((row.tim_d || 0) + (row.tim_i || 0), 108);
                       const timSent = (sent.tim_d || 0) + (sent.tim_i || 0);
-                      const oatRet = Math.floor((row.oatmeal || 0) / 100);
+                      const oatRet = row.oatmeal || 0; // returGrid menyimpan Oatmeal dalam cup
                       const oatSent = sent.oatmeal || 0;
-                      const pudRet = Math.floor((row.puding || 0) / 80);
+                      const pudRet = row.puding || 0; // returGrid menyimpan Puding dalam cup
                       const pudSent = sent.puding || 0;
                       const abonRet = row.abon || 0; // returGrid stores pcs directly for abon
                       const abonSent = sent.abon || 0;

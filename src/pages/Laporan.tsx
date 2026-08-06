@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { computeIsLocked, DEFAULT_LOCK_DEADLINE } from "@/lib/produksi-utils";
+import { computeIsLocked, DEFAULT_LOCK_DEADLINE, sisaGramToCups } from "@/lib/produksi-utils";
 
 type Periode = "harian" | "mingguan" | "bulanan";
 
@@ -624,7 +624,8 @@ function SisaProduksiOH({
         sisaGram = sisaCups * item.gramPerCup;
       } else {
         sisaGram = storedVal; // stored in grams for bubur/tim
-        sisaCups = item.gramPerCup > 0 ? Math.floor(sisaGram / item.gramPerCup) : 0;
+        // Aturan OH 50g: sisa ≤ 50 gr → 0 cup (semua terjual), > 50 gr → dibulatkan naik
+        sisaCups = item.gramPerCup > 0 ? sisaGramToCups(sisaGram, item.gramPerCup) : 0;
       }
 
       const terjual = distQty > 0 ? Math.max(0, distQty - Math.min(sisaCups, distQty)) : 0;
@@ -1235,7 +1236,8 @@ function SisaProduksiAdminView({
             sisaGram = sisaCups * item.gramPerCup;
           } else {
             sisaGram = storedVal; // stored in grams
-            sisaCups = item.gramPerCup > 0 ? Math.floor(sisaGram / item.gramPerCup) : 0;
+            // Aturan OH 50g: sisa ≤ 50 gr → 0 cup (semua terjual), > 50 gr → dibulatkan naik
+            sisaCups = item.gramPerCup > 0 ? sisaGramToCups(sisaGram, item.gramPerCup) : 0;
           }
           const terjual = Math.max(0, info.distQty - Math.min(sisaCups, info.distQty));
           // Harga tersimpan dari record penjualan (konsisten dgn Rekap/Riwayat)
@@ -2002,8 +2004,8 @@ function RiwayatTransaksiTab({
             dbSisaCups = dbRec.sisaGram;
             displayGr = dbSisaCups * gramPerCup;
           } else {
-            // sisaGram stores grams for bubur/tim
-            dbSisaCups = gramPerCup > 0 ? Math.floor(dbRec.sisaGram / gramPerCup) : 0;
+            // sisaGram stores grams for bubur/tim — aturan OH 50g (sisa > 50 gr = 1 cup)
+            dbSisaCups = gramPerCup > 0 ? sisaGramToCups(dbRec.sisaGram, gramPerCup) : 0;
             displayGr = dbRec.sisaGram;
           }
         } else {

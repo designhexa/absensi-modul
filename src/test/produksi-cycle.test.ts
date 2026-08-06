@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { saldoBahan } from "@/lib/store";
 import { SEED_BAHAN } from "@/lib/seed";
 import { BahanBaku, StokMovement } from "@/lib/types";
-import { calcKemasanKebutuhan, KEMASAN_BAHAN } from "@/lib/produksi-utils";
+import { calcKemasanKebutuhan, KEMASAN_BAHAN, sisaGramToCups } from "@/lib/produksi-utils";
 
 /**
  * Test siklus produksi — Tutup Oat:
@@ -201,7 +201,8 @@ function calcOHRusak(
     const retur = returGrid[o] || {};
 
     const addBubur = (sentCups: number, returGram: number) => {
-      const cups = Math.min(Math.floor((returGram || 0) / 118), sentCups);
+      // Aturan OH 50g: sisa ≤ 50 gr → 0 cup, > 50 gr → dibulatkan naik (selaras dgn Produksi.tsx)
+      const cups = Math.min(sisaGramToCups(returGram || 0, 118), sentCups);
       if (cups > 0) {
         rusak.beras += (cups * 100) / 6;
         rusak.sayurHijau += (cups * 8) / 6;
@@ -210,7 +211,7 @@ function calcOHRusak(
       }
     };
     const addTim = (sentCups: number, returGram: number) => {
-      const cups = Math.min(Math.floor((returGram || 0) / 108), sentCups);
+      const cups = Math.min(sisaGramToCups(returGram || 0, 108), sentCups);
       if (cups > 0) {
         rusak.beras += cups * settings.berasTim;
         rusak.sayurHijau += cups * settings.sayurHijauTim;
