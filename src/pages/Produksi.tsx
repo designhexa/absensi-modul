@@ -45,6 +45,27 @@ const buburCalc = (cups: number, baseAmount: number) => (cups * baseAmount) / 6;
 // Batas toleransi deviasi realisasi vs rencana — di atas ini muncul konfirmasi saat menyimpan Step 3 (20%)
 const DEVIASI_THRESHOLD = 0.2;
 
+// Sentinel id untuk opsi "Semua Outlet" di Langkah 5 — menampilkan total retur OH seluruh outlet
+const ALL_OUTLETS_ID = "__all__";
+
+// Bentuk baris retur/distribusi default (semua nol)
+const ZERO_RETUR_ROW = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
+
+// Jumlahkan grid per-outlet (returGrid / distGrid) menjadi satu baris total "Semua Outlet"
+const sumGridRows = (grid: Record<string, Record<string, number>>) => {
+  const out = { ...ZERO_RETUR_ROW };
+  Object.values(grid).forEach((r) => {
+    out.bubur_d += r.bubur_d || 0;
+    out.bubur_i += r.bubur_i || 0;
+    out.tim_d += r.tim_d || 0;
+    out.tim_i += r.tim_i || 0;
+    out.oatmeal += r.oatmeal || 0;
+    out.puding += r.puding || 0;
+    out.abon += r.abon || 0;
+  });
+  return out;
+};
+
 // Gramasi standar per cup/pcs untuk konversi berat matang <-> jumlah cup
 const getUnitFactor = (prod: string) => {
   if (prod === "bubur_1" || prod === "bubur_2") return 118;
@@ -99,15 +120,15 @@ export default function Produksi() {
     return () => window.removeEventListener("buba_settings_changed", handler);
   }, []);
   const [step4OutletId, setStep4OutletId] = useState("");
-  const [step5OutletId, setStep5OutletId] = useState("");
+  const [step5OutletId, setStep5OutletId] = useState(ALL_OUTLETS_ID); // default "Semua Outlet"
 
   useEffect(() => {
     if (outlets.length > 0) {
       if (!step1OutletId) setStep1OutletId(outlets[0].id);
       if (!step4OutletId) setStep4OutletId(outlets[0].id);
-      if (!step5OutletId) setStep5OutletId(outlets[0].id);
+      // Langkah 5 sengaja default ke "Semua Outlet" (total retur OH seluruh outlet)
     }
-  }, [outlets, step1OutletId, step4OutletId, step5OutletId]);
+  }, [outlets, step1OutletId, step4OutletId]);
 
   const filtered = useMemo(() => {
     return (produksi || []).filter((p: any) => {
@@ -3188,12 +3209,14 @@ export default function Produksi() {
     );
   }
   function renderStep5() {
+    // "Semua Outlet" terpilih (default) → tampilkan total retur OH seluruh outlet sebagai ringkasan
+    const isAllView = step5OutletId === ALL_OUTLETS_ID || !outlets.some((o) => o.id === step5OutletId);
     return (
       <Card className="glass border-0 shadow-card">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <CardTitle>Langkah 5: Retur & Penjualan Akhir Hari</CardTitle>
-            <p className="text-xs text-muted-foreground">Pilih outlet di bawah. Bubur &amp; Nasi Tim isi <strong>gram</strong> retur (otomatis konversi ke cup), Oatmeal &amp; Puding isi <strong>cup</strong>, Abon isi <strong>pcs</strong>. Penjualan dihitung otomatis.</p>
+            <p className="text-xs text-muted-foreground">Default <strong>Semua Outlet</strong> menampilkan <strong>total retur OH seluruh outlet</strong>; pilih satu outlet pada daftar untuk mengedit returnya. Bubur &amp; Nasi Tim isi <strong>gram</strong> retur (otomatis konversi ke cup), Oatmeal &amp; Puding isi <strong>cup</strong>, Abon isi <strong>pcs</strong>. Penjualan dihitung otomatis.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {hasNewSalesData && !refreshing && step === 5 && (
@@ -3251,21 +3274,29 @@ export default function Produksi() {
                     selectedId={step5OutletId}
                     onSelect={setStep5OutletId}
                     label="Pilih Outlet"
+                    showAll
+                    allLabel="Semua Outlet"
+                    allValue={ALL_OUTLETS_ID}
                   />
                 </div>
               </div>
             </div>
+            {isAllView && (
+              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/20 rounded-xl px-3 py-2.5">
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] shrink-0" variant="outline">Semua Outlet</Badge>
+                <span>Mode ringkasan — menampilkan <strong>total retur OH seluruh outlet</strong>. Pilih satu outlet pada daftar untuk mengedit nilai per-outlet.</span>
+              </div>
+            )}
 
             {/* Input fields laid out as a row with maximum constraints based on sent qty */}
             {(() => {
-              const row = returGrid[step5OutletId] || {
-                bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0,
-                oatmeal: 0, puding: 0, abon: 0
-              };
-              const sent = distGrid[step5OutletId] || {
-                bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0,
-                oatmeal: 0, puding: 0, abon: 0
-              };
+              // "Semua Outlet" → jumlahkan retur & kiriman seluruh outlet; selain itu nilai outlet terpilih
+              const row = isAllView
+                ? sumGridRows(returGrid)
+                : (returGrid[step5OutletId] || { ...ZERO_RETUR_ROW });
+              const sent = isAllView
+                ? sumGridRows(distGrid)
+                : (distGrid[step5OutletId] || { ...ZERO_RETUR_ROW });
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-1">
                   <div className="space-y-1 bg-blue-500/5 p-2.5 rounded-xl border border-blue-300/30">
@@ -3274,6 +3305,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.bubur_d * 118}
+                      disabled={isAllView}
                       value={row.bubur_d || ""}
                       onChange={(e) => {
                         const grams = parseInt(e.target.value) || 0;
@@ -3291,6 +3323,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.bubur_i * 118}
+                      disabled={isAllView}
                       value={row.bubur_i || ""}
                       onChange={(e) => {
                         const grams = parseInt(e.target.value) || 0;
@@ -3308,6 +3341,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.tim_d * 108}
+                      disabled={isAllView}
                       value={row.tim_d || ""}
                       onChange={(e) => {
                         const grams = parseInt(e.target.value) || 0;
@@ -3325,6 +3359,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.tim_i * 108}
+                      disabled={isAllView}
                       value={row.tim_i || ""}
                       onChange={(e) => {
                         const grams = parseInt(e.target.value) || 0;
@@ -3342,6 +3377,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.oatmeal}
+                      disabled={isAllView}
                       value={row.oatmeal || ""}
                       onChange={(e) => handleReturChange(step5OutletId, "oatmeal", parseInt(e.target.value))}
                       className="h-9 text-xs text-center font-medium"
@@ -3356,6 +3392,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.puding}
+                      disabled={isAllView}
                       value={row.puding || ""}
                       onChange={(e) => handleReturChange(step5OutletId, "puding", parseInt(e.target.value))}
                       className="h-9 text-xs text-center font-medium"
@@ -3370,6 +3407,7 @@ export default function Produksi() {
                       type="number"
                       min={0}
                       max={sent.abon}
+                      disabled={isAllView}
                       value={row.abon || ""}
                       onChange={(e) => handleReturChange(step5OutletId, "abon", parseInt(e.target.value))}
                       className="h-9 text-xs text-center font-medium"
@@ -3385,7 +3423,7 @@ export default function Produksi() {
 
           {/* Consolidated Table at the Bottom */}
           <div className="space-y-2 pt-2">
-            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Ringkasan Retur & Produk Terjual (Klik baris untuk edit)</Label>
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Ringkasan Retur & Produk Terjual (Klik baris untuk pilih/edit)</Label>
             <div className="rounded-2xl border overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
@@ -3480,6 +3518,56 @@ export default function Produksi() {
                         </TableRow>
                       );
                     })}
+                    {/* Baris Total (Semua Outlet) — klik untuk kembali ke ringkasan total */}
+                    {(() => {
+                      const tRow = sumGridRows(returGrid);
+                      const tSent = sumGridRows(distGrid);
+                      return (
+                        <TableRow
+                          onClick={() => setStep5OutletId(ALL_OUTLETS_ID)}
+                          className={`cursor-pointer transition-colors font-semibold ${
+                            isAllView
+                              ? "bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary"
+                              : "hover:bg-muted/30 border-l-4 border-l-transparent"
+                          }`}
+                        >
+                          <TableCell className="py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-primary">Total (Semua Outlet)</span>
+                              {isAllView && <Badge className="text-[9px] bg-primary/10 text-primary hover:bg-primary/20 border-primary/20" variant="outline">Lihat</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-blue-500/5 text-center py-2">
+                            <div className="font-semibold text-xs"><span className="text-destructive">{tRow.bubur_d || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.bubur_d || 0) - sisaGramToCups(tRow.bubur_d || 0, 118))} cup</div>
+                          </TableCell>
+                          <TableCell className="bg-blue-500/5 text-center py-2">
+                            <div className="font-semibold text-xs"><span className="text-destructive">{tRow.bubur_i || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.bubur_i || 0) - sisaGramToCups(tRow.bubur_i || 0, 118))} cup</div>
+                          </TableCell>
+                          <TableCell className="bg-amber-500/5 text-center py-2">
+                            <div className="font-semibold text-xs"><span className="text-destructive">{tRow.tim_d || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.tim_d || 0) - sisaGramToCups(tRow.tim_d || 0, 108))} cup</div>
+                          </TableCell>
+                          <TableCell className="bg-amber-500/5 text-center py-2">
+                            <div className="font-semibold text-xs"><span className="text-destructive">{tRow.tim_i || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.tim_i || 0) - sisaGramToCups(tRow.tim_i || 0, 108))} cup</div>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <div className="font-medium text-xs"><span className="text-destructive">{tRow.oatmeal || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.oatmeal || 0) - (tRow.oatmeal || 0))} cup</div>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <div className="font-medium text-xs"><span className="text-destructive">{tRow.puding || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.puding || 0) - (tRow.puding || 0))} cup</div>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <div className="font-medium text-xs"><span className="text-destructive">{tRow.abon || 0}</span><span className="text-muted-foreground/60"> retur</span></div>
+                            <div className="text-[9px] text-success">Terjual: {Math.max(0, (tSent.abon || 0) - (tRow.abon || 0))} pcs</div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })()}
                   </TableBody>
                 </Table>
               </div>
