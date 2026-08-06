@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy, Package } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, Package } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
@@ -576,6 +576,14 @@ export default function Produksi() {
         [field]: isNaN(val) ? 0 : val
       }
     }));
+  };
+
+  // Pindah ke outlet sebelumnya/berikutnya di Langkah 5 (termasuk "Semua Outlet")
+  const cycleStep5Outlet = (dir: 1 | -1) => {
+    const list = [ALL_OUTLETS_ID, ...outlets.map((o) => o.id)];
+    const cur = list.includes(step5OutletId) ? step5OutletId : ALL_OUTLETS_ID;
+    const next = (list.indexOf(cur) + dir + list.length) % list.length;
+    setStep5OutletId(list[next]);
   };
 
   const handleGramsChange = (prod: string, grams: number) => {
@@ -3268,16 +3276,48 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex-1 min-w-[200px]">
-                  <OutletFilter
-                    outlets={outlets}
-                    selectedId={step5OutletId}
-                    onSelect={setStep5OutletId}
-                    label="Pilih Outlet"
-                    showAll
-                    allLabel="Semua Outlet"
-                    allValue={ALL_OUTLETS_ID}
-                  />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => cycleStep5Outlet(-1)}
+                    title="Outlet sebelumnya"
+                    aria-label="Outlet sebelumnya"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Select
+                    value={isAllView ? ALL_OUTLETS_ID : step5OutletId}
+                    onValueChange={(v) => setStep5OutletId(v)}
+                  >
+                    <SelectTrigger className="h-10 flex-1 font-medium">
+                      <SelectValue placeholder="Pilih Outlet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_OUTLETS_ID}>
+                        <span className="flex items-center gap-1.5">
+                          <span>Semua Outlet</span>
+                          <span className="text-[10px] text-muted-foreground">(total)</span>
+                        </span>
+                      </SelectItem>
+                      {outlets.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => cycleStep5Outlet(1)}
+                    title="Outlet berikutnya"
+                    aria-label="Outlet berikutnya"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
