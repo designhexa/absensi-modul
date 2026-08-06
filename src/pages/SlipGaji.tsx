@@ -12,9 +12,18 @@ export default function SlipGaji() {
   const isAdmin = user?.role === "admin";
   const { karyawan, absensi, outlets } = useDB();
 
-  // Filter employees based on role
+  // Filter employees based on role — karyawan non-outlet (TL, produksi, gudang)
+  // hanya melihat slip gajinya sendiri (k-tl / k-produksi / k-gudang)
   const visibleKaryawan = useMemo(
-    () => (isAdmin ? karyawan : karyawan.filter((k) => k.outletId === user?.outletId)),
+    () => {
+      if (isAdmin) return karyawan;
+      const ownId =
+        user?.role === "produksi" ? "k-produksi" :
+        user?.role === "gudang" ? "k-gudang" :
+        user?.role === "tl" ? "k-tl" : undefined;
+      if (ownId) return karyawan.filter((k) => k.id === ownId);
+      return karyawan.filter((k) => k.outletId === user?.outletId);
+    },
     [karyawan, isAdmin, user]
   );
 
@@ -301,7 +310,7 @@ export default function SlipGaji() {
         <Card className="glass border-0 shadow-card">
           <CardContent className="p-8 text-center text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            Tidak ada data karyawan yang terdaftar untuk outlet Anda.
+            Tidak ada data karyawan yang terdaftar untuk akun Anda.
           </CardContent>
         </Card>
       )}

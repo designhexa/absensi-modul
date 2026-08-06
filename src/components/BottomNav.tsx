@@ -63,8 +63,9 @@ export function BottomNav() {
     } else if (user?.role === "tl") {
       return [
         { title: "Home", url: "/", icon: LayoutDashboard },
+        { title: "Absen", url: "/absensi", icon: UserCheck, highlighted: true },
         { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Request/Retur", url: "/stok", icon: Warehouse, highlighted: true },
+        { title: "Request/Retur", url: "/stok", icon: Warehouse },
         { title: "Profile", url: "/profile", icon: User },
       ];
     } else { // outlet

@@ -46,6 +46,7 @@ export function AppSidebar() {
     } else if (user?.role === "tl") {
       return [
         { title: "Dashboard", url: "/", icon: LayoutDashboard },
+        { title: "Absensi", url: "/absensi", icon: UserCheck },
         { title: "Laporan", url: "/laporan", icon: FileBarChart },
         { title: "Request & Retur", url: "/stok", icon: Warehouse },
         { title: "Profile", url: "/profile", icon: User },

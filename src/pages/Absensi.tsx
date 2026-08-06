@@ -32,6 +32,7 @@ export default function Absensi() {
       if (isAdmin) return karyawan;
       if (user?.role === "produksi") return karyawan.filter((k) => k.id === "k-produksi");
       if (user?.role === "gudang") return karyawan.filter((k) => k.id === "k-gudang");
+      if (user?.role === "tl") return karyawan.filter((k) => k.id === "k-tl");
       return karyawan.filter((k) => k.outletId === user?.outletId);
     },
     [karyawan, isAdmin, user]
@@ -109,7 +110,7 @@ export default function Absensi() {
     }
     
     // Fallback: use outlet name from database
-    const outletNama = user?.role === "outlet" ? (user?.nama || "Outlet") : "Dapur Utama Buba Healthy";
+    const outletNama = user?.role === "outlet" ? (user?.nama || "Outlet") : (user?.role === "tl" ? (user?.nama || "Tim Leader") : "Dapur Utama Buba Healthy");
     return `${outletNama} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
   };
 
@@ -146,7 +147,7 @@ export default function Absensi() {
   };
 
   useEffect(() => {
-    if (user?.role === "produksi" || user?.role === "gudang" || user?.role === "outlet") {
+    if (user?.role === "produksi" || user?.role === "gudang" || user?.role === "tl" || user?.role === "outlet") {
       fetchGPSLocation();
     }
   }, [user]);
@@ -179,7 +180,7 @@ export default function Absensi() {
   };
 
   const todayRecord = useMemo(() => {
-    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "outlet" ? `k-${user.outletId}-1` : (karyawanId || visibleKaryawan[0]?.id)));
+    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "tl" ? "k-tl" : (user?.role === "outlet" ? `k-${user.outletId}-1` : (karyawanId || visibleKaryawan[0]?.id))));
     if (!kid) return null;
     return absensi.find((a) => a.tanggal === todayISO() && a.karyawanId === kid);
   }, [absensi, karyawanId, visibleKaryawan, user]);
@@ -240,7 +241,7 @@ export default function Absensi() {
     if (gpsLoading) return toast.error("Menunggu GPS mengunci lokasi...");
     if (user?.role !== "gudang" && !validateGPSDistance()) return;
     const jam = currentTime();
-    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : `k-${user?.outletId}-1`);
+    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "tl" ? "k-tl" : `k-${user?.outletId}-1`));
     setRecordedJamMasuk(jam);
     db.addAbsensi({
       tanggal: todayISO(),
@@ -424,7 +425,7 @@ export default function Absensi() {
             )}
           </CardContent>
         </Card>
-      ) : (user?.role === "produksi" || user?.role === "gudang" || user?.role === "outlet") ? (
+      ) : (user?.role === "produksi" || user?.role === "gudang" || user?.role === "tl" || user?.role === "outlet") ? (
         <Card className="glass border-0 shadow-card overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -507,7 +508,10 @@ export default function Absensi() {
                     const loc = myOutletLocation;
                     const gpsSet = !!(user?.role === "outlet" && outlets.find((o: any) => o.id === user.outletId)?.lokasi?.includes("@"));
                     if (!gpsSet) {
-                      return <p className="text-[10px] text-amber-600">GPS outlet belum diatur — absensi tanpa verifikasi lokasi</p>;
+                      if (user?.role === "outlet") {
+                        return <p className="text-[10px] text-amber-600">GPS outlet belum diatur — absensi tanpa verifikasi lokasi</p>;
+                      }
+                      return <p className="text-[10px] text-amber-600">Absensi mandiri tanpa verifikasi lokasi</p>;
                     }
                     if (coordinates && loc) {
                       const dist = getDistanceMeters(coordinates.lat, coordinates.lng, loc.lat, loc.lng);

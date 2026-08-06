@@ -61,8 +61,8 @@ const App = () => (
                 <Route path="/stok" element={<StokGudang />} />
                 <Route path="/profile" element={<Profile />} />
 
-                {/* Absensi & Slip Gaji — not accessible to TL (read-only role) */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang", "outlet"]} />}>
+                {/* Absensi & Slip Gaji — semua peran karyawan termasuk TL (absen mandiri + slip sendiri) */}
+                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang", "outlet", "tl"]} />}>
                   <Route path="/absensi" element={<Absensi />} />
                   <Route path="/slip-gaji" element={<SlipGaji />} />
                 </Route>
