@@ -12,6 +12,7 @@ import { Plus, Trash2, UserCheck, Users, CalendarCheck, CheckCircle2, Check, Fil
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DateInput } from "@/components/DateInput";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
@@ -364,9 +365,9 @@ export default function Absensi() {
           <CardHeader><CardTitle>Input Absensi</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 lg:items-end">
-              <div className="space-y-2">
+              <div className="space-y-2 lg:col-span-2">
                 <Label>Tanggal</Label>
-                <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+                <DateInput value={tanggal} onChange={setTanggal} />
               </div>
               <div className="space-y-2">
                 <Label>Karyawan</Label>
@@ -878,7 +879,7 @@ function EditAbsensiDialog({ record, onClose, karyawan }: any) {
         <form onSubmit={handleSave} className="grid gap-3 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Tanggal</Label>
-            <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+            <DateInput value={tanggal} onChange={setTanggal} />
           </div>
           <div className="space-y-2">
             <Label>Karyawan</Label>

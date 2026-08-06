@@ -13,6 +13,7 @@ import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
 import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, Package } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DateInput } from "@/components/DateInput";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
 import { ExportButtons } from "@/components/ExportButtons";
 import OutletFilter from "@/components/OutletFilter";
@@ -1970,29 +1971,27 @@ export default function Produksi() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Label className="text-xs font-bold text-muted-foreground">Tanggal 1:</Label>
-              <Input
-                type="date"
+              <DateInput
                 value={tanggal}
-                onChange={(e) => {
-                  setTanggal(e.target.value);
+                onChange={(v) => {
+                  setTanggal(v);
                   hasUserModifiedGrids.current = false;
                 }}
-                className="w-44 h-9 text-xs"
+                className="text-xs"
               />
             </div>
             {isTwoDayPlan && (
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-bold text-muted-foreground">Tanggal 2:</Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={tanggal2}
-                  onChange={(e) => {
-                    setTanggal2(e.target.value);
-                    if (e.target.value) {
-                      loadPlanForDate(e.target.value, (grid) => setPlanGrid2(grid));
+                  onChange={(v) => {
+                    setTanggal2(v);
+                    if (v) {
+                      loadPlanForDate(v, (grid) => setPlanGrid2(grid));
                     }
                   }}
-                  className="w-44 h-9 text-xs"
+                  className="text-xs"
                 />
               </div>
             )}
@@ -3324,7 +3323,7 @@ export default function Produksi() {
                   <div className="flex-1">
                     <OutletFilter
                       outlets={outlets}
-                      selectedId={isAllView ? ALL_OUTLETS_ID : step5OutletId}
+                      selectedId={step5OutletId}
                       onSelect={setStep5OutletId}
                       label=""
                       showAll
@@ -3667,11 +3666,10 @@ export default function Produksi() {
                   <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-primary" /> Tanggal Produksi
                   </Label>
-                  <Input
-                    type="date"
+                  <DateInput
                     value={tanggal}
-                    onChange={(e) => setTanggal(e.target.value)}
-                    className="h-10 rounded-xl font-medium border-primary/20 focus-visible:ring-primary text-sm shadow-sm"
+                    onChange={setTanggal}
+                    className="font-medium border-primary/20 text-sm"
                   />
                 </div>
                 <div className="text-xs text-muted-foreground italic text-right hidden md:block">

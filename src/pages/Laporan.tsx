@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { db, useDB } from "@/lib/store";
 import { rupiah, monthKey, DateRange, inRange, todayISO } from "@/lib/format";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DateInput } from "@/components/DateInput";
 import { useAuth } from "@/lib/auth";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
@@ -843,12 +844,7 @@ function SisaProduksiOH({
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground font-medium">Tanggal:</span>
-                <Input
-                  type="date"
-                  value={tanggal}
-                  onChange={(e) => setTanggal(e.target.value)}
-                  className="h-9 w-40 text-xs"
-                />
+                <DateInput value={tanggal} onChange={setTanggal} className="text-xs" />
               </div>
               {summary.totalDistribusi > 0 && (
                 <div className="flex items-center gap-4 text-xs">
@@ -1420,12 +1416,7 @@ function SisaProduksiAdminView({
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground font-medium">Tanggal:</span>
-                <Input
-                  type="date"
-                  value={tanggal}
-                  onChange={(e) => setTanggal(e.target.value)}
-                  className="h-9 w-40 text-xs"
-                />
+                <DateInput value={tanggal} onChange={setTanggal} className="text-xs" />
               </div>
               {grandTotal.totalDist > 0 && (
                 <div className="flex items-center gap-4 text-xs">

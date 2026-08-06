@@ -13,6 +13,7 @@ import { Plus, Trash2, AlertTriangle, Package, ArrowUpCircle, ArrowDownCircle, C
 import { toast } from "sonner";
 import BahanFilter from "@/components/BahanFilter";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DateInput } from "@/components/DateInput";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
@@ -270,12 +271,7 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
               <form onSubmit={submit} className="border-t pt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-end">
                 <div className="space-y-2">
                   <Label>Tanggal Kirim</Label>
-                  <Input
-                    type="date"
-                    value={tanggalKirim}
-                    onChange={(e) => setTanggalKirim(e.target.value)}
-                    className="h-10"
-                  />
+                  <DateInput value={tanggalKirim} onChange={setTanggalKirim} />
                 </div>
                 <div className="space-y-2 lg:col-span-2">
                   <Label>Catatan Pengiriman</Label>
@@ -390,12 +386,7 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
                 <div className="grid gap-4 md:grid-cols-3 items-end">
                   <div className="space-y-2">
                     <Label>Tanggal Retur</Label>
-                    <Input
-                      type="date"
-                      value={returTanggal}
-                      onChange={(e) => setReturTanggal(e.target.value)}
-                      className="h-10"
-                    />
+                    <DateInput value={returTanggal} onChange={setReturTanggal} />
                   </div>
                   <div className="space-y-2">
                     <Label>Pilih Perlengkapan</Label>
@@ -528,7 +519,7 @@ function OutletPermohonanStok({ user, dbState }: { user: any; dbState: any }) {
             </div>
             <div className="space-y-2">
               <Label>{editing?.catatan?.startsWith("RETUR") ? "Tanggal Retur" : "Tanggal Kirim"}</Label>
-              <Input type="date" value={editTanggal} onChange={(e) => setEditTanggal(e.target.value)} className="h-10" />
+              <DateInput value={editTanggal} onChange={setEditTanggal} />
             </div>
             {editing && !editing.catatan?.startsWith("RETUR") && (
               <div className="space-y-2">
@@ -1294,7 +1285,7 @@ export default function StokGudang() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Tanggal</Label>
-                        <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+                        <DateInput value={tanggal} onChange={setTanggal} />
                       </div>
                       <BahanFilter bahan={bahan} selectedId={bahanId} onSelect={setBahanId} label="Bahan" />
                       <div className="space-y-2">
@@ -1365,7 +1356,7 @@ export default function StokGudang() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Tanggal Kirim</Label>
-                        <Input type="date" value={supTanggal} onChange={(e) => setSupTanggal(e.target.value)} />
+                        <DateInput value={supTanggal} onChange={setSupTanggal} />
                       </div>
                       <div className="space-y-2 sm:col-span-2 md:col-span-1">
                         <BahanFilter bahan={bahan} selectedId={supBahanId} onSelect={setSupBahanId} label="Bahan Baku" />
@@ -1602,7 +1593,7 @@ export default function StokGudang() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Tanggal</Label>
-                      <Input type="date" value={rusakTanggal} onChange={(e) => setRusakTanggal(e.target.value)} />
+                      <DateInput value={rusakTanggal} onChange={setRusakTanggal} />
                     </div>
                     <div className="space-y-2 sm:col-span-2 md:col-span-1">
                       <BahanFilter bahan={bahan} selectedId={rusakBahanId} onSelect={setRusakBahanId} label="Bahan Baku" />

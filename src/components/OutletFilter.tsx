@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -59,6 +59,20 @@ export default function OutletFilter({
     () => outlets.find((o) => o.id === selectedId),
     [outlets, selectedId]
   );
+
+  // Saat pilihan berubah dari luar komponen (mis. tombol panah prev/next di halaman
+  // Produksi), sinkronkan teks input agar menampilkan outlet yang baru dipilih.
+  // Dilewati saat selectedId kosong (user sedang mengetik pencarian) supaya
+  // teks yang diketik tidak tertimpa.
+  useEffect(() => {
+    if (!selectedId) return;
+    if (showAll && selectedId === allValue) {
+      setSearchText(allLabel);
+      return;
+    }
+    const outlet = outlets.find((o) => o.id === selectedId);
+    if (outlet) setSearchText(outlet.nama);
+  }, [selectedId, outlets, showAll, allValue, allLabel]);
 
   // inputValue harus SELALU dari searchText, BUKAN dari selectedOutlet.
   const inputValue = searchText;

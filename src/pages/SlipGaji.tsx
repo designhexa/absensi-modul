@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDB } from "@/lib/store";
 import { rupiah, todayISO, monthKey } from "@/lib/format";
-import { Printer, FileText, Landmark, User, CalendarDays, Award } from "lucide-react";
+import { addMonths, format, parseISO } from "date-fns";
+import { Printer, FileText, Landmark, User, CalendarDays, Award, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export default function SlipGaji() {
@@ -103,6 +104,11 @@ export default function SlipGaji() {
     return Array.from(months).sort().reverse();
   }, [absensi]);
 
+  // Geser bulan aktif ±1 (menyeberangi pergantian tahun dengan aman)
+  const shiftMonth = (dir: 1 | -1) => {
+    setSelectedMonth((prev) => format(addMonths(parseISO(`${prev}-01`), dir), "yyyy-MM"));
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -157,18 +163,40 @@ export default function SlipGaji() {
             </div>
           )}
 
-          <div className="space-y-2 w-44">
+          <div className="space-y-2">
             <label className="text-xs font-semibold text-muted-foreground">Pilih Bulan</label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {availableMonths.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {formatMonthName(m)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => shiftMonth(-1)}
+                aria-label="Bulan sebelumnya"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="h-10 w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {availableMonths.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {formatMonthName(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => shiftMonth(1)}
+                aria-label="Bulan berikutnya"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

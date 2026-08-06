@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { db, useDB, getBubaSettings } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
+import { DateInput } from "@/components/DateInput";
 import { todayISO } from "@/lib/format";
 import { ArrowRight, ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -913,7 +914,7 @@ export default function Distribusi() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Tanggal</Label>
-              <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="h-10 font-semibold" />
+              <DateInput value={tanggal} onChange={setTanggal} className="font-semibold" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-amber-600 uppercase tracking-wider">Bubur 1</Label>

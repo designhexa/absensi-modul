@@ -14,6 +14,7 @@ import { AkunKategori } from "@/lib/types";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DateInput } from "@/components/DateInput";
 import { ImportExcelButton } from "@/components/ImportExcelButton";
 import { ExportButtons } from "@/components/ExportButtons";
 import { usePagination } from "@/hooks/usePagination";
@@ -217,7 +218,7 @@ export default function Keuangan() {
             <CardHeader><CardTitle>Tambah Jurnal</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 items-end">
-                <div className="space-y-2"><Label>Tanggal</Label><Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="h-10" /></div>
+                <div className="space-y-2 lg:col-span-2"><Label>Tanggal</Label><DateInput value={tanggal} onChange={setTanggal} /></div>
                 <div className="space-y-2 lg:col-span-2"><Label>Keterangan</Label><Input value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="cth: Bayar listrik" className="h-10" /></div>
                 <div className="space-y-2 lg:col-span-1">
                   <Label>Akun (COA)</Label>
