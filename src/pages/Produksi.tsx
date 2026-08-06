@@ -578,12 +578,21 @@ export default function Produksi() {
     }));
   };
 
-  // Pindah ke outlet sebelumnya/berikutnya di Langkah 5 (termasuk "Semua Outlet")
-  const cycleStep5Outlet = (dir: 1 | -1) => {
-    const list = [ALL_OUTLETS_ID, ...outlets.map((o) => o.id)];
-    const cur = list.includes(step5OutletId) ? step5OutletId : ALL_OUTLETS_ID;
-    const next = (list.indexOf(cur) + dir + list.length) % list.length;
-    setStep5OutletId(list[next]);
+  // Pindah ke outlet sebelumnya/berikutnya (Langkah 4 & 5).
+  // includeAll=true menyertakan "Semua Outlet" sebagai item pertama (Langkah 5).
+  const cycleOutlet = (
+    dir: 1 | -1,
+    currentId: string,
+    setCurrent: (id: string) => void,
+    includeAll = false
+  ) => {
+    const ids = includeAll
+      ? [ALL_OUTLETS_ID, ...outlets.map((o) => o.id)]
+      : outlets.map((o) => o.id);
+    if (ids.length === 0) return;
+    const cur = ids.includes(currentId) ? currentId : ids[0];
+    const next = (ids.indexOf(cur) + dir + ids.length) % ids.length;
+    setCurrent(ids[next]);
   };
 
   const handleGramsChange = (prod: string, grams: number) => {
@@ -3018,13 +3027,37 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex-1 min-w-[200px]">
-                  <OutletFilter
-                    outlets={outlets}
-                    selectedId={step4OutletId}
-                    onSelect={setStep4OutletId}
-                    label="Pilih Outlet"
-                  />
+                <div className="flex items-start gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => cycleOutlet(-1, step4OutletId, setStep4OutletId)}
+                    title="Outlet sebelumnya"
+                    aria-label="Outlet sebelumnya"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1">
+                    <OutletFilter
+                      outlets={outlets}
+                      selectedId={step4OutletId}
+                      onSelect={setStep4OutletId}
+                      label=""
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => cycleOutlet(1, step4OutletId, setStep4OutletId)}
+                    title="Outlet berikutnya"
+                    aria-label="Outlet berikutnya"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -3282,7 +3315,7 @@ export default function Produksi() {
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 shrink-0"
-                    onClick={() => cycleStep5Outlet(-1)}
+                    onClick={() => cycleOutlet(-1, step5OutletId, setStep5OutletId, true)}
                     title="Outlet sebelumnya"
                     aria-label="Outlet sebelumnya"
                   >
@@ -3304,7 +3337,7 @@ export default function Produksi() {
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 shrink-0"
-                    onClick={() => cycleStep5Outlet(1)}
+                    onClick={() => cycleOutlet(1, step5OutletId, setStep5OutletId, true)}
                     title="Outlet berikutnya"
                     aria-label="Outlet berikutnya"
                   >
