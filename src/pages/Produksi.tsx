@@ -3276,7 +3276,7 @@ export default function Produksi() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5 flex-1 min-w-[200px]">
                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pilih Outlet</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-start gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -3288,25 +3288,17 @@ export default function Produksi() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Select
-                    value={isAllView ? ALL_OUTLETS_ID : step5OutletId}
-                    onValueChange={(v) => setStep5OutletId(v)}
-                  >
-                    <SelectTrigger className="h-10 flex-1 font-medium">
-                      <SelectValue placeholder="Pilih Outlet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_OUTLETS_ID}>
-                        <span className="flex items-center gap-1.5">
-                          <span>Semua Outlet</span>
-                          <span className="text-[10px] text-muted-foreground">(total)</span>
-                        </span>
-                      </SelectItem>
-                      {outlets.map((o) => (
-                        <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex-1">
+                    <OutletFilter
+                      outlets={outlets}
+                      selectedId={isAllView ? ALL_OUTLETS_ID : step5OutletId}
+                      onSelect={setStep5OutletId}
+                      label=""
+                      showAll
+                      allLabel="Semua Outlet"
+                      allValue={ALL_OUTLETS_ID}
+                    />
+                  </div>
                   <Button
                     type="button"
                     variant="outline"

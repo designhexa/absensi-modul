@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label";
 //   outlets    – array of outlet objects (must have id, nama)
 //   selectedId – currently selected outlet id (controlled by parent)
 //   onSelect   – callback fired when user picks an outlet from the list
-//   label      – optional label text (default "Outlet")
+//   label      – optional label text (default "Outlet"); empty string
+//                hides the label entirely
+//   showAll    – optional: prepend a "Semua Outlet" item on top of the list
+//   allLabel   – display text for the "Semua Outlet" item
+//   allValue   – id value used for the "Semua Outlet" item
 // ------------------------------------------------------------------
 export interface OutletItem {
   id: string;
@@ -23,6 +27,10 @@ export interface OutletFilterProps {
   selectedId: string;
   onSelect: (id: string) => void;
   label?: string;
+  // Opsi "Semua Outlet" opsional — muncul sebagai item teratas di daftar
+  showAll?: boolean;
+  allLabel?: string;
+  allValue?: string;
 }
 
 export default function OutletFilter({
@@ -30,18 +38,22 @@ export default function OutletFilter({
   selectedId,
   onSelect,
   label = "Outlet",
+  showAll = false,
+  allLabel = "Semua Outlet",
+  allValue = "",
 }: OutletFilterProps) {
   const [searchText, setSearchText] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
+  const isAllSelected = showAll && selectedId === allValue;
+
   const filteredOutlets = useMemo(() => {
-    if (!searchText.trim()) return outlets;
+    // Saat opsi "Semua Outlet" terpilih, input menampilkan allLabel — biarkan
+    // seluruh outlet tetap muncul saat dropdown dibuka kembali.
+    if (!searchText.trim() || searchText === allLabel) return outlets;
     const q = searchText.toLowerCase();
-    return outlets.filter(
-      (o) =>
-        o.nama.toLowerCase().includes(q)
-    );
-  }, [outlets, searchText]);
+    return outlets.filter((o) => o.nama.toLowerCase().includes(q));
+  }, [outlets, searchText, allLabel]);
 
   const selectedOutlet = useMemo(
     () => outlets.find((o) => o.id === selectedId),
@@ -53,9 +65,10 @@ export default function OutletFilter({
 
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      {label ? <Label>{label}</Label> : null}
       <Input
         placeholder="Cari outlet..."
+        aria-label={label ? undefined : "Cari outlet..."}
         value={inputValue}
         onChange={(e) => {
           setSearchText(e.target.value);
@@ -87,6 +100,25 @@ export default function OutletFilter({
           onMouseDown={(e) => e.preventDefault()}
           className="border rounded-lg max-h-[180px] overflow-y-auto mt-1 divide-y bg-background shadow-lg"
         >
+          {showAll && (
+            <div
+              className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2 ${
+                isAllSelected
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => {
+                onSelect(allValue);
+                setSearchText(allLabel);
+                setIsOpen(false);
+              }}
+            >
+              <span className="font-medium">{allLabel}</span>
+              <span className="text-[10px] text-muted-foreground">
+                total semua outlet
+              </span>
+            </div>
+          )}
           {filteredOutlets.map((o) => (
             <div
               key={o.id}
