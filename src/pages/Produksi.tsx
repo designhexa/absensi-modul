@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { db, useDB, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
+import { db, useDB, fetchFromSupabase, saldoBahan, getBubaSettings, GRAM_EXCLUDED_BAHAN } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy, Package } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Check, X, Clock, ArrowRight, ArrowLeft, ClipboardList, Send, RotateCcw, ShoppingBag, Calculator, ChevronDown, ChevronUp, Copy, Package, LockOpen } from "lucide-react";
 import { ArrowNav } from "@/components/ArrowNav";
 import { toast } from "sonner";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -106,6 +106,9 @@ export default function Produksi() {
   const [range, setRange] = useState<DateRange>({});
   const [requestingWarehouse, setRequestingWarehouse] = useState(false);
   const [warehouseConfirmOpen, setWarehouseConfirmOpen] = useState(false);
+  // Buka siklus (khusus admin) — dialog konfirmasi + status proses
+  const [bukaSiklusOpen, setBukaSiklusOpen] = useState(false);
+  const [bukaSiklusLoading, setBukaSiklusLoading] = useState(false);
   // OH abon yang disalin ke rencana (Langkah 1) → auto-konfirmasi ke distribusi saat stok dipotong (Langkah 2)
   const [ohAbonApplied, setOhAbonApplied] = useState(false);
   const [ohAbonAutoConfirmed, setOhAbonAutoConfirmed] = useState(false);
@@ -626,6 +629,55 @@ export default function Produksi() {
 
   // STEP 1 Action: Save pre-production target plans
   const isReadOnlyGudang = user?.role === "gudang";
+
+  // Siklus dianggap TERTUTUP bila ada jurnal OUT-SALES untuk tanggal ini
+  const isCycleClosed = useMemo(() => {
+    return (dbState.jurnal || []).some((j: any) => j.tanggal === tanggal && j.ref === "OUT-SALES");
+  }, [dbState.jurnal, tanggal]);
+
+  // Buka siklus (KHUSUS ADMIN): hapus jurnal OUT-SALES & stok IN retur/OH abon untuk tanggal ini.
+  // Data penjualan TIDAK dihapus — tetap bisa diedit ulang; tutup siklus lagi setelah selesai.
+  const handleBukaSiklus = async () => {
+    if (user?.role !== "admin") {
+      toast.error("Hanya akun admin yang dapat membuka siklus");
+      return;
+    }
+    if (closingCycle || bukaSiklusLoading) return; // cegah proses ganda
+    setBukaSiklusOpen(false);
+    setBukaSiklusLoading(true);
+    try {
+      // 1. Hapus jurnal OUT-SALES tanggal ini
+      const outSales = (dbState.jurnal || []).filter(
+        (j: any) => j.tanggal === tanggal && j.ref === "OUT-SALES"
+      );
+      for (const j of outSales) {
+        await supabase.from("jurnal").delete().eq("id", j.id);
+      }
+      // 2. Hapus stok IN retur/OH abon tanggal ini (dibuat saat tutup siklus)
+      const returMovs = (dbState.stokMov || []).filter(
+        (m: any) =>
+          m.tanggal === tanggal &&
+          m.tipe === "IN" &&
+          (m.keterangan?.includes("Retur Bahan") || m.keterangan?.includes("OH abon"))
+      );
+      for (const m of returMovs) {
+        await supabase.from("stok_movement").delete().eq("id", m.id);
+      }
+      const deletedCount = outSales.length + returMovs.length;
+      await fetchFromSupabase();
+      if (deletedCount > 0) {
+        toast.success(`Siklus ${tanggal} dibuka (${deletedCount} record jurnal/stok dihapus) — penjualan bisa diedit ulang`);
+      } else {
+        toast.info(`Tidak ada jurnal/retur siklus untuk ${tanggal} — siklus sudah terbuka`);
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Buka siklus error:", err);
+      toast.error(`Gagal membuka siklus: ${errMsg}`);
+    } finally {
+      setBukaSiklusLoading(false);
+    }
+  };
 
   const saveStep1 = async () => {
     if (isReadOnlyGudang) return toast.error("Anda tidak memiliki izin untuk menyimpan data produksi");
@@ -3615,11 +3667,44 @@ export default function Produksi() {
               <span className="hidden md:inline">Kembali</span>
             </Button>
 
-            <Button onClick={saveStep5} className="gradient-success text-white hover-lift h-10 font-bold" disabled={closingCycle || isReadOnlyGudang}>
-              <ShoppingBag className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">{closingCycle ? "Menutup siklus..." : "Selesaikan & Tutup Siklus"}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {user?.role === "admin" && isCycleClosed && (
+                <Button
+                  variant="outline"
+                  onClick={() => setBukaSiklusOpen(true)}
+                  disabled={closingCycle || bukaSiklusLoading}
+                  className="h-10 border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
+                >
+                  <LockOpen className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">{bukaSiklusLoading ? "Membuka..." : "Buka Siklus"}</span>
+                </Button>
+              )}
+              <Button onClick={saveStep5} className="gradient-success text-white hover-lift h-10 font-bold" disabled={closingCycle || bukaSiklusLoading || isReadOnlyGudang}>
+                <ShoppingBag className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">{closingCycle ? "Menutup siklus..." : "Selesaikan & Tutup Siklus"}</span>
+              </Button>
+            </div>
           </div>
+
+          {/* Konfirmasi Buka Siklus — khusus admin */}
+          <AlertDialog open={bukaSiklusOpen} onOpenChange={setBukaSiklusOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <LockOpen className="h-5 w-5 text-amber-500" />
+                  Buka Siklus {tanggal}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ini akan menghapus <strong>jurnal OUT-SALES</strong> dan <strong>stok retur/OH abon</strong> untuk tanggal {tanggal}.
+                  Data penjualan <strong>tetap aman</strong> dan bisa diedit ulang. Setelah selesai memperbaiki data, tutup siklus lagi.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBukaSiklus}>Ya, Buka Siklus</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     );

@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { db, useDB, getBubaSettings } from "@/lib/store";
+import { db, useDB, fetchFromSupabase, getBubaSettings } from "@/lib/store";
 import { supabase } from "@/lib/supabaseClient";
 import { DateInput } from "@/components/DateInput";
 import { todayISO } from "@/lib/format";
-import { ArrowLeft, Check, Clock, AlertTriangle, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, Clock, AlertTriangle, RotateCcw, LockOpen } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowNav } from "@/components/ArrowNav";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -65,6 +66,9 @@ export default function Distribusi() {
   const [returGrid, setReturGrid] = useState<Record<string, Record<string, number>>>({});
   const [closingCycle, setClosingCycle] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Buka siklus (khusus admin) — dialog konfirmasi + status proses
+  const [bukaSiklusOpen, setBukaSiklusOpen] = useState(false);
+  const [bukaSiklusLoading, setBukaSiklusLoading] = useState(false);
   const lastSyncedSalesRef = useRef<string>("");
 
   // Actual cups from produksi table
@@ -273,6 +277,51 @@ export default function Distribusi() {
     setReturGrid(rGrid);
     hasUserModifiedGrids.current = false;
     setStep(5);
+  };
+
+  // Siklus dianggap TERTUTUP bila ada jurnal OUT-SALES untuk tanggal ini
+  const isCycleClosed = useMemo(() => {
+    return (jurnal || []).some((j: any) => j.tanggal === tanggal && j.ref === "OUT-SALES");
+  }, [jurnal, tanggal]);
+
+  // Buka siklus (KHUSUS ADMIN): hapus jurnal OUT-SALES & stok IN retur/OH abon untuk tanggal ini.
+  // Data penjualan TIDAK dihapus — tetap bisa diedit ulang; tutup siklus lagi setelah selesai.
+  const handleBukaSiklus = async () => {
+    if (user?.role !== "admin") {
+      toast.error("Hanya akun admin yang dapat membuka siklus");
+      return;
+    }
+    if (closingCycle || bukaSiklusLoading) return; // cegah proses ganda
+    setBukaSiklusOpen(false);
+    setBukaSiklusLoading(true);
+    try {
+      const outSales = (jurnal || []).filter((j: any) => j.tanggal === tanggal && j.ref === "OUT-SALES");
+      for (const j of outSales) {
+        await supabase.from("jurnal").delete().eq("id", j.id);
+      }
+      const returMovs = (stokMov || []).filter(
+        (m: any) =>
+          m.tanggal === tanggal &&
+          m.tipe === "IN" &&
+          (m.keterangan?.includes("Retur Bahan") || m.keterangan?.includes("OH abon"))
+      );
+      for (const m of returMovs) {
+        await supabase.from("stok_movement").delete().eq("id", m.id);
+      }
+      const deletedCount = outSales.length + returMovs.length;
+      await fetchFromSupabase();
+      if (deletedCount > 0) {
+        toast.success(`Siklus ${tanggal} dibuka (${deletedCount} record jurnal/stok dihapus) — penjualan bisa diedit ulang`);
+      } else {
+        toast.info(`Tidak ada jurnal/retur siklus untuk ${tanggal} — siklus sudah terbuka`);
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Buka siklus error:", err);
+      toast.error(`Gagal membuka siklus: ${errMsg}`);
+    } finally {
+      setBukaSiklusLoading(false);
+    }
   };
 
   // STEP 5 Action
@@ -891,11 +940,42 @@ export default function Distribusi() {
               <Button variant="outline" onClick={handleRefreshStep5} disabled={refreshing} className="h-10">
                 <RotateCcw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Muat Ulang
               </Button>
-              <Button onClick={saveStep5} disabled={closingCycle} className="gradient-primary text-primary-foreground hover-lift h-10">
+              {user?.role === "admin" && isCycleClosed && (
+                <Button
+                  variant="outline"
+                  onClick={() => setBukaSiklusOpen(true)}
+                  disabled={closingCycle || bukaSiklusLoading}
+                  className="h-10 border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
+                >
+                  <LockOpen className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">{bukaSiklusLoading ? "Membuka..." : "Buka Siklus"}</span>
+                </Button>
+              )}
+              <Button onClick={saveStep5} disabled={closingCycle || bukaSiklusLoading} className="gradient-primary text-primary-foreground hover-lift h-10">
                 <Check className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Selesaikan & Tutup Siklus</span>
               </Button>
             </div>
           </div>
+
+          {/* Konfirmasi Buka Siklus — khusus admin */}
+          <AlertDialog open={bukaSiklusOpen} onOpenChange={setBukaSiklusOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <LockOpen className="h-5 w-5 text-amber-500" />
+                  Buka Siklus {tanggal}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ini akan menghapus <strong>jurnal OUT-SALES</strong> dan <strong>stok retur/OH abon</strong> untuk tanggal {tanggal}.
+                  Data penjualan <strong>tetap aman</strong> dan bisa diedit ulang. Setelah selesai memperbaiki data, tutup siklus lagi.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBukaSiklus}>Ya, Buka Siklus</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     );
