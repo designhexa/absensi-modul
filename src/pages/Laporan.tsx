@@ -603,6 +603,9 @@ function SisaProduksiOH({
         : ((distMap.get(item.subId) || 0) * item.gramPerCup);
       out[key] = Math.min(draftVal, maxVal);
     });
+    // Tandai sebagai diedit user — dialog selalu menerapkan nilai draft (mulai dari 0),
+    // jadi tampilan terjual/omset harus dihitung ulang live agar sesuai dgn yg disimpan.
+    setUserModifiedSisa(true);
     setSisaGrid(out);
     setDialogOpen(false);
   };
@@ -629,15 +632,19 @@ function SisaProduksiOH({
         sisaCups = item.gramPerCup > 0 ? sisaGramToCups(sisaGram, item.gramPerCup) : 0;
       }
 
-      const terjual = distQty > 0 ? Math.max(0, distQty - Math.min(sisaCups, distQty)) : 0;
-      // Pakai harga TERSIMPAN dari record penjualan bila sudah ada (agar omzet konsisten
-      // dgn tab Rekap & Riwayat). Fallback ke harga master produk hanya untuk input baru.
+      // Omset SELARAS dgn tab Riwayat & Rekap: saat record penjualan sudah tersimpan
+      // dan user belum mengubah grid, pakai qty & harga TERSIMPAN (sumber kebenaran).
+      // Hitung ulang (distribusi − sisa) hanya untuk baris yang baru diinput/diubah.
       const existingSale = (penjualan || []).find(
         (p: any) => p.outletId === user.outletId && p.tanggal === tanggal && p.produkId === item.baseId && p.variant === item.subId
       );
       const prod = produk.find((p: any) => p.id === item.baseId);
       const harga = existingSale?.harga ?? (prod?.harga || 0);
-      const omset = terjual * harga;
+      const hasStored = !!existingSale;
+      const liveTerjual = distQty > 0 ? Math.max(0, distQty - Math.min(sisaCups, distQty)) : 0;
+      const terjual = hasStored && !userModifiedSisa ? (existingSale.qty || 0) : liveTerjual;
+      const belumInput = distQty > 0 && !hasStored && !userModifiedSisa;
+      const omset = distQty > 0 && (hasStored || userModifiedSisa) ? terjual * harga : 0;
 
       return {
         key,
@@ -652,20 +659,22 @@ function SisaProduksiOH({
         terjual,
         harga,
         omset,
+        belumInput,
       };
     });
-  }, [distMap, tanggal, sisaGrid, produk, penjualan, user.outletId]);
+  }, [distMap, tanggal, sisaGrid, produk, penjualan, user.outletId, userModifiedSisa]);
 
   // Summary
   const summary = useMemo(() => {
-    let totalDistribusi = 0, totalSisa = 0, totalTerjual = 0, totalOmset = 0;
+    let totalDistribusi = 0, totalSisa = 0, totalTerjual = 0, totalOmset = 0, belumInputCount = 0;
     rows.forEach((row) => {
       totalDistribusi += row.distribusi;
       totalSisa += Math.min(row.sisaCups, row.distribusi);
       totalTerjual += row.terjual;
       totalOmset += row.omset;
+      if (row.belumInput) belumInputCount++;
     });
-    return { totalDistribusi, totalSisa, totalTerjual, totalOmset };
+    return { totalDistribusi, totalSisa, totalTerjual, totalOmset, belumInputCount };
   }, [rows]);
 
   // Lock check: waktu (dinamis dari master data via useDB) dan status siklus
@@ -852,6 +861,9 @@ function SisaProduksiOH({
                   <span className="text-warning font-medium">Sisa: <strong>{summary.totalSisa}</strong> cup</span>
                   <span className="text-success font-medium">Terjual: <strong>{summary.totalTerjual}</strong> cup</span>
                   <span className="text-primary font-medium">Omset: <strong>{rupiah(summary.totalOmset)}</strong></span>
+                  {summary.belumInputCount > 0 && (
+                    <span className="text-amber-600 dark:text-amber-400">{summary.belumInputCount} menu belum input — tidak dihitung</span>
+                  )}
                 </div>
               )}
             </div>
@@ -910,6 +922,9 @@ function SisaProduksiOH({
                         {row.distribusi <= 0 && (
                           <span className="text-[10px] text-muted-foreground ml-2">(no dist)</span>
                         )}
+                        {row.belumInput && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 ml-2">belum input</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {row.distribusi > 0 ? row.distribusi : <span className="text-muted-foreground">—</span>}
@@ -947,13 +962,13 @@ function SisaProduksiOH({
                         ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right font-bold text-success">
-                        {row.distribusi > 0 ? row.terjual : <span className="text-muted-foreground">—</span>}
+                        {row.distribusi > 0 && !row.belumInput ? row.terjual : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
                         {rupiah(row.harga)}
                       </TableCell>
                       <TableCell className="text-right font-bold text-primary">
-                        {row.distribusi > 0 ? rupiah(row.omset) : <span className="text-muted-foreground">—</span>}
+                        {row.distribusi > 0 && !row.belumInput ? rupiah(row.omset) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                     </TableRow>
                     );
@@ -1235,13 +1250,17 @@ function SisaProduksiAdminView({
             // Aturan OH 50g: sisa ≤ 50 gr → 0 cup (semua terjual), > 50 gr → dibulatkan naik
             sisaCups = item.gramPerCup > 0 ? sisaGramToCups(sisaGram, item.gramPerCup) : 0;
           }
-          const terjual = Math.max(0, info.distQty - Math.min(sisaCups, info.distQty));
-          // Harga tersimpan dari record penjualan (konsisten dgn Rekap/Riwayat)
+          // Omset SELARAS dgn tab Riwayat & Rekap: pakai qty & harga TERSIMPAN saat record
+          // sudah ada & admin belum mengubah grid; hitung ulang hanya utk input baru.
           const existingSale = (penjualan || []).find(
             (p: any) => p.outletId === outlet.id && p.tanggal === tanggal && p.produkId === item.baseId && p.variant === item.subId
           );
           const harga = existingSale?.harga ?? info.harga;
-          const omset = terjual * harga;
+          const hasStored = !!existingSale;
+          const liveTerjual = Math.max(0, info.distQty - Math.min(sisaCups, info.distQty));
+          const terjual = hasStored && !userModifiedSisa ? (existingSale.qty || 0) : liveTerjual;
+          const belumInput = !hasStored && !userModifiedSisa;
+          const omset = hasStored || userModifiedSisa ? terjual * harga : 0;
 
           return {
             key,
@@ -1255,13 +1274,14 @@ function SisaProduksiAdminView({
             sisaCups,
             terjual,
             omset,
+            belumInput,
           };
         }).filter(Boolean) as typeof items;
 
         return { outlet, items };
       })
       .filter(Boolean) as { outlet: any; items: any[] }[];
-  }, [outlets, outletDataMap, sisaGrid, penjualan, tanggal]);
+  }, [outlets, outletDataMap, sisaGrid, penjualan, tanggal, userModifiedSisa]);
 
   // Lock check: apakah siklus sudah ditutup (berdasarkan jurnal OUT-SALES)
   const isCycleClosed = useMemo(() => {
@@ -1272,14 +1292,15 @@ function SisaProduksiAdminView({
 
   // Grand total across all outlets (auto-calculated)
   const grandTotal = useMemo(() => {
-    let totalDist = 0, totalSisa = 0, totalTerjual = 0, totalOmset = 0;
+    let totalDist = 0, totalSisa = 0, totalTerjual = 0, totalOmset = 0, belumInputCount = 0;
     outletRows.forEach(o => o.items.forEach((i: any) => {
       totalDist += i.distQty;
       totalSisa += Math.min(i.sisaCups, i.distQty);
       totalTerjual += i.terjual;
       totalOmset += i.omset;
+      if (i.belumInput) belumInputCount++;
     }));
-    return { totalDist, totalSisa, totalTerjual, totalOmset };
+    return { totalDist, totalSisa, totalTerjual, totalOmset, belumInputCount };
   }, [outletRows]);
 
   const handleSubmit = useCallback(async () => {
@@ -1424,6 +1445,9 @@ function SisaProduksiAdminView({
                   <span className="text-warning font-medium">Sisa: <strong>{grandTotal.totalSisa}</strong> cup</span>
                   <span className="text-success font-medium">Terjual: <strong>{grandTotal.totalTerjual}</strong> cup</span>
                   <span className="text-primary font-medium">Omset: <strong>{rupiah(grandTotal.totalOmset)}</strong></span>
+                  {grandTotal.belumInputCount > 0 && (
+                    <span className="text-amber-600 dark:text-amber-400">{grandTotal.belumInputCount} baris belum input — tidak dihitung</span>
+                  )}
                 </div>
               )}
             </div>
@@ -1492,7 +1516,12 @@ function SisaProduksiAdminView({
 
                               return (
                                 <TableRow key={row.key}>
-                                  <TableCell className="font-semibold whitespace-nowrap">{row.label}</TableCell>
+                                  <TableCell className="font-semibold whitespace-nowrap">
+                                    {row.label}
+                                    {row.belumInput && (
+                                      <span className="text-[10px] text-amber-600 dark:text-amber-400 ml-2">belum input</span>
+                                    )}
+                                  </TableCell>
                                   <TableCell className="text-right font-medium">{row.distQty}</TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1.5">
@@ -1524,9 +1553,9 @@ function SisaProduksiAdminView({
                                       </span>
                                     ) : <span className="text-muted-foreground">0%</span>}
                                   </TableCell>
-                                  <TableCell className="text-right font-bold text-success">{row.terjual}</TableCell>
+                                  <TableCell className="text-right font-bold text-success">{row.belumInput ? <span className="text-muted-foreground">—</span> : row.terjual}</TableCell>
                                   <TableCell className="text-right text-xs text-muted-foreground">{rupiah(row.harga)}</TableCell>
-                                  <TableCell className="text-right font-bold text-primary">{rupiah(row.omset)}</TableCell>
+                                  <TableCell className="text-right font-bold text-primary">{row.belumInput ? <span className="text-muted-foreground">—</span> : rupiah(row.omset)}</TableCell>
                                 </TableRow>
                               );
                             })}
