@@ -91,11 +91,15 @@ export default function Produksi() {
   const [tim2Variant, setTim2Variant] = useState("b-sl01"); // default SALMON
   
   const hasUserModifiedGrids = useRef(false);
+  // Tandai saat admin mengedit input retur Langkah 5 secara manual — nilai itu
+  // WAJIB dihormati saat tutup siklus (tidak boleh dihitung ulang dari penjualan).
+  const hasManualReturEdits = useRef(false);
 
   // Reset modification flag when date changes — prevents background Supabase
   // polling/real-time updates from resetting user input mid-edit.
   useEffect(() => {
     hasUserModifiedGrids.current = false;
+    hasManualReturEdits.current = false;
     // Reset status auto-konfirmasi OH abon saat ganti tanggal siklus
     setOhAbonApplied(false);
     setOhAbonAutoConfirmed(false);
@@ -574,6 +578,7 @@ export default function Produksi() {
   const handleReturChange = (outletId: string, field: string, val: number) => {
     if (isReadOnlyGudang) return;
     hasUserModifiedGrids.current = true;
+    hasManualReturEdits.current = true;
     setReturGrid(prev => ({
       ...prev,
       [outletId]: {
@@ -664,6 +669,10 @@ export default function Produksi() {
         await supabase.from("stok_movement").delete().eq("id", m.id);
       }
       const deletedCount = outSales.length + returMovs.length;
+      // Lepas guard edit manual SEBELUM fetch agar grid di-reload dari data
+      // terbaru DB & auto-sync penjualan dari outlet kembali aktif.
+      hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
       await fetchFromSupabase();
       if (deletedCount > 0) {
         toast.success(`Siklus ${tanggal} dibuka (${deletedCount} record jurnal/stok dihapus) — penjualan bisa diedit ulang`);
@@ -948,20 +957,22 @@ export default function Produksi() {
     }
 
     // Helper to add meat variant
+    // qty disimpan sebagai BILANGAN BULAT (kolom stok_movement.qty bertipe integer) —
+    // gram desimal dari rasio per cup dibulatkan agar insert tidak gagal (bug lama:
+    // potongan daging selalu gagal & hilang). rawQtyGrams tetap desimal utk display.
     const addVariant = (variantId: string, grams: number) => {
       const b = bahan.find(x => x.id === variantId);
       if (b && grams > 0) {
         const existing = reqs.find(r => r.bahanId === variantId);
-        const qtyPcs = grams; // dalam gram
         if (existing) {
           existing.rawQtyGrams += grams;
-          existing.qty = existing.rawQtyGrams;
+          existing.qty = Math.round(existing.rawQtyGrams);
         } else {
           reqs.push({
             bahanId: variantId,
             kode: b.kode,
             nama: b.nama,
-            qty: grams,
+            qty: Math.round(grams),
             rawQtyGrams: grams,
             satuan: b.satuan
           });
@@ -1375,6 +1386,7 @@ export default function Produksi() {
     setReturGrid(rGrid);
     // Reset modification flag so returGrid auto-refreshes with latest penjualan data from outlet
     hasUserModifiedGrids.current = false;
+    hasManualReturEdits.current = false;
     setStep(5);
   };
 
@@ -1401,16 +1413,20 @@ export default function Produksi() {
         totalSalesRevenue += p.qty * p.harga;
       });
 
-      // 3. Recalculate returGrid from latest penjualan data before computing recovered ingredients.
-      //    This ensures that even if returGrid state is stale (due to hasUserModifiedGrids blocking auto-refresh),
-      //    the stok retur calculation uses the correct latest data from outlet.
-      //    If admin has manually edited returGrid (handleReturChange was called), those edits will be overwritten
-      //    by the recalculated values — this is intentional to prevent stale-data bugs.
+      // 3. Retur grid yang dipakai untuk perhitungan OH (bahan rusak / abon kembali).
+      //    - Jika admin MENGEDIT input retur Langkah 5 secara manual → hormati edit
+      //      admin (nilai returGrid state dipakai; handleReturChange sudah membatasi
+      //      maksimum sesuai qty kirim outlet).
+      //    - Jika TIDAK ada edit manual → hitung ulang dari penjualan terbaru outlet,
+      //      agar stok retur tidak memakai data basi (mis. saat guard edit manual
+      //      memblokir auto-refresh returGrid).
       const freshReturGrid: Record<string, Record<string, number>> = {};
       outlets.forEach(o => {
-        freshReturGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
+        freshReturGrid[o.id] = hasManualReturEdits.current
+          ? { ...(returGrid[o.id] || ZERO_RETUR_ROW) }
+          : { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
       });
-      if (existingPenjualan.length > 0) {
+      if (!hasManualReturEdits.current && existingPenjualan.length > 0) {
         outlets.forEach((o) => {
           const sent = distGrid[o.id] || {};
           if (!sent) return;
@@ -1765,6 +1781,7 @@ export default function Produksi() {
 
     try {
       hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
       const rGrid: Record<string, Record<string, number>> = {};
       outlets.forEach(o => {
         rGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
@@ -1846,6 +1863,7 @@ export default function Produksi() {
     try {
       // Reset the modification guard so returGrid can recalculate
       hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
 
       // Recalculate returGrid from latest penjualan data
       const rGrid: Record<string, Record<string, number>> = {};

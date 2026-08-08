@@ -1,0 +1,1276 @@
+{
+  "pen": [
+    {
+      "id": "581meoue",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-abon",
+      "qty": 1,
+      "harga": 4000,
+      "total": 4000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "lwqf1aoh",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-bubur",
+      "qty": 8,
+      "harga": 3500,
+      "total": 28000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "ptj5d6mw",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-bubur",
+      "qty": 6,
+      "harga": 3500,
+      "total": 21000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "t22l8v1a",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-nasitim",
+      "qty": 4,
+      "harga": 4500,
+      "total": 18000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "8vwt011x",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-nasitim",
+      "qty": 7,
+      "harga": 4500,
+      "total": 31500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "wybk2try",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gempeng",
+      "produk_id": "p-puding",
+      "qty": 1,
+      "harga": 3000,
+      "total": 3000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "lrt53g6x",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 3,
+      "variant": "abon"
+    },
+    {
+      "id": "ti6fxehb",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-bubur",
+      "qty": 21,
+      "harga": 3500,
+      "total": 73500,
+      "sisa_gram": 300,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "sticlnrn",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-bubur",
+      "qty": 14,
+      "harga": 3500,
+      "total": 49000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "gpggp7gd",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-nasitim",
+      "qty": 29,
+      "harga": 4500,
+      "total": 130500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "idykz7z5",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-nasitim",
+      "qty": 16,
+      "harga": 4500,
+      "total": 72000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "c4wxfzqv",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-oatmeal",
+      "qty": 4,
+      "harga": 5000,
+      "total": 20000,
+      "sisa_gram": 0,
+      "variant": "oatmeal"
+    },
+    {
+      "id": "gwxsr22q",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-gunung-gangsir",
+      "produk_id": "p-puding",
+      "qty": 7,
+      "harga": 3000,
+      "total": 21000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "ugh5qfcc",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kenongo",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "m52ntsnw",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kenongo",
+      "produk_id": "p-bubur",
+      "qty": 4,
+      "harga": 3500,
+      "total": 14000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "qwrxd6lf",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kenongo",
+      "produk_id": "p-bubur",
+      "qty": 6,
+      "harga": 3500,
+      "total": 21000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "9h3q6uc5",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kenongo",
+      "produk_id": "p-nasitim",
+      "qty": 5,
+      "harga": 4500,
+      "total": 22500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "1d9u73n4",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kenongo",
+      "produk_id": "p-puding",
+      "qty": 7,
+      "harga": 3000,
+      "total": 21000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "224gkm76",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kepadangan",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "7cw8pww7",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kepadangan",
+      "produk_id": "p-bubur",
+      "qty": 4,
+      "harga": 3500,
+      "total": 14000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "a9j3fbwe",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kepadangan",
+      "produk_id": "p-nasitim",
+      "qty": 5,
+      "harga": 4500,
+      "total": 22500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "p2gegcqr",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kepadangan",
+      "produk_id": "p-puding",
+      "qty": 5,
+      "harga": 3000,
+      "total": 15000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "z8yayupp",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "85qpgcnw",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-bubur",
+      "qty": 14,
+      "harga": 3500,
+      "total": 49000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "w51gl4c0",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-bubur",
+      "qty": 10,
+      "harga": 3500,
+      "total": 35000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "06evyk97",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-nasitim",
+      "qty": 7,
+      "harga": 4500,
+      "total": 31500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "klgflif8",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-nasitim",
+      "qty": 6,
+      "harga": 4500,
+      "total": 27000,
+      "sisa_gram": 19,
+      "variant": "tim_i"
+    },
+    {
+      "id": "i1a7y7mt",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kesambi",
+      "produk_id": "p-puding",
+      "qty": 2,
+      "harga": 3000,
+      "total": 6000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "z5df471v",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "r9xq2ozt",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-bubur",
+      "qty": 8,
+      "harga": 3500,
+      "total": 28000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "45rrbx70",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-bubur",
+      "qty": 10,
+      "harga": 3500,
+      "total": 35000,
+      "sisa_gram": 463,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "jyx369kt",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-nasitim",
+      "qty": 8,
+      "harga": 4500,
+      "total": 36000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "298aofsg",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-nasitim",
+      "qty": 18,
+      "harga": 4500,
+      "total": 81000,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "yc8ldxih",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-kuti",
+      "produk_id": "p-puding",
+      "qty": 4,
+      "harga": 3000,
+      "total": 12000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "opyfek2w",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-mca",
+      "produk_id": "p-abon",
+      "qty": 1,
+      "harga": 4000,
+      "total": 4000,
+      "sisa_gram": 1,
+      "variant": "abon"
+    },
+    {
+      "id": "wum15pwq",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-mca",
+      "produk_id": "p-nasitim",
+      "qty": 5,
+      "harga": 4500,
+      "total": 22500,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "wcdvso51",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-mca",
+      "produk_id": "p-nasitim",
+      "qty": 3,
+      "harga": 4500,
+      "total": 13500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "3ianea0d",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-mca",
+      "produk_id": "p-puding",
+      "qty": 3,
+      "harga": 3000,
+      "total": 9000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "pdp2vb5y",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "un15c8sq",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-bubur",
+      "qty": 20,
+      "harga": 3500,
+      "total": 70000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "ffw6fhqv",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-bubur",
+      "qty": 14,
+      "harga": 3500,
+      "total": 49000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "inlq9718",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-nasitim",
+      "qty": 10,
+      "harga": 4500,
+      "total": 45000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "mc8l4ho8",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-nasitim",
+      "qty": 13,
+      "harga": 4500,
+      "total": 58500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "6wuaxy9j",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-oatmeal",
+      "qty": 2,
+      "harga": 5000,
+      "total": 10000,
+      "sisa_gram": 0,
+      "variant": "oatmeal"
+    },
+    {
+      "id": "xumrvkoi",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-permata",
+      "produk_id": "p-puding",
+      "qty": 6,
+      "harga": 3000,
+      "total": 18000,
+      "sisa_gram": 1,
+      "variant": "puding"
+    },
+    {
+      "id": "hze6msqh",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "dnfeoene",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-bubur",
+      "qty": 14,
+      "harga": 3500,
+      "total": 49000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "vkep49mv",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-bubur",
+      "qty": 20,
+      "harga": 3500,
+      "total": 70000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "hrz5nt8e",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-nasitim",
+      "qty": 13,
+      "harga": 4500,
+      "total": 58500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "e8s0ttwf",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-nasitim",
+      "qty": 10,
+      "harga": 4500,
+      "total": 45000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "3kozzs23",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-oatmeal",
+      "qty": 2,
+      "harga": 5000,
+      "total": 10000,
+      "sisa_gram": 0,
+      "variant": "oatmeal"
+    },
+    {
+      "id": "0a8t90d2",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-randu-pitu",
+      "produk_id": "p-puding",
+      "qty": 2,
+      "harga": 3000,
+      "total": 6000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "bixjumjn",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-abon",
+      "qty": 1,
+      "harga": 4000,
+      "total": 4000,
+      "sisa_gram": 1,
+      "variant": "abon"
+    },
+    {
+      "id": "vu93nz5r",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-bubur",
+      "qty": 12,
+      "harga": 3500,
+      "total": 42000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "8vqxr69p",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-bubur",
+      "qty": 14,
+      "harga": 3500,
+      "total": 49000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "tx6ce1pd",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-nasitim",
+      "qty": 8,
+      "harga": 4500,
+      "total": 36000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "jr9hv8sr",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-nasitim",
+      "qty": 7,
+      "harga": 4500,
+      "total": 31500,
+      "sisa_gram": 230,
+      "variant": "tim_d"
+    },
+    {
+      "id": "bni9qi0p",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-oatmeal",
+      "qty": 2,
+      "harga": 5000,
+      "total": 10000,
+      "sisa_gram": 0,
+      "variant": "oatmeal"
+    },
+    {
+      "id": "8rpc6095",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidohwayah",
+      "produk_id": "p-puding",
+      "qty": 3,
+      "harga": 3000,
+      "total": 9000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "st28o9vg",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "2d94os6e",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-bubur",
+      "qty": 10,
+      "harga": 3500,
+      "total": 35000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "e4844m24",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-bubur",
+      "qty": 8,
+      "harga": 3500,
+      "total": 28000,
+      "sisa_gram": 0,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "xgnys2di",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-nasitim",
+      "qty": 6,
+      "harga": 4500,
+      "total": 27000,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "6emlxdkv",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-nasitim",
+      "qty": 5,
+      "harga": 4500,
+      "total": 22500,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "owt8fsix",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-oatmeal",
+      "qty": 2,
+      "harga": 5000,
+      "total": 10000,
+      "sisa_gram": 0,
+      "variant": "oatmeal"
+    },
+    {
+      "id": "u5m0tr05",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sidokare",
+      "produk_id": "p-puding",
+      "qty": 4,
+      "harga": 3000,
+      "total": 12000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    },
+    {
+      "id": "5g59exs4",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-abon",
+      "qty": 2,
+      "harga": 4000,
+      "total": 8000,
+      "sisa_gram": 0,
+      "variant": "abon"
+    },
+    {
+      "id": "j7z6grqr",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-bubur",
+      "qty": 8,
+      "harga": 3500,
+      "total": 28000,
+      "sisa_gram": 0,
+      "variant": "bubur_d"
+    },
+    {
+      "id": "77s1z5rd",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-bubur",
+      "qty": 6,
+      "harga": 3500,
+      "total": 21000,
+      "sisa_gram": 37,
+      "variant": "bubur_i"
+    },
+    {
+      "id": "tv249ieb",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-nasitim",
+      "qty": 3,
+      "harga": 4500,
+      "total": 13500,
+      "sisa_gram": 0,
+      "variant": "tim_d"
+    },
+    {
+      "id": "vnpv0g7y",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-nasitim",
+      "qty": 4,
+      "harga": 4500,
+      "total": 18000,
+      "sisa_gram": 0,
+      "variant": "tim_i"
+    },
+    {
+      "id": "6kp1efb2",
+      "tanggal": "2026-08-01",
+      "outlet_id": "o-sugihwaras",
+      "produk_id": "p-puding",
+      "qty": 5,
+      "harga": 3000,
+      "total": 15000,
+      "sisa_gram": 0,
+      "variant": "puding"
+    }
+  ],
+  "sm": [
+    {
+      "id": "s5xs62q1",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ab01",
+      "tipe": "IN",
+      "qty": 30,
+      "keterangan": "OH abon dari o-gunung-gangsir tanggal 2026-08-01",
+      "produksi_id": null
+    },
+    {
+      "id": "a3w1kv5e",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ab01",
+      "tipe": "IN",
+      "qty": 10,
+      "keterangan": "OH abon dari o-mca tanggal 2026-08-01",
+      "produksi_id": null
+    },
+    {
+      "id": "ls6vyi59",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ab01",
+      "tipe": "IN",
+      "qty": 10,
+      "keterangan": "OH abon dari o-sidohwayah tanggal 2026-08-01",
+      "produksi_id": null
+    },
+    {
+      "id": "ay3s3ra2",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ab01",
+      "tipe": "OUT",
+      "qty": 260,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "r7jbsnui",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-pud01",
+      "tipe": "OUT",
+      "qty": 5,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "e3w21er2",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-brs01",
+      "tipe": "OUT",
+      "qty": 8200,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "523c33pi",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sh01",
+      "tipe": "OUT",
+      "qty": 656,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "8xea0vnv",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sp01",
+      "tipe": "OUT",
+      "qty": 123,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "yhzgiphm",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sb01",
+      "tipe": "OUT",
+      "qty": 410,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "5cnlh35w",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-oat01",
+      "tipe": "OUT",
+      "qty": 3,
+      "keterangan": "Pemakaian Produksi [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "hjai89g9",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-brs01",
+      "tipe": "OUT",
+      "qty": 1080,
+      "keterangan": "RUSAK:OH Beras (sisa Bubur/Tim) (1080 gr) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "hnge4824",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cupoat1",
+      "tipe": "OUT",
+      "qty": 2,
+      "keterangan": "RUSAK:OH Cup Oat (sisa) (2 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "h1tdfs91",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cuppud01",
+      "tipe": "OUT",
+      "qty": 17,
+      "keterangan": "RUSAK:OH Cup Puding (sisa) (17 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "mlh5cdf0",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-oat01",
+      "tipe": "OUT",
+      "qty": 1,
+      "keterangan": "RUSAK:OH Oatmeal (sisa) (1 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "xek5mcs5",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-plas01",
+      "tipe": "OUT",
+      "qty": 17,
+      "keterangan": "RUSAK:OH Plastik Seler (sisa) (17 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "mkbm6c7s",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-pud01",
+      "tipe": "OUT",
+      "qty": 2,
+      "keterangan": "RUSAK:OH Puding (sisa) (2 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "rxauso0h",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sb01",
+      "tipe": "OUT",
+      "qty": 55,
+      "keterangan": "RUSAK:OH Sayur Buah (sisa) (55 gr) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "1h73c9cy",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sh01",
+      "tipe": "OUT",
+      "qty": 87,
+      "keterangan": "RUSAK:OH Sayur Hijau (sisa) (87 gr) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "tgzktqwi",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sp01",
+      "tipe": "OUT",
+      "qty": 17,
+      "keterangan": "RUSAK:OH Sayur Protein (sisa) (17 gr) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "li90f7an",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ttoat01",
+      "tipe": "OUT",
+      "qty": 2,
+      "keterangan": "RUSAK:OH Tutup Oat (sisa) (2 pcs) [2026-08-01]",
+      "produksi_id": null
+    },
+    {
+      "id": "2e3ek158",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-tn01",
+      "tipe": "IN",
+      "qty": 420,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "uzvgmffe",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-kk01",
+      "tipe": "IN",
+      "qty": 315,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "ud1yzd1g",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-kk01",
+      "tipe": "IN",
+      "qty": 315,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "9jaawmkv",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-oat01",
+      "tipe": "IN",
+      "qty": 23,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "eip789aj",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-bl01",
+      "tipe": "IN",
+      "qty": 3,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "3f93f047",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cb01",
+      "tipe": "IN",
+      "qty": 250,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "hgdpe6mi",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cb01",
+      "tipe": "IN",
+      "qty": 250,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "5yh9vbsb",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cupoat1",
+      "tipe": "IN",
+      "qty": 179,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "wt8m133m",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cuppud01",
+      "tipe": "IN",
+      "qty": 370,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "10o00zgo",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-cuppud01",
+      "tipe": "IN",
+      "qty": 370,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "mhq3ow2p",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-bl01",
+      "tipe": "IN",
+      "qty": 2,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "cppaiygi",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ttp01",
+      "tipe": "IN",
+      "qty": 250,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "6yee815n",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ttp01",
+      "tipe": "IN",
+      "qty": 250,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "2v0yoxv7",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-bl01",
+      "tipe": "IN",
+      "qty": 3,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "nhfr77tn",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-pud01",
+      "tipe": "IN",
+      "qty": 13,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "rd94plz5",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-pud01",
+      "tipe": "IN",
+      "qty": 13,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "3q1ndxfd",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-krs01",
+      "tipe": "IN",
+      "qty": 27,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "12kp4ijz",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-krs01",
+      "tipe": "IN",
+      "qty": 27,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "o7syt0qf",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-krs01",
+      "tipe": "IN",
+      "qty": 27,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "uitr4j3h",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sen01",
+      "tipe": "IN",
+      "qty": 2,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "ldj6o8hm",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sen01",
+      "tipe": "IN",
+      "qty": 2,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "1rbmrjks",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ab01",
+      "tipe": "IN",
+      "qty": 300,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "bmt3zosh",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ts01",
+      "tipe": "IN",
+      "qty": 4,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "a8u5hb9k",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-brs01",
+      "tipe": "IN",
+      "qty": 96600,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "1t50j9jh",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-brs01",
+      "tipe": "IN",
+      "qty": 96600,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "682huhhs",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-dg01",
+      "tipe": "IN",
+      "qty": 1680,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "nkn5z8l6",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-dg01",
+      "tipe": "IN",
+      "qty": 1680,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "2kl5hdvb",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-ay01",
+      "tipe": "IN",
+      "qty": 735,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "2hoeiqg2",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sl01",
+      "tipe": "IN",
+      "qty": 560,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "9xjm2m5b",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-sl01",
+      "tipe": "IN",
+      "qty": 560,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "izhszt3n",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-gr01",
+      "tipe": "IN",
+      "qty": 175,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "370lvcix",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-tg01",
+      "tipe": "IN",
+      "qty": 35,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    },
+    {
+      "id": "vlkl4zdz",
+      "tanggal": "2026-08-01",
+      "bahan_id": "b-tg01",
+      "tipe": "IN",
+      "qty": 35,
+      "keterangan": "Supplier",
+      "produksi_id": null
+    }
+  ],
+  "js": []
+}

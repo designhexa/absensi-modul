@@ -26,9 +26,13 @@ export default function Distribusi() {
 
   const [tanggal, setTanggal] = useState(todayISO());
   const hasUserModifiedGrids = useRef(false);
+  // Tandai saat admin mengedit input retur Langkah 5 secara manual — nilai itu
+  // WAJIB dihormati saat tutup siklus (tidak boleh dihitung ulang dari penjualan).
+  const hasManualReturEdits = useRef(false);
 
   useEffect(() => {
     hasUserModifiedGrids.current = false;
+    hasManualReturEdits.current = false;
   }, [tanggal]);
 
   const [step, setStep] = useState(4);
@@ -186,6 +190,7 @@ export default function Distribusi() {
 
   const handleReturChange = (outletId: string, field: string, val: number) => {
     hasUserModifiedGrids.current = true;
+    hasManualReturEdits.current = true;
     setReturGrid(prev => ({ ...prev, [outletId]: { ...prev[outletId], [field]: isNaN(val) ? 0 : val } }));
   };
 
@@ -276,6 +281,7 @@ export default function Distribusi() {
 
     setReturGrid(rGrid);
     hasUserModifiedGrids.current = false;
+    hasManualReturEdits.current = false;
     setStep(5);
   };
 
@@ -309,6 +315,10 @@ export default function Distribusi() {
         await supabase.from("stok_movement").delete().eq("id", m.id);
       }
       const deletedCount = outSales.length + returMovs.length;
+      // Lepas guard edit manual SEBELUM fetch agar grid di-reload dari data
+      // terbaru DB & auto-sync penjualan dari outlet kembali aktif.
+      hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
       await fetchFromSupabase();
       if (deletedCount > 0) {
         toast.success(`Siklus ${tanggal} dibuka (${deletedCount} record jurnal/stok dihapus) — penjualan bisa diedit ulang`);
@@ -335,11 +345,17 @@ export default function Distribusi() {
       let totalSalesRevenue = 0;
       existingPenjualan.forEach((p: any) => { totalSalesRevenue += p.qty * p.harga; });
 
-      // Recalculate returGrid from latest penjualan
+      // Retur grid yang dipakai untuk perhitungan OH — hormati edit manual admin
+      // (returGrid state), selain itu hitung ulang dari penjualan terbaru outlet
+      // agar stok retur tidak memakai data basi.
       const freshReturGrid: Record<string, Record<string, number>> = {};
-      outlets.forEach(o => { freshReturGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }; });
+      outlets.forEach(o => {
+        freshReturGrid[o.id] = hasManualReturEdits.current
+          ? { ...(returGrid[o.id] || { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }) }
+          : { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 };
+      });
 
-      if (existingPenjualan.length > 0) {
+      if (!hasManualReturEdits.current && existingPenjualan.length > 0) {
         outlets.forEach((o) => {
           const sent = distGrid[o.id] || {};
           if (!sent) return;
@@ -550,6 +566,7 @@ export default function Distribusi() {
     setRefreshing(true);
     try {
       hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
       const rGrid: Record<string, Record<string, number>> = {};
       outlets.forEach(o => { rGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }; });
 
@@ -586,6 +603,7 @@ export default function Distribusi() {
     setRefreshing(true);
     try {
       hasUserModifiedGrids.current = false;
+      hasManualReturEdits.current = false;
       const rGrid: Record<string, Record<string, number>> = {};
       outlets.forEach(o => { rGrid[o.id] = { bubur_d: 0, bubur_i: 0, tim_d: 0, tim_i: 0, oatmeal: 0, puding: 0, abon: 0 }; });
 

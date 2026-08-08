@@ -106,12 +106,20 @@ async function main() {
   const APPLY = args.includes("--apply");
   const SKIP_CLOSED = args.includes("--skip-closed");
   const GRAM_ONLY = args.includes("--gram-only");
+  const dariArg = args.find((a) => a.startsWith("--dari="));
+  const sampaiArg = args.find((a) => a.startsWith("--sampai="));
+  // Batas rentang eksplisit — lebih sempit dari cutoff jumlah-hari bila diberikan
+  const DARI = dariArg ? dariArg.split("=")[1] : null;
+  const SAMPAI = sampaiArg ? sampaiArg.split("=")[1] : null;
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const lower = DARI || cutoffISO;
+  const upper = SAMPAI || null;
+  const rangeLabel = upper ? `${lower} s.d. ${upper}` : `sejak ${lower}, ${days} hari`;
 
-  console.log(`=== NORMALISASI PENJUALAN — ATURAN OH 50g (sejak ${cutoffISO}, ${days} hari) ===`);
+  console.log(`=== NORMALISASI PENJUALAN — ATURAN OH 50g (${rangeLabel}) ===`);
   console.log(`Mode: ${APPLY ? "✅ MENULIS KE DATABASE (--apply)" : "🔍 DRY-RUN (tidak menulis)"}${SKIP_CLOSED ? " · melewati tanggal siklus tertutup (--skip-closed)" : ""}${GRAM_ONLY ? " · hanya bubur/tim (--gram-only)" : ""}\n`);
 
   // 1. Nama outlet (untuk laporan yang lebih terbaca)
@@ -119,20 +127,20 @@ async function main() {
   const outletNames = new Map((outlets || []).map((o: any) => [o.id, o.nama]));
 
   // 2. Tanggal yang siklusnya sudah ditutup (ada jurnal OUT-SALES)
-  const { data: jurnals } = await supabase
-    .from("jurnal")
-    .select("tanggal")
-    .eq("ref", "OUT-SALES")
-    .gte("tanggal", cutoffISO);
+  let jq = supabase.from("jurnal").select("tanggal").eq("ref", "OUT-SALES").gte("tanggal", lower);
+  if (upper) jq = jq.lte("tanggal", upper);
+  const { data: jurnals } = await jq;
   const closedDates = new Set((jurnals || []).map((j: any) => j.tanggal));
 
   // 3. Distribusi disetujui (sumber dist per varian)
-  const { data: dists, error: errD } = await supabase
+  let dq = supabase
     .from("permohonan_stok")
     .select("tanggal_kirim, outlet_id, produk_id, qty, status, catatan")
     .in("produk_id", PROD_IDS)
     .eq("status", "Disetujui")
-    .gte("tanggal_kirim", cutoffISO);
+    .gte("tanggal_kirim", lower);
+  if (upper) dq = dq.lte("tanggal_kirim", upper);
+  const { data: dists, error: errD } = await dq;
   if (errD) {
     console.error("❌ Gagal membaca permohonan_stok:", errD.message);
     process.exit(1);
@@ -156,12 +164,14 @@ async function main() {
   });
 
   // 4. Record penjualan produk produksi
-  const { data: sales, error: errS } = await supabase
+  let sq = supabase
     .from("penjualan")
     .select("id, tanggal, outlet_id, produk_id, qty, harga, total, sisa_gram, variant")
     .in("produk_id", PROD_IDS)
-    .gte("tanggal", cutoffISO)
-    .order("tanggal", { ascending: false });
+    .gte("tanggal", lower);
+  if (upper) sq = sq.lte("tanggal", upper);
+  sq = sq.order("tanggal", { ascending: false });
+  const { data: sales, error: errS } = await sq;
   if (errS) {
     console.error("❌ Gagal membaca penjualan:", errS.message);
     process.exit(1);
