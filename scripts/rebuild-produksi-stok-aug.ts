@@ -128,7 +128,7 @@ async function main() {
   const { data: bahan } = await supabase.from("bahan_baku").select("id, nama, konversi_gram");
   const byName = new Map((bahan || []).map((b: any) => [b.nama.toLowerCase(), b.id]));
   const konvPuding = (bahan || []).find((b: any) => b.id === "b-pud01")?.konversi_gram || 130;
-  const konvOat = (bahan || []).find((b: any) => b.id === "b-oat01")?.konversi_gram || 154;
+  const konvOat = (bahan || []).find((b: any) => b.id === "b-oat01")?.konversi_gram || 180;
   // Bisa berupa ID langsung ([I:b-ay01,...]) atau NAMA ([V:AYAM,...])
   const nameToId = (name: string) => byName.get(String(name || "").trim().toLowerCase());
   const toId = (idOrName: string | undefined) => {

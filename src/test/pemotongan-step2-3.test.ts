@@ -14,7 +14,7 @@ import { BUBUR_BASE, buburCalc, calcKemasanKebutuhan, KEMASAN_BAHAN } from "@/li
  */
 
 // ===== Replikasi materialReqs (Step 2) dari Produksi.tsx =====
-const KONV = { puding: 130, oat: 154 }; // konversi gram per pcs (fallback master data)
+const KONV = { puding: 130, oat: 180 }; // konversi gram per pcs (fallback master data)
 
 const materialReqs = (t: {
   buburD: number; buburI: number; timD: number; timI: number;
@@ -85,6 +85,10 @@ describe("Langkah 2 — Pemotongan BAHAN BAKU dari RENCANA", () => {
     expect(ids).toContain("b-pud01");
     expect(ids).toContain("b-oat01");
     expect(ids).toContain("b-ab01");
+    // Konversi bahan baku: Oatmeal 180 gr/pcs, Puding 130 gr/pcs
+    // PLAN: oat 40 cup x 25.71 = 1029 gr -> ceil(1029/180) = 6 pcs; puding 60 cup x 13 = 780 gr -> ceil(780/130) = 6 pcs
+    expect(reqs.find((r) => r.bahanId === "b-oat01")!.qty).toBe(6);
+    expect(reqs.find((r) => r.bahanId === "b-pud01")!.qty).toBe(6);
   });
 
   it("TIDAK memotong kemasan (cup & tutup) di Langkah 2", () => {

@@ -1005,7 +1005,7 @@ export default function Produksi() {
     // Oat — dalam pcs (produksi selalu habis per pcs, tidak ada sisa gram)
     const oatGr = Math.ceil(t.oatmeal * settings.oatmealCup);
     const oatBahan = bahan.find((x: any) => x.id === "b-oat01");
-    const oatKonv = oatBahan?.konversiGram || 154; // konversi dari master data (default 154 gr/pcs)
+    const oatKonv = oatBahan?.konversiGram || 180; // konversi dari master data (default 180 gr/pcs)
     const oatPcs = Math.ceil(oatGr / oatKonv);
     if (oatPcs > 0) {
       reqs.push({
@@ -1695,7 +1695,7 @@ export default function Produksi() {
       }
       if (ohRusak.oat > 1) {
         const oatBahanRetur = bahan.find((x: any) => x.id === "b-oat01");
-        const oatKonvRetur = oatBahanRetur?.konversiGram || 154; // konversi master data
+        const oatKonvRetur = oatBahanRetur?.konversiGram || 180; // konversi master data
         const qtyOat = Math.ceil(ohRusak.oat / oatKonvRetur);
         movPromises.push(db.addStokMov({
           tanggal, bahanId: "b-oat01", tipe: "OUT",

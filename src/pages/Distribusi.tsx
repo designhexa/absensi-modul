@@ -527,7 +527,7 @@ export default function Distribusi() {
       }
       if (ohRusak.oat > 1) {
         const oatBahanRetur = bahan.find((x: any) => x.id === "b-oat01");
-        const oatKonvRetur = oatBahanRetur?.konversiGram || 154;
+        const oatKonvRetur = oatBahanRetur?.konversiGram || 180;
         const qtyOat = Math.ceil(ohRusak.oat / oatKonvRetur);
         movPromises.push(db.addStokMov({ tanggal, bahanId: "b-oat01", tipe: "OUT", qty: qtyOat, keterangan: `RUSAK:OH Oatmeal (sisa) (${qtyOat} pcs) [${tanggal}]` }));
       }
