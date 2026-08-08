@@ -1,19 +1,23 @@
 /**
- * Buka Semua Tutup Siklus
- * 
+ * Buka Tutup Siklus (dengan filter tanggal + dry-run)
+ *
  * Hapus record yang dibuat saat saveStep5 (tutup siklus):
  * 1. stok_movement IN: "Retur Bahan Baku*" dan "OH abon*"
  * 2. jurnal: ref = "OUT-SALES"
- * 
+ *
  * Data penjualan TIDAK dihapus — agar bisa diedit ulang.
- * Setelah ini, admin bisa mengubah data dan menutup siklus lagi.
+ * Setelah ini, admin bisa mengubah data dan menutup siklus lagi
+ * (jurnal & stok IN retur/OH akan dibuat ulang otomatis saat tutup ulang).
+ *
+ * Cara pakai:
+ *   npx tsx scripts/buka-siklus.ts                              # dry-run, SEMUA tanggal
+ *   npx tsx scripts/buka-siklus.ts --dari=2026-08-01 --sampai=2026-08-07   # dry-run rentang 1-7
+ *   npx tsx scripts/buka-siklus.ts --dari=2026-08-01 --sampai=2026-08-07 --apply   # eksekusi
  */
 
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
-
-const uid = () => Math.random().toString(36).slice(2, 10);
 
 const envPath = path.resolve(process.cwd(), ".env");
 const envContent = fs.readFileSync(envPath, "utf-8");
@@ -32,18 +36,47 @@ envContent.split(/\r?\n/).forEach((line) => {
 
 const supabase = createClient(env["VITE_SUPABASE_URL"], env["VITE_SUPABASE_ANON_KEY"]);
 
-async function bukaSiklus() {
-  console.log("=== BUKA SEMUA TUTUP SIKLUS ===\n");
+const args = process.argv.slice(2);
+const APPLY = args.includes("--apply");
+const dariArg = args.find((a) => a.startsWith("--dari="));
+const sampaiArg = args.find((a) => a.startsWith("--sampai="));
+const DARI = dariArg ? dariArg.split("=")[1] : null;
+const SAMPAI = sampaiArg ? sampaiArg.split("=")[1] : null;
 
-  // ========= STEP 1: Hapus stok_movement Retur/OH =========
+function dateFilter(query: any, col: string) {
+  if (DARI) query = query.gte(col, DARI);
+  if (SAMPAI) query = query.lte(col, SAMPAI);
+  return query;
+}
+
+async function deleteBatch(table: string, ids: string[], label: string) {
+  const batchSize = 50;
+  let deleted = 0;
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    const { error } = await supabase.from(table).delete().in("id", batch);
+    if (error) console.error(`  ERROR batch ${i}-${i + batch.length}: ${error.message}`);
+    else deleted += batch.length;
+  }
+  console.log(`  ✅ ${label}: ${deleted} record dihapus`);
+}
+
+async function bukaSiklus() {
+  const rangeLabel = DARI && SAMPAI ? `${DARI} s.d. ${SAMPAI}` : DARI ? `mulai ${DARI}` : SAMPAI ? `sampai ${SAMPAI}` : "SEMUA tanggal";
+  console.log(`=== BUKA TUTUP SIKLUS (${rangeLabel}) ===`);
+  console.log(`Mode: ${APPLY ? "✅ EKSEKUSI (--apply)" : "🔍 DRY-RUN (hanya laporan, tidak menghapus)"}\n`);
+
+  // ========= STEP 1: stok_movement IN (Retur Bahan / OH abon) =========
   console.log("1. Mencari stok_movement IN (Retur Bahan / OH abon)...");
-  
-  const { data: returMov, error: rmErr } = await supabase
+
+  let q1 = supabase
     .from("stok_movement")
     .select("id, tanggal, bahan_id, qty, keterangan")
     .eq("tipe", "IN")
     .or("keterangan.ilike.%Retur Bahan%,keterangan.ilike.%OH abon%")
     .order("tanggal", { ascending: false });
+  q1 = dateFilter(q1, "tanggal");
+  const { data: returMov, error: rmErr } = await q1;
 
   if (rmErr) {
     console.error("  ERROR query:", rmErr.message);
@@ -51,48 +84,35 @@ async function bukaSiklus() {
   }
 
   if (!returMov || returMov.length === 0) {
-    console.log("  ℹ️  Tidak ada stok_movement Retur/OH ditemukan");
+    console.log("  ℹ️  Tidak ada stok_movement Retur/OH dalam rentang ini");
   } else {
-    console.log(`  Ditemukan ${returMov.length} records dari ${new Set(returMov.map(r => r.tanggal)).size} tanggal:`);
-    
+    console.log(`  Ditemukan ${returMov.length} records dari ${new Set(returMov.map((r) => r.tanggal)).size} tanggal:`);
     const grouped: Record<string, typeof returMov> = {};
-    returMov.forEach(r => {
+    returMov.forEach((r) => {
       if (!grouped[r.tanggal]) grouped[r.tanggal] = [];
       grouped[r.tanggal].push(r);
     });
-    
     Object.entries(grouped).forEach(([tgl, records]) => {
       console.log(`  ${tgl}: ${records.length} records`);
-      records.forEach(r => console.log(`    id=${r.id}, ${r.bahan_id} qty=${r.qty}, "${r.keterangan?.substring(0, 50)}"`));
+      records.forEach((r) => console.log(`    id=${r.id}, ${r.bahan_id} qty=${r.qty}, "${r.keterangan?.substring(0, 50)}"`));
     });
-
-    // Konfirmasi
-    console.log(`\n  >>> Akan menghapus ${returMov.length} records stok_movement`);
-
-    const ids = returMov.map(r => r.id);
-    const batchSize = 50;
-    let deleted = 0;
-    
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      const { error: delErr } = await supabase.from("stok_movement").delete().in("id", batch);
-      if (delErr) {
-        console.error(`  ERROR batch ${i}-${i + batch.length}: ${delErr.message}`);
-      } else {
-        deleted += batch.length;
-      }
+    if (APPLY) {
+      await deleteBatch("stok_movement", returMov.map((r) => r.id), "stok_movement");
+    } else {
+      console.log(`  👉 Akan menghapus ${returMov.length} records stok_movement`);
     }
-    console.log(`  ✅ ${deleted} stok_movement berhasil dihapus`);
   }
 
-  // ========= STEP 2: Hapus jurnal OUT-SALES =========
+  // ========= STEP 2: jurnal OUT-SALES =========
   console.log("\n2. Mencari jurnal OUT-SALES...");
-  
-  const { data: jurnal, error: jErr } = await supabase
+
+  let q2 = supabase
     .from("jurnal")
     .select("id, tanggal, ref, keterangan")
     .eq("ref", "OUT-SALES")
     .order("tanggal", { ascending: false });
+  q2 = dateFilter(q2, "tanggal");
+  const { data: jurnal, error: jErr } = await q2;
 
   if (jErr) {
     console.error("  ERROR query:", jErr.message);
@@ -100,60 +120,42 @@ async function bukaSiklus() {
   }
 
   if (!jurnal || jurnal.length === 0) {
-    console.log("  ℹ️  Tidak ada jurnal OUT-SALES ditemukan");
+    console.log("  ℹ️  Tidak ada jurnal OUT-SALES dalam rentang ini");
   } else {
-    console.log(`  Ditemukan ${jurnal.length} records dari ${new Set(jurnal.map(r => r.tanggal)).size} tanggal:`);
-    
+    console.log(`  Ditemukan ${jurnal.length} records dari ${new Set(jurnal.map((r) => r.tanggal)).size} tanggal:`);
     const grouped: Record<string, typeof jurnal> = {};
-    jurnal.forEach(r => {
+    jurnal.forEach((r) => {
       if (!grouped[r.tanggal]) grouped[r.tanggal] = [];
       grouped[r.tanggal].push(r);
     });
-    
     Object.entries(grouped).forEach(([tgl, records]) => {
       console.log(`  ${tgl}: ${records.length} records`);
-      records.forEach(r => console.log(`    id=${r.id}, "${r.keterangan?.substring(0, 60)}"`));
+      records.forEach((r) => console.log(`    id=${r.id}, "${r.keterangan?.substring(0, 60)}"`));
     });
-
-    const ids = jurnal.map(r => r.id);
-    const batchSize = 50;
-    let deleted = 0;
-
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      const { error: delErr } = await supabase.from("jurnal").delete().in("id", batch);
-      if (delErr) {
-        console.error(`  ERROR batch ${i}-${i + batch.length}: ${delErr.message}`);
-      } else {
-        deleted += batch.length;
-      }
+    if (APPLY) {
+      await deleteBatch("jurnal", jurnal.map((r) => r.id), "jurnal");
+    } else {
+      console.log(`  👉 Akan menghapus ${jurnal.length} records jurnal`);
     }
-    console.log(`  ✅ ${deleted} jurnal berhasil dihapus`);
   }
 
   // ========= VERIFIKASI =========
   console.log("\n=== VERIFIKASI ===\n");
-
-  const { data: verifyRm } = await supabase
-    .from("stok_movement")
-    .select("id")
-    .eq("tipe", "IN")
-    .or("keterangan.ilike.%Retur Bahan%,keterangan.ilike.%OH abon%")
-    .limit(1);
-  
-  console.log(`StokMov Retur/OH tersisa: ${verifyRm?.length || 0}`);
-
-  const { data: verifyJr } = await supabase
-    .from("jurnal")
-    .select("id")
-    .eq("ref", "OUT-SALES")
-    .limit(1);
-  
-  console.log(`Jurnal OUT-SALES tersisa: ${verifyJr?.length || 0}`);
-
-  console.log(`\n✅ Selesai! Semua siklus sudah dibuka.`);
-  console.log(`   Data penjualan tetap aman — bisa diedit ulang di aplikasi.`);
-  console.log(`   Jalankan saveStep5 (Tutup Siklus) lagi setelah selesai mengedit.`);
+  if (APPLY) {
+    let v1 = supabase.from("stok_movement").select("id").eq("tipe", "IN").or("keterangan.ilike.%Retur Bahan%,keterangan.ilike.%OH abon%");
+    v1 = dateFilter(v1, "tanggal");
+    const { data: verifyRm } = await v1;
+    let v2 = supabase.from("jurnal").select("id").eq("ref", "OUT-SALES");
+    v2 = dateFilter(v2, "tanggal");
+    const { data: verifyJr } = await v2;
+    console.log(`StokMov Retur/OH tersisa: ${verifyRm?.length || 0}`);
+    console.log(`Jurnal OUT-SALES tersisa: ${verifyJr?.length || 0}`);
+    console.log(`\n✅ Selesai! Siklus ${rangeLabel} sudah dibuka.`);
+    console.log(`   Data penjualan tetap aman — bisa diedit ulang di aplikasi.`);
+    console.log(`   Jalankan saveStep5 (Tutup Siklus) lagi setelah selesai mengedit.`);
+  } else {
+    console.log(`\n👉 DRY-RUN selesai. Jalankan dengan --apply untuk benar-benar membuka siklus ${rangeLabel}.`);
+  }
 }
 
 bukaSiklus().catch((err) => {
