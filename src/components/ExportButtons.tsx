@@ -14,13 +14,14 @@ interface Props {
 }
 
 export function ExportButtons({ filename, title, headers, rows, excelRows, size = "sm" }: Props) {
+  const data =
+    excelRows ??
+    rows.map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
+
   const handleExcel = () => {
-    const data =
-      excelRows ??
-      rows.map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
-    exportToExcel(filename, title.slice(0, 31), data);
+    exportToExcel(data, filename);
   };
-  const handlePDF = () => exportToPDF(filename, title, headers, rows);
+  const handlePDF = () => exportToPDF(data, filename, title);
 
   return (
     <div className="flex flex-wrap gap-2">

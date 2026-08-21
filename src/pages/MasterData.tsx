@@ -179,7 +179,7 @@ export default function MasterData() {
                           </div>
                           <div className="flex gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
                             <span className="capitalize bg-muted px-1.5 py-0.5 rounded text-[10px]">{k.role}</span>
-                            <span>{k.posisi}</span><span>&bull;</span><span>{o?.nama ?? "Pusat"}</span><span>&bull;</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hr</span>
+                            <span>{k.posisi}</span><span>&bull;</span><span>{o?.nama ?? "Pusat"}</span><span>&bull;</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hari</span>
                           </div>
                           {k.username && <div className="mt-1.5 text-[10px] text-primary flex items-center gap-1"><Users className="h-3 w-3" /><span>Akun: {k.username}</span></div>}
                         </div>
@@ -348,6 +348,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const [posisi, setPosisi] = useState(karyawan.posisi);
   const [role, setRole] = useState(karyawan.role || "karyawan");
   const [username, setUsername] = useState(karyawan.username || "");
+  const [password, setPassword] = useState("");
   const [np, setNp] = useState("");
   const [outletId, setOutletId] = useState(karyawan.outletId ?? "none");
   const [gajiPokok, setGajiPokok] = useState(karyawan.gajiPokok);

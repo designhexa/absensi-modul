@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { UserAccount } from "./types";
-import { supabase } from "./supabaseClient";
+import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
 const KEY = "absensi-auth-v1";
 
@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load all users for login helper
   useEffect(() => {
     async function fetchUsers() {
+      if (!isSupabaseConfigured) return;
       try {
         const { data, error } = await supabase.from("users").select("*");
         if (data && !error) {
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
+    if (!isSupabaseConfigured) return false;
     try {
       const { data, error } = await supabase
         .from("users")

@@ -1,4 +1,4 @@
-import { Outlet, UserAccount, Karyawan } from "./types";
+import { EMPLOYEE_ROLES, Outlet, UserAccount, Karyawan } from "./types";
 
 const DEPARTMENT_NAMES = [
   "management",
@@ -26,7 +26,7 @@ export const SEED_USERS: UserAccount[] = [
     username: `pegawai${i + 1}`,
     password: "pegawai123",
     nama: `Pegawai ${o.nama}`,
-    role: (i % 4 === 0 ? "operational" : i % 4 === 1 ? "development" : i % 4 === 2 ? "management" : "marketing") as const,
+    role: EMPLOYEE_ROLES[i % EMPLOYEE_ROLES.length],
     outletId: o.id,
     karyawanId: `k-${o.id}-1`,
   })),
@@ -37,7 +37,7 @@ export const SEED_KARYAWAN: Karyawan[] = [
     id: `k-${o.id}-1`,
     nama: `Pegawai ${o.nama}`,
     posisi: o.nama,
-    role: o.nama as Karyawan["role"],
+    role: EMPLOYEE_ROLES[i % EMPLOYEE_ROLES.length],
     outletId: o.id,
     gajiPokok: 17500,
     bonusOmset: 0,

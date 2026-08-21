@@ -37,6 +37,7 @@ const STATUSES: StatusAbsen[] = ["Hadir"];
 export default function Absensi() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const isEmployee = Boolean(user && user.role !== "admin");
   const { karyawan = [], absensi = [], outlets = [] } = useDB();
 
   const visibleKaryawan = useMemo(() => {
@@ -94,7 +95,7 @@ export default function Absensi() {
   const [address, setAddress] = useState("Mencari lokasi GPS...");
 
   const myOutletLocation = useMemo(() => {
-    if (user?.role !== "karyawan" || !user?.outletId) return null;
+    if (!isEmployee || !user?.outletId) return null;
     const myOutlet = outlets.find((o: any) => o.id === user.outletId);
     if (!myOutlet || !myOutlet.lokasi) return null;
 
@@ -120,7 +121,7 @@ export default function Absensi() {
       return `${loc.nama}, ${loc.alamat || "-"} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
     }
     const outletNama =
-      user?.role === "karyawan"
+      isEmployee
         ? user?.nama || "Lokasi"
         : "Dapur Utama";
     return `${outletNama} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
@@ -155,7 +156,7 @@ export default function Absensi() {
   };
 
   useEffect(() => {
-    if (user?.role === "karyawan") {
+    if (isEmployee) {
       fetchGPSLocation();
     }
   }, [user]);
@@ -189,8 +190,8 @@ export default function Absensi() {
 
   const todayRecord = useMemo(() => {
     const kid =
-      user?.role === "karyawan"
-        ? `k-${user.outletId}-1`
+      isEmployee
+        ? user.karyawanId || `k-${user.outletId}-1`
         : karyawanId || visibleKaryawan[0]?.id;
     if (!kid) return null;
     return absensi.find(
@@ -218,7 +219,7 @@ export default function Absensi() {
   };
 
   const validateGPSDistance = () => {
-    if (user?.role !== "karyawan" || !user?.outletId) return true;
+    if (!isEmployee || !user?.outletId) return true;
     const myOutlet = outlets.find((o: any) => o.id === user.outletId);
     if (
       !myOutlet ||
@@ -544,7 +545,7 @@ export default function Absensi() {
             )}
           </CardContent>
         </Card>
-      ) : user?.role === "karyawan" ? (
+      ) : isEmployee ? (
         /* GPS Attendance for Karyawan */
         <Card className="glass border-0 shadow-card overflow-hidden">
           <CardHeader className="pb-3">
@@ -684,7 +685,7 @@ export default function Absensi() {
                   {(() => {
                     const loc = myOutletLocation;
                     const gpsSet = !!(
-                      user?.role === "karyawan" &&
+                      isEmployee &&
                       outlets.find(
                         (o: any) => o.id === user.outletId
                       )?.lokasi?.includes("@")
@@ -819,16 +820,18 @@ export default function Absensi() {
           <div className="flex items-center gap-2">
             <DateRangeFilter value={range} onChange={setRange} />
             <ExportButtons
-              data={rekap.map((r) => ({
-                Nama: r.k.nama,
-                Posisi: r.k.posisi,
-                Hadir: r.hadir,
-                Terlambat: r.terlambatCount,
-                Tunjangan: r.tunjanganTotal,
-                Bonus: r.totalBonus,
-                "Total Gaji": r.totalGaji,
-              }))}
               filename="rekap-absensi"
+              title="Rekap Absensi"
+              headers={["Nama", "Posisi", "Hadir", "Terlambat", "Tunjangan", "Bonus", "Total Gaji"]}
+              rows={rekap.map((r) => [
+                r.k.nama,
+                r.k.posisi,
+                r.hadir,
+                r.terlambatCount,
+                r.tunjanganTotal,
+                r.totalBonus,
+                r.totalGaji,
+              ])}
             />
           </div>
         </CardHeader>

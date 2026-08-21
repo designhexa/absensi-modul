@@ -123,18 +123,20 @@ export async function fetchFromSupabase() {
 // Initial fetch when module loads
 fetchFromSupabase();
 
-// Setup Supabase Real-time listener for database sync
-supabase
-  .channel("db-realtime-channel")
-  .on("postgres_changes", { event: "*", schema: "public" }, () => {
-    fetchFromSupabase();
-  })
-  .subscribe();
+if (isSupabaseConfigured) {
+  // Setup Supabase Real-time listener for database sync.
+  supabase
+    .channel("db-realtime-channel")
+    .on("postgres_changes", { event: "*", schema: "public" }, () => {
+      fetchFromSupabase();
+    })
+    .subscribe();
 
-// Periodic polling fallback (every 30s) in case Realtime connection drops
-setInterval(() => {
-  fetchFromSupabase();
-}, 30_000);
+  // Periodic polling fallback (every 30s) in case Realtime connection drops.
+  setInterval(() => {
+    fetchFromSupabase();
+  }, 30_000);
+}
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
