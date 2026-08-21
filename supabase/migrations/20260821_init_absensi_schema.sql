@@ -16,7 +16,7 @@ create table if not exists public.karyawan (
   id text primary key,
   nama text not null,
   posisi text not null default 'Kasir',
-  role text not null default 'karyawan' check (role in ('admin', 'karyawan')),
+  role text not null default 'operational' check (role in ('admin', 'operational', 'development', 'management', 'marketing', 'design', 'finance', 'logistic', 'karyawan')),
   outlet_id text references public.outlets(id) on delete set null,
   gaji_pokok numeric not null default 0,
   bonus_omset numeric not null default 0,
@@ -33,7 +33,7 @@ create table if not exists public.users (
   username text primary key,
   password text not null,
   nama text not null,
-  role text not null default 'karyawan' check (role in ('admin', 'karyawan')),
+  role text not null default 'operational' check (role in ('admin', 'operational', 'development', 'management', 'marketing', 'design', 'finance', 'logistic', 'karyawan')),
   outlet_id text references public.outlets(id) on delete set null,
   karyawan_id text references public.karyawan(id) on delete set null
 );

@@ -346,7 +346,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(karyawan.nama);
   const [posisi, setPosisi] = useState(karyawan.posisi);
-  const [role, setRole] = useState(karyawan.role || "karyawan");
+  const [role, setRole] = useState(karyawan.role === "karyawan" ? "operational" : karyawan.role || "operational");
   const [username, setUsername] = useState(karyawan.username || "");
   const [password, setPassword] = useState("");
   const [np, setNp] = useState("");
