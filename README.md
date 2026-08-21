@@ -44,6 +44,20 @@ Ambil values dari: **Supabase Dashboard → Project Settings → API**
 - `VITE_SUPABASE_URL` → Project URL
 - `VITE_SUPABASE_ANON_KEY` → `anon` `public` key
 
+### 3a. Vercel Deployment
+
+Tambahkan variable berikut di **Vercel → Project Settings → Environment Variables**
+untuk environment **Production**, **Preview**, dan **Development**, lalu lakukan
+redeploy:
+
+```env
+VITE_SUPABASE_URL=https://irlcuhgjteappwxjpmnn.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+File `.env` lokal tidak ikut ke GitHub. Tanpa variable tersebut, aplikasi hanya
+memakai data seed lokal dan perubahan Master Data tidak dapat tersimpan ke Supabase.
+
 ### 4. Install & Run
 
 ```bash
