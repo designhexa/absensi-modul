@@ -1,831 +1,245 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
-import {
-  Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
-import {
-  Accordion, AccordionItem, AccordionTrigger, AccordionContent
-} from "@/components/ui/accordion";
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-
-import { db, useDB, getBubaSettings, saveAppSettings } from "@/lib/store";
-import { DEFAULT_LOCK_DEADLINE } from "@/lib/produksi-utils";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { db, useDB } from "@/lib/store";
 import { rupiah } from "@/lib/format";
-
-import { Plus, Trash2, RotateCcw, Pencil, Sliders, Warehouse, Store, ShoppingCart, BookOpen, UserCheck, Users, AlertTriangle } from "lucide-react";
+import { Plus, RotateCcw, Pencil, Store, UserCheck, Users, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-
 import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
 import ConfirmDeleteButton from "@/components/ConfirmDeleteButton";
 
-// GPS Location parsing helper
-const parseLokasi = (lokasiStr: string) => {
-  const parts = (lokasiStr || "").split(" @ ");
-  const alamat = parts[0] || "";
-  let lat = "";
-  let lng = "";
-  let rad = "100";
-  if (parts[1]) {
-    const coords = parts[1].split(",");
-    lat = coords[0] || "";
-    lng = coords[1] || "";
-    rad = coords[2] || "100";
-  }
-  return { alamat, lat, lng, rad };
+const parseLokasi = (s: string) => {
+  const p = (s || "").split(" @ ");
+  const a = p[0] || "";
+  let lat = "", lng = "", rad = "100";
+  if (p[1]) { const c = p[1].split(","); lat = c[0] || ""; lng = c[1] || ""; rad = c[2] || "100"; }
+  return { alamat: a, lat, lng, rad };
 };
+
+function genUsername(n: string): string {
+  return n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
+}
+
+function uniqueUsername(b: string, ex: string[]): string {
+  if (!ex.includes(b)) return b;
+  let i = 1;
+  while (ex.includes(b + i)) i++;
+  return b + i;
+}
 
 export default function MasterData() {
   const { user } = useAuth();
-  const { outlets = [], produk = [], coa = [], karyawan = [], users = [], bahan = [] } = useDB();
+  const { outlets = [], karyawan = [], users = [] } = useDB();
+  const [os, setOs] = useState("");
+  const [ks, setKs] = useState("");
 
-  const [outletSearch, setOutletSearch] = useState("");
-  const [produkSearch, setProdukSearch] = useState("");
-  const [bahanSearch, setBahanSearch] = useState("");
-  const [coaSearch, setCoaSearch] = useState("");
-  const [karyawanSearch, setKaryawanSearch] = useState("");
+  const fO = useMemo(() => {
+    if (!os.trim()) return outlets;
+    return outlets.filter((o: any) => o.nama.toLowerCase().includes(os.toLowerCase()));
+  }, [outlets, os]);
+  const fK = useMemo(() => {
+    if (!ks.trim()) return karyawan;
+    return karyawan.filter((k: any) => k.nama.toLowerCase().includes(ks.toLowerCase()));
+  }, [karyawan, ks]);
+  const oPg = usePagination(fO, 10);
+  const kPg = usePagination(fK, 10);
+  const [oN, setON] = useState("");
+  const [oL, setOL] = useState("");
+  const [oLt, setOLt] = useState("");
+  const [oLn, setOLn] = useState("");
+  const [oR, setOR] = useState("100");
 
-  const filteredOutlets = useMemo(() => {
-    if (!outletSearch.trim()) return outlets;
-    const q = outletSearch.toLowerCase();
-    return outlets.filter((o: any) => o.nama.toLowerCase().includes(q));
-  }, [outlets, outletSearch]);
-
-  const filteredProduk = useMemo(() => {
-    if (!produkSearch.trim()) return produk;
-    const q = produkSearch.toLowerCase();
-    return produk.filter((p: any) => p.nama.toLowerCase().includes(q));
-  }, [produk, produkSearch]);
-
-  const filteredBahanList = useMemo(() => {
-    if (!bahanSearch.trim()) return bahan;
-    const q = bahanSearch.toLowerCase();
-    return bahan.filter((b: any) => b.kode.toLowerCase().includes(q) || b.nama.toLowerCase().includes(q));
-  }, [bahan, bahanSearch]);
-
-  const filteredCoa = useMemo(() => {
-    if (!coaSearch.trim()) return coa;
-    const q = coaSearch.toLowerCase();
-    return coa.filter((a: any) => a.kode.toLowerCase().includes(q) || a.nama.toLowerCase().includes(q));
-  }, [coa, coaSearch]);
-
-  const filteredKaryawan = useMemo(() => {
-    if (!karyawanSearch.trim()) return karyawan;
-    const q = karyawanSearch.toLowerCase();
-    return karyawan.filter((k: any) => k.nama.toLowerCase().includes(q));
-  }, [karyawan, karyawanSearch]);
-
-  const outletPg = usePagination(filteredOutlets, 10);
-  const produkPg = usePagination(filteredProduk, 10);
-  const coaPg = usePagination(filteredCoa, 10);
-  const karyawanPg = usePagination(filteredKaryawan, 10);
-  const bahanPg = usePagination(filteredBahanList, 10);
-
-  // Outlet form state with GPS
-  const [oNama, setONama] = useState("");
-  const [oLokasi, setOLokasi] = useState("");
-  const [oLat, setOLat] = useState("");
-  const [oLng, setOLng] = useState("");
-  const [oRadius, setORadius] = useState("100");
-
-  const [pNama, setPNama] = useState("");
-  const [pHarga, setPHarga] = useState(0);
-  const [pSatuan, setPSatuan] = useState("cup");
-
-  // Bahan Baku form state
-  const [bKode, setBKode] = useState("");
-  const [bNama, setBNama] = useState("");
-  const [bSatuan, setBSatuan] = useState("sachet");
-  const [bStokMin, setBStokMin] = useState(0);
-  const [bStokAwal, setBStokAwal] = useState(0);
-  const [bHargaBeli, setBHargaBeli] = useState(0);
-  const [bKonversiGram, setBKonversiGram] = useState(0);
-
-
-
-  // Global Settings state
-  const [globalSettings, setGlobalSettings] = useState(getBubaSettings());
-  const [sBerasBubur, setSBerasBubur] = useState(globalSettings.berasBubur);
-  const [sDagingBubur, setSDagingBubur] = useState(globalSettings.dagingBubur);
-  const [sAirBubur, setSAirBubur] = useState(globalSettings.airBubur);
-  const [sSayurHijauBubur, setSSayurHijauBubur] = useState(globalSettings.sayurHijauBubur);
-  const [sSayurBrokoliBubur, setSSayurBrokoliBubur] = useState(globalSettings.sayurBuahBubur);
-  const [sSayurPutihBubur, setSSayurPutihBubur] = useState(globalSettings.sayurProteinBubur);
-
-  const [sBerasTim, setSBerasTim] = useState(globalSettings.berasTim);
-  const [sDagingTim, setSDagingTim] = useState(globalSettings.dagingTim);
-  const [sAirTim, setSAirTim] = useState(globalSettings.airTim);
-  const [sSayurHijauTim, setSSayurHijauTim] = useState(globalSettings.sayurHijauTim);
-  const [sSayurBrokoliTim, setSSayurBrokoliTim] = useState(globalSettings.sayurBuahTim);
-  const [sSayurPutihTim, setSSayurPutihTim] = useState(globalSettings.sayurProteinTim);
-
-  const [sOatmealCup, setSOatmealCup] = useState(globalSettings.oatmealCup);
-  const [sPudingCup, setSPudingCup] = useState(globalSettings.pudingCup);
-  const [sAbonCup, setSAbonCup] = useState(globalSettings.abonCup);
-  const [sLockDeadline, setSLockDeadline] = useState(globalSettings.lockDeadlineTime || DEFAULT_LOCK_DEADLINE);
-  const [sLockEnabled, setSLockEnabled] = useState(globalSettings.lockEnabled !== false);
-
-  useEffect(() => {
-    const handler = () => {
-      const gs = getBubaSettings();
-      setGlobalSettings(gs);
-      setSBerasBubur(gs.berasBubur);
-      setSDagingBubur(gs.dagingBubur);
-      setSAirBubur(gs.airBubur);
-      setSSayurHijauBubur(gs.sayurHijauBubur);
-      setSSayurBrokoliBubur(gs.sayurBuahBubur);
-      setSSayurPutihBubur(gs.sayurProteinBubur);
-      setSBerasTim(gs.berasTim);
-      setSDagingTim(gs.dagingTim);
-      setSAirTim(gs.airTim);
-      setSSayurHijauTim(gs.sayurHijauTim);
-      setSSayurBrokoliTim(gs.sayurBuahTim);
-      setSSayurPutihTim(gs.sayurProteinTim);
-      setSOatmealCup(gs.oatmealCup);
-      setSPudingCup(gs.pudingCup);
-      setSAbonCup(gs.abonCup);
-      setSLockDeadline(gs.lockDeadlineTime || DEFAULT_LOCK_DEADLINE);
-      setSLockEnabled(gs.lockEnabled !== false);
-    };
-    window.addEventListener("buba_settings_changed", handler);
-    return () => window.removeEventListener("buba_settings_changed", handler);
-  }, []);
-
-  const handleSaveGramasi = (e: React.FormEvent) => {
-    e.preventDefault();
-    const current = getBubaSettings();
-    saveAppSettings({
-      ...current,
-      berasBubur: Number(sBerasBubur),
-      dagingBubur: Number(sDagingBubur),
-      airBubur: Number(sAirBubur),
-      sayurHijauBubur: Number(sSayurHijauBubur),
-      sayurBuahBubur: Number(sSayurBrokoliBubur),
-      sayurProteinBubur: Number(sSayurPutihBubur),
-      
-      berasTim: Number(sBerasTim),
-      dagingTim: Number(sDagingTim),
-      airTim: Number(sAirTim),
-      sayurHijauTim: Number(sSayurHijauTim),
-      sayurBuahTim: Number(sSayurBrokoliTim),
-      sayurProteinTim: Number(sSayurPutihTim),
-
-      oatmealCup: Number(sOatmealCup),
-      pudingCup: Number(sPudingCup),
-      abonCup: Number(sAbonCup),
-      lockDeadlineTime: sLockDeadline || DEFAULT_LOCK_DEADLINE,
-      lockEnabled: sLockEnabled,
-    });
-    toast.success("Pengaturan aplikasi berhasil disimpan!");
-  };
-
-  // Guard: halaman Master Data hanya boleh diakses admin (Admin Utama)
-  if (user?.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+  if (user?.role !== "admin") return <Navigate to="/" replace />;
 
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
-
-      {/* HEADER */}
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-3xl font-bold text-gradient">Master Data</h1>
-          <p className="text-muted-foreground">
-            Kelola outlet, produk, bahan baku, COA, karyawan, dan pengaturan global
-          </p>
+          <p className="text-muted-foreground">Kelola outlet, karyawan, dan akun pengguna</p>
         </div>
-
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (confirm("Reset semua data?")) {
-              db.reset();
-              toast.success("Data direset");
-            }
-          }}
-        >
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset
+        <Button variant="outline" onClick={() => { if (confirm("Reset semua data?")) { db.reset(); toast.success("Data direset"); } }}>
+          <RotateCcw className="mr-2 h-4 w-4" />Reset
         </Button>
       </div>
 
-
-
-
-
-      {/* ===== ACCORDION VIEW ===== */}
-      <div>
-        <Accordion type="single" collapsible className="space-y-2">
-          {/* OUTLET */}
-          <AccordionItem value="outlet" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <Store className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Outlet</div>
-                  <div className="text-[11px] text-muted-foreground">{outlets.length} terdaftar</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="grid gap-4">
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4 space-y-3">
-                    <h3 className="text-sm font-bold">Tambah Outlet</h3>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (!oNama) {
-                          toast.error("Nama outlet diperlukan");
-                          return;
-                        }
-                        // Wajibkan koordinat GPS — dipakai sebagai batasan absensi GPS outlet.
-                        if (!oLat || !oLng) {
-                          toast.error("Latitude & Longitude GPS wajib diisi (untuk absensi GPS outlet)");
-                          return;
-                        }
-                        const lokasiCombined = `${oLokasi} @ ${oLat},${oLng},${oRadius || 100}`;
-                        db.addOutlet({ nama: oNama, lokasi: lokasiCombined });
-                        setONama("");
-                        setOLokasi("");
-                        setOLat("");
-                        setOLng("");
-                        setORadius("100");
-                        toast.success("Outlet ditambahkan");
-                      }}
-                      className="space-y-2"
-                    >
-                      <Input value={oNama} onChange={(e) => setONama(e.target.value)} placeholder="Nama Outlet" />
-                      <Input value={oLokasi} onChange={(e) => setOLokasi(e.target.value)} placeholder="Alamat" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input value={oLat} onChange={(e) => setOLat(e.target.value)} placeholder="Latitude GPS *" />
-                        <Input value={oLng} onChange={(e) => setOLng(e.target.value)} placeholder="Longitude GPS *" />
-                      </div>
-                      <Input type="number" value={oRadius} onChange={(e) => setORadius(e.target.value)} placeholder="Radius Absensi (M)" />
-                      <p className="text-[10px] text-muted-foreground">
-                        * Lat &amp; Lng wajib — dipakai sebagai batasan lokasi absensi GPS outlet.
-                      </p>
-                      <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Outlet
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-                <Card className="border shadow-sm">
-                  <CardContent className="p-3">
-                    <div className="mb-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                          <h3 className="text-sm font-bold px-1 shrink-0">Daftar Outlet</h3>
-                          <Input
-                            placeholder="Cari outlet..."
-                            value={outletSearch}
-                            onChange={(e) => { setOutletSearch(e.target.value); outletPg.setPage(1); }}
-                            className="h-8 w-40 text-xs shrink-0"
-                          />
-                        </div>
-                        <div className="flex justify-center lg:justify-end shrink-0">
-                          <TablePagination 
-                            page={outletPg.page}
-                            totalPages={outletPg.totalPages}
-                            total={outletPg.total}
-                            pageSize={outletPg.pageSize}
-                            onChange={outletPg.setPage}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {outletPg.paged.map((o) => {
-                        const parsed = parseLokasi(o.lokasi);
-                        return (
-                          <div key={o.id} className="rounded-lg border p-3 text-sm space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold">{o.nama}</span>
-                              <div className="flex gap-1">
-                                <EditOutletDialog outlet={o} />
-                                <ConfirmDeleteButton
-                                  className="h-7 w-7"
-                                  onConfirm={() => db.deleteOutlet(o.id)}
-                                  title="Hapus Outlet"
-                                  description={`Outlet ${o.nama} akan dihapus permanen.`}
-                                />
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">{parsed.alamat || "-"}</div>
-                            {parsed.lat !== "" && parsed.lng !== "" ? (
-                              <div className="text-[10px] text-primary font-mono">
-                                GPS: {parsed.lat}, {parsed.lng} (R:{parsed.rad}m)
-                              </div>
-                            ) : (
-                              <div className="text-[10px] font-medium text-amber-600 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" /> GPS belum diatur — absensi tanpa verifikasi lokasi (sementara)
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {outletPg.paged.length === 0 && (
-                        <div className="text-center text-muted-foreground py-6 text-sm">Belum ada outlet</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          {/* PRODUK */}
-          <AccordionItem value="produk" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <ShoppingCart className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Produk</div>
-                  <div className="text-[11px] text-muted-foreground">{produk.length} terdaftar</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="grid gap-4">
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4 space-y-3">
-                    <h3 className="text-sm font-bold">Tambah Produk</h3>
-                    <form onSubmit={(e) => { e.preventDefault(); if (!pNama || pHarga <= 0) return; db.addProduk({ nama: pNama, harga: pHarga, satuan: pSatuan }); setPNama(""); setPHarga(0); toast.success("Produk ditambahkan"); }} className="space-y-2">
-                      <Input value={pNama} onChange={(e) => setPNama(e.target.value)} placeholder="Nama Produk" />
-                      <Input type="number" value={pHarga} onChange={(e) => setPHarga(Number(e.target.value))} placeholder="Harga" />
-                      <Input value={pSatuan} onChange={(e) => setPSatuan(e.target.value)} placeholder="Satuan" />
-                      <Button className="w-full h-9 text-xs"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-                <Card className="border shadow-sm">
-                  <CardContent className="p-3">
-                    <div className="mb-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                          <h3 className="text-sm font-bold px-1 shrink-0">Daftar Produk</h3>
-                          <Input
-                            placeholder="Cari produk..."
-                            value={produkSearch}
-                            onChange={(e) => { setProdukSearch(e.target.value); produkPg.setPage(1); }}
-                            className="h-8 w-40 text-xs shrink-0"
-                          />
-                        </div>
-                        <div className="flex justify-center lg:justify-end shrink-0">
-                          <TablePagination page={produkPg.page} totalPages={produkPg.totalPages} total={produkPg.total} pageSize={produkPg.pageSize} onChange={produkPg.setPage} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {produkPg.paged.map((p) => (
-                        <div key={p.id} className="rounded-lg border p-3 text-sm flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold">{p.nama}</div>
-                            <div className="text-xs text-muted-foreground">{rupiah(p.harga)} / {p.satuan}</div>
-                          </div>
-                          <div className="flex gap-1">
-                            <EditProdukDialog produk={p} />
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => db.deleteProduk(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                          </div>
-                        </div>
-                      ))}
-                      {produkPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada produk</div>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          {/* BAHAN BAKU */}
-          <AccordionItem value="bahan" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <Warehouse className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Bahan Baku</div>
-                  <div className="text-[11px] text-muted-foreground">{bahan.length} terdaftar</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="grid gap-4">
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4 space-y-2">
-                    <h3 className="text-sm font-bold">Tambah Bahan Baku</h3>
-                    <form onSubmit={async (e) => { e.preventDefault(); if (!bKode || !bNama) return toast.error("Lengkapi kode dan nama bahan!"); try { await db.addBahan({ kode: bKode, nama: bNama, satuan: bSatuan, stokMin: bStokMin, stokAwal: bStokAwal, hargaBeli: bHargaBeli, konversiGram: bKonversiGram || undefined }); setBKode(""); setBNama(""); setBSatuan("sachet"); setBStokMin(0); setBStokAwal(0); setBHargaBeli(0); setBKonversiGram(0); toast.success("Bahan baku ditambahkan"); } catch (err: any) { toast.error(`Gagal menyimpan bahan baku: ${err?.message || "Terjadi kesalahan"}`); } }} className="space-y-2">
-                      <Input value={bKode} onChange={(e) => setBKode(e.target.value)} placeholder="Kode (contoh: BRS01)" />
-                      <Input value={bNama} onChange={(e) => setBNama(e.target.value)} placeholder="Nama Bahan" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input value={bSatuan} onChange={(e) => setBSatuan(e.target.value)} placeholder="Satuan" />
-                        <Input type="number" value={bStokMin} onChange={(e) => setBStokMin(Number(e.target.value))} placeholder="Stok Min" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input type="number" value={bStokAwal} onChange={(e) => setBStokAwal(Number(e.target.value))} placeholder="Stok Awal" />
-                        <Input type="number" value={bHargaBeli} onChange={(e) => setBHargaBeli(Number(e.target.value))} placeholder="Harga Beli" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input type="number" value={bKonversiGram} onChange={(e) => setBKonversiGram(Number(e.target.value))} placeholder="Konversi Gram" />
-                        <div className="text-[10px] text-muted-foreground flex items-center px-1">g / {bSatuan || "satuan"}</div>
-                      </div>
-                      <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Bahan Baku</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-                <Card className="border shadow-sm">
-                  <CardContent className="p-3">
-                    <div className="mb-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                          <h3 className="text-sm font-bold px-1 shrink-0">Daftar Bahan Baku</h3>
-                          <Input
-                            placeholder="Cari bahan..."
-                            value={bahanSearch}
-                            onChange={(e) => { setBahanSearch(e.target.value); bahanPg.setPage(1); }}
-                            className="h-8 w-40 text-xs shrink-0"
-                          />
-                        </div>
-                        <div className="flex justify-center lg:justify-end shrink-0">
-                          <TablePagination page={bahanPg.page} totalPages={bahanPg.totalPages} total={bahanPg.total} pageSize={bahanPg.pageSize} onChange={bahanPg.setPage} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {bahanPg.paged.map((b) => (
-                        <div key={b.id} className="rounded-lg border p-3 text-sm">
-                          <div className="flex items-center justify-between">
-                            <div><span className="font-mono font-bold text-xs text-primary">{b.kode}</span><span className="font-semibold ml-2">{b.nama}</span></div>
-                            <div className="flex gap-1">
-                              <EditBahanDialog bahan={b} />
-                              <ConfirmDeleteButton
-                                className="h-7 w-7"
-                                onConfirm={async () => {
-                                  try {
-                                    await db.deleteBahan(b.id);
-                                    toast.success("Bahan baku dihapus");
-                                  } catch (err: any) {
-                                    toast.error(`Gagal menghapus bahan: ${err?.message || "Terjadi kesalahan"}`);
-                                  }
-                                }}
-                                title="Hapus Bahan Baku"
-                                description={`Bahan ${b.kode} — ${b.nama} akan dihapus permanen.`}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                            <span>Satuan: {b.satuan}</span><span>Min: {b.stokMin}</span><span>Awal: {b.stokAwal}</span><span className="text-primary font-semibold">{rupiah(b.hargaBeli)}</span>
-                            {b.konversiGram ? <span className="text-amber-600 font-medium">Konv: {b.konversiGram} g/{b.satuan}</span> : null}
-                          </div>
-                        </div>
-                      ))}
-                      {bahanPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada bahan baku</div>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          {/* COA */}
-          <AccordionItem value="coa" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <BookOpen className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">COA</div>
-                  <div className="text-[11px] text-muted-foreground">{coa.length} akun</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
+      <Accordion type="single" collapsible className="space-y-2">
+        <AccordionItem value="outlet" className="rounded-xl border bg-card overflow-hidden">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center"><Store className="h-4 w-4 text-primary-foreground" /></div>
+              <div className="text-left"><div className="font-semibold text-sm">Outlet</div><div className="text-[11px] text-muted-foreground">{outlets.length} terdaftar</div></div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="grid gap-4">
               <Card className="border shadow-sm">
-                <CardContent className="p-3">                    <div className="mb-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                          <h3 className="text-sm font-bold px-1 shrink-0">Chart of Accounts</h3>
-                          <Input
-                            placeholder="Cari COA..."
-                            value={coaSearch}
-                            onChange={(e) => { setCoaSearch(e.target.value); coaPg.setPage(1); }}
-                            className="h-8 w-40 text-xs shrink-0"
-                          />
-                        </div>
-                        <div className="flex justify-center lg:justify-end shrink-0">
-                          <TablePagination page={coaPg.page} totalPages={coaPg.totalPages} total={coaPg.total} pageSize={coaPg.pageSize} onChange={coaPg.setPage} />
-                        </div>
-                      </div>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="text-sm font-bold">Tambah Outlet</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!oN) return toast.error("Nama outlet diperlukan");
+                    const lc = oLt && oLn ? `${oL} @ ${oLt},${oLn},${oR || 100}` : oL || "-";
+                    db.addOutlet({ nama: oN, lokasi: lc });
+                    setON(""); setOL(""); setOLt(""); setOLn(""); setOR("100");
+                    toast.success("Outlet ditambahkan");
+                  }} className="space-y-2">
+                    <Input value={oN} onChange={(e) => setON(e.target.value)} placeholder="Nama Outlet" />
+                    <Input value={oL} onChange={(e) => setOL(e.target.value)} placeholder="Alamat" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={oLt} onChange={(e) => setOLt(e.target.value)} placeholder="Latitude GPS" />
+                      <Input value={oLn} onChange={(e) => setOLn(e.target.value)} placeholder="Longitude GPS" />
                     </div>
-                  <div className="space-y-2">
-                    {coaPg.paged.map((a) => (
-                      <div key={a.kode} className="rounded-lg border p-3 text-sm flex items-center justify-between">
-                        <div>
-                          <span className="font-mono text-xs text-muted-foreground">{a.kode}</span>
-                          <span className="font-semibold ml-2">{a.nama}</span>
-                        </div>
-                        <div className="text-xs">
-                          <span className="bg-muted px-2 py-0.5 rounded-full">{a.kategori}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {coaPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada COA</div>}
-                  </div>
+                    <Input type="number" value={oR} onChange={(e) => setOR(e.target.value)} placeholder="Radius Absensi (M)" />
+                    <p className="text-[10px] text-muted-foreground">Lat &amp; Lng opsional — diisi untuk batasan absensi GPS outlet.</p>
+                    <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Outlet</Button>
+                  </form>
                 </CardContent>
               </Card>
-            </AccordionContent>
-          </AccordionItem>
-          {/* KARYAWAN */}
-          <AccordionItem value="karyawan" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <UserCheck className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Karyawan</div>
-                  <div className="text-[11px] text-muted-foreground">{karyawan.length} terdaftar</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="grid gap-4">
-                <div className="flex justify-end">
-                  <TambahKaryawanDialog outlets={outlets} />
-                </div>
-                <Card className="border shadow-sm">
-                  <CardContent className="p-3">
-                    <div className="mb-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                          <h3 className="text-sm font-bold px-1 shrink-0">Daftar Karyawan</h3>
-                          <Input
-                            placeholder="Cari karyawan..."
-                            value={karyawanSearch}
-                            onChange={(e) => { setKaryawanSearch(e.target.value); karyawanPg.setPage(1); }}
-                            className="h-8 w-40 text-xs shrink-0"
-                          />
-                        </div>
-                        <div className="flex justify-center lg:justify-end shrink-0">
-                          <TablePagination page={karyawanPg.page} totalPages={karyawanPg.totalPages} total={karyawanPg.total} pageSize={karyawanPg.pageSize} onChange={karyawanPg.setPage} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {karyawanPg.paged.map((k) => {
-                        const o = outlets.find((x) => x.id === k.outletId);
-                        return (
-                          <div key={k.id} className="rounded-lg border p-3 text-sm">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold">{k.nama}</span>
-                              <div className="flex gap-1">
-                                <EditKaryawanDialog karyawan={k} outlets={outlets} />
-                                <ConfirmDeleteButton
-                                  className="h-7 w-7"
-                                  onConfirm={() => db.deleteKaryawan(k.id)}
-                                  title="Hapus Karyawan"
-                                  description={`Karyawan ${k.nama} akan dihapus permanen.`}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
-                              <span className="capitalize bg-muted px-1.5 py-0.5 rounded text-[10px]">{k.role}</span>
-                              <span>{k.posisi}</span><span>•</span><span>{o?.nama ?? "Pusat"}</span><span>•</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hr</span>
-                            </div>
-                            {k.username && (
-                              <div className="mt-1.5 text-[10px] text-primary flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                <span>Akun: {k.username}</span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {karyawanPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada karyawan</div>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          {/* AKUN ADMIN */}
-          <AccordionItem value="pengguna" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <Users className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Akun Admin</div>
-                  <div className="text-[11px] text-muted-foreground">{users.filter((u: any) => !u.karyawanId && u.username !== "khazana").length} akun utama</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
               <Card className="border shadow-sm">
                 <CardContent className="p-3">
-                  <h3 className="text-sm font-bold mb-2 px-1">Akun Administrator & Super Admin</h3>
-                  <p className="text-[11px] text-muted-foreground mb-3">
-                    Akun ini adalah akun utama yang tidak terhubung ke data karyawan. 
-                    Untuk akun karyawan, kelola melalui seksi Karyawan di atas.
-                  </p>
+                  <div className="mb-3">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
+                        <h3 className="text-sm font-bold px-1 shrink-0">Daftar Outlet</h3>
+                        <Input placeholder="Cari outlet..." value={os} onChange={(e) => { setOs(e.target.value); oPg.setPage(1); }} className="h-8 w-40 text-xs shrink-0" />
+                      </div>
+                      <div className="flex justify-center lg:justify-end shrink-0"><TablePagination page={oPg.page} totalPages={oPg.totalPages} total={oPg.total} pageSize={oPg.pageSize} onChange={oPg.setPage} /></div>
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    {users.filter((u: any) => !u.karyawanId && u.username !== "khazana").map((u: any) => {
+                    {oPg.paged.map((o) => {
+                      const p = parseLokasi(o.lokasi);
                       return (
-                        <div key={u.username} className="rounded-lg border p-3 text-sm">
+                        <div key={o.id} className="rounded-lg border p-3 text-sm space-y-1">
                           <div className="flex items-center justify-between">
-                            <div><span className="font-semibold">{u.username}</span><span className="text-xs text-muted-foreground ml-2">{u.nama}</span></div>
+                            <span className="font-semibold">{o.nama}</span>
                             <div className="flex gap-1">
-                              <EditUserDialog userAccount={u} outlets={outlets} />
+                              <EditOutletDialog outlet={o} />
+                              <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteOutlet(o.id)} title="Hapus Outlet" description={`Outlet ${o.nama} akan dihapus permanen.`} />
                             </div>
                           </div>
-                          <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
-                            <span className="capitalize bg-muted px-1.5 py-0.5 rounded">{u.role}</span>
-                            <span>PW: {u.password}</span>
-                          </div>
+                          <div className="text-xs text-muted-foreground">{p.alamat || "-"}</div>
+                          {p.lat !== "" && p.lng !== "" ? (
+                            <div className="text-[10px] text-primary font-mono">GPS: {p.lat}, {p.lng} (R:{p.rad}m)</div>
+                          ) : (
+                            <div className="text-[10px] font-medium text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> GPS belum diatur</div>
+                          )}
                         </div>
                       );
                     })}
-                    {users.filter((u: any) => !u.karyawanId && u.username !== "khazana").length === 0 && 
-                      <div className="text-center text-muted-foreground py-6 text-sm">Tidak ada akun utama</div>
-                    }
+                    {oPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada outlet</div>}
                   </div>
                 </CardContent>
               </Card>
-            </AccordionContent>
-          </AccordionItem>
-          {/* SETTING */}
-          <AccordionItem value="setting" className="rounded-xl border bg-card overflow-hidden">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <Sliders className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Setting</div>
-                  <div className="text-[11px] text-muted-foreground">atur setelan aplikasi</div>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <form onSubmit={handleSaveGramasi} className="space-y-4">
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4 space-y-3">                      <h3 className="text-sm font-bold flex items-center gap-2"><Sliders className="h-4 w-4 text-primary" /> Konversi Gramasi</h3>
-                      {/* LEVEL 1: BASE RATIO */}
-                      <div className="bg-muted/20 p-3 rounded-xl border border-dashed space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">① Base Ratio — per 100gr Beras</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="text-[10px]">
-                            <span className="font-bold text-amber-600">Bubur</span>
-                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:Buah:Protein = </span>
-                            <span className="font-mono font-semibold">100:5:700:8:5:1,5</span>
-                          </div>
-                          <div className="text-[10px]">
-                            <span className="font-bold text-blue-600">Nasi Tim</span>
-                            <span className="text-muted-foreground">: Beras:Daging:Air:SH:Buah:Protein = </span>
-                            <span className="font-mono font-semibold">100:4:600:8:5:1,5</span>
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-muted-foreground italic">Artinya: setiap 100gr beras butuh 5gr/4gr daging, 700ml/600ml air, 8gr SH, 5gr Buah, 1,5gr Protein</p>
-                      </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-                      {/* LEVEL 2: PER CUP */}
-                      <div className="bg-primary/5 p-3 rounded-xl border space-y-1">
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">② Per Cup — Turunan dari Base Ratio</p>
-                        <div className="grid grid-cols-2 gap-2 text-[10px]">
-                          <div className="text-muted-foreground">
-                            <span className="font-bold text-amber-600">Bubur</span>: 100gr beras = <span className="font-bold text-foreground">6 cup</span>
-                            <span className="ml-1">→ nilai per cup = nilai base ÷ 6</span>
-                          </div>
-                          <div className="text-muted-foreground">
-                            <span className="font-bold text-blue-600">Nasi Tim</span>: 100gr beras = <span className="font-bold text-foreground">5 cup</span>
-                            <span className="ml-1">→ nilai per cup = nilai base ÷ 5</span>
-                          </div>
-                        </div>
+        <AccordionItem value="karyawan" className="rounded-xl border bg-card overflow-hidden">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center"><UserCheck className="h-4 w-4 text-primary-foreground" /></div>
+              <div className="text-left"><div className="font-semibold text-sm">Karyawan</div><div className="text-[11px] text-muted-foreground">{karyawan.length} terdaftar</div></div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="grid gap-4">
+              <div className="flex justify-end"><TambahKaryawanDialog outlets={outlets} /></div>
+              <Card className="border shadow-sm">
+                <CardContent className="p-3">
+                  <div className="mb-3">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
+                        <h3 className="text-sm font-bold px-1 shrink-0">Daftar Karyawan</h3>
+                        <Input placeholder="Cari karyawan..." value={ks} onChange={(e) => { setKs(e.target.value); kPg.setPage(1); }} className="h-8 w-40 text-xs shrink-0" />
                       </div>
+                      <div className="flex justify-center lg:justify-end shrink-0"><TablePagination page={kPg.page} totalPages={kPg.totalPages} total={kPg.total} pageSize={kPg.pageSize} onChange={kPg.setPage} /></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {kPg.paged.map((k) => {
+                      const o = outlets.find((x) => x.id === k.outletId);
+                      return (
+                        <div key={k.id} className="rounded-lg border p-3 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">{k.nama}</span>
+                            <div className="flex gap-1">
+                              <EditKaryawanDialog karyawan={k} outlets={outlets} />
+                              <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteKaryawan(k.id)} title="Hapus Karyawan" description={`Karyawan ${k.nama} akan dihapus permanen.`} />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                            <span className="capitalize bg-muted px-1.5 py-0.5 rounded text-[10px]">{k.role}</span>
+                            <span>{k.posisi}</span><span>&bull;</span><span>{o?.nama ?? "Pusat"}</span><span>&bull;</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hr</span>
+                          </div>
+                          {k.username && <div className="mt-1.5 text-[10px] text-primary flex items-center gap-1"><Users className="h-3 w-3" /><span>Akun: {k.username}</span></div>}
+                        </div>
+                      );
+                    })}
+                    {kPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada karyawan</div>}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-amber-600">Varian Bubur <span className="text-[9px] font-normal text-muted-foreground">(gram/cup)</span></h4>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Beras (g)</Label><Input type="number" step="any" value={sBerasBubur} onChange={(e) => setSBerasBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirBubur} onChange={(e) => setSAirBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Ikan/Daging (g)</Label><Input type="number" step="any" value={sDagingBubur} onChange={(e) => setSDagingBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Hijau (g)</Label><Input type="number" step="any" value={sSayurHijauBubur} onChange={(e) => setSSayurHijauBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Buah (g)</Label><Input type="number" step="any" value={sSayurBrokoliBubur} onChange={(e) => setSSayurBrokoliBubur(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Protein (g)</Label><Input type="number" step="any" value={sSayurPutihBubur} onChange={(e) => setSSayurPutihBubur(Number(e.target.value))} /></div>
+        <AccordionItem value="pengguna" className="rounded-xl border bg-card overflow-hidden">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center"><Users className="h-4 w-4 text-primary-foreground" /></div>
+              <div className="text-left"><div className="font-semibold text-sm">Akun Pengguna</div><div className="text-[11px] text-muted-foreground">{users.length} akun</div></div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <Card className="border shadow-sm">
+              <CardContent className="p-3">
+                <p className="text-[11px] text-muted-foreground mb-3">Akun admin &amp; akun karyawan.</p>
+                <div className="space-y-2">
+                  {users.filter((u: any) => u.username !== "khazana").map((u: any) => (
+                    <div key={u.username} className="rounded-lg border p-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div><span className="font-semibold">{u.username}</span><span className="text-xs text-muted-foreground ml-2">{u.nama}</span></div>
+                        <EditUserDialog userAccount={u} outlets={outlets} />
+                      </div>
+                      <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                        <span className="capitalize bg-muted px-1.5 py-0.5 rounded">{u.role}</span>
+                        <span>PW: {u.password}</span>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-blue-600">Varian Nasi Tim <span className="text-[9px] font-normal text-muted-foreground">(gram/cup)</span></h4>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Beras (g)</Label><Input type="number" step="any" value={sBerasTim} onChange={(e) => setSBerasTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Air (ml)</Label><Input type="number" step="any" value={sAirTim} onChange={(e) => setSAirTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Ikan/Daging (g)</Label><Input type="number" step="any" value={sDagingTim} onChange={(e) => setSDagingTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Hijau (g)</Label><Input type="number" step="any" value={sSayurHijauTim} onChange={(e) => setSSayurHijauTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Buah (g)</Label><Input type="number" step="any" value={sSayurBrokoliTim} onChange={(e) => setSSayurBrokoliTim(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">S.Protein (g)</Label><Input type="number" step="any" value={sSayurPutihTim} onChange={(e) => setSSayurPutihTim(Number(e.target.value))} /></div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-muted-foreground">Menu Lainnya</h4>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Oatmeal (g/cup)</Label><Input type="number" step="any" value={sOatmealCup} onChange={(e) => setSOatmealCup(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Puding (g/cup)</Label><Input type="number" step="any" value={sPudingCup} onChange={(e) => setSPudingCup(Number(e.target.value))} /></div>
-                        <div><Label className="text-[10px]">Abon (g/pcs)</Label><Input type="number" step="any" value={sAbonCup} onChange={(e) => setSAbonCup(Number(e.target.value))} /></div>
-                      </div>
-                    </div>
-                    <div className="border-t pt-4 mt-4 space-y-3">
-                      <h4 className="text-xs font-bold text-primary">⏰ Pengaturan Deadline Input Outlet</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <Label className="text-[10px] cursor-pointer" htmlFor="lock-toggle">Aktifkan Penguncian</Label>
-                            <button
-                              id="lock-toggle"
-                              type="button"
-                              role="switch"
-                              aria-checked={sLockEnabled}
-                              onClick={() => setSLockEnabled(!sLockEnabled)}
-                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${sLockEnabled ? 'bg-primary' : 'bg-muted'}`}
-                            >
-                              <span className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${sLockEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                            </button>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {sLockEnabled ? `Outlet tidak dapat mengubah sisa produksi setelah pukul ${sLockDeadline || DEFAULT_LOCK_DEADLINE}.` : "Outlet dapat menginput sisa produksi kapan saja."}
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Batas Waktu Input Sisa (HH:mm)</Label>
-                          <Input
-                            type="time"
-                            value={sLockDeadline}
-                            onChange={(e) => setSLockDeadline(e.target.value)}
-                            className="h-9"
-                            disabled={!sLockEnabled}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full h-10 gradient-primary text-primary-foreground text-xs">Simpan Pengaturan</Button>
-                  </CardContent>
-                </Card>
-              </form>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
+                  ))}
+                  {users.filter((u: any) => u.username !== "khazana").length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Tidak ada akun</div>}
+                </div>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
 
-/* ================= EDIT DIALOGS ================= */
-
-/* ================= TAMBAH KARYAWAN DIALOG ================= */
-
-// Generate username from name: "Budi Santoso" → "budisantoso"
-function generateUsernameFromNama(nama: string): string {
-  return nama
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove accents
-    .replace(/[^a-z0-9]/g, "") // remove non-alphanumeric
-    .trim();
-}
-
-// Find unique username by appending number if already taken
-function findUniqueUsername(base: string, existingUsernames: string[]): string {
-  if (!existingUsernames.includes(base)) return base;
-  let i = 1;
-  while (existingUsernames.includes(`${base}${i}`)) i++;
-  return `${base}${i}`;
-}
+// =============================================================================
+// Dialog Components
+// =============================================================================
 
 function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   const { users } = useDB();
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState("");
   const [username, setUsername] = useState("");
-  const [usernameManuallyEdited, setUsernameManuallyEdited] = useState(false);
+  const [ume, setUme] = useState(false);
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("outlet");
+  const [role, setRole] = useState("karyawan");
   const [posisi, setPosisi] = useState("Kasir");
   const [outletId, setOutletId] = useState(outlets[0]?.id ?? "none");
   const [gajiPokok, setGajiPokok] = useState(17500);
@@ -837,224 +251,61 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   const [jamMasuk, setJamMasuk] = useState("07:30");
   const [jamPulang, setJamPulang] = useState("15:00");
 
-  // Auto-generate username from nama (unless user has manually edited it)
   useEffect(() => {
-    if (!usernameManuallyEdited) {
-      const existingUsernames = users.map((u: any) => u.username);
-      const base = generateUsernameFromNama(nama);
-      const unique = base ? findUniqueUsername(base, existingUsernames) : "";
-      setUsername(unique);
+    if (!ume) {
+      const eu = users.map((u: any) => u.username);
+      const b = genUsername(nama);
+      setUsername(b ? uniqueUsername(b, eu) : "");
     }
-  }, [nama, usernameManuallyEdited, users]);
+  }, [nama, ume, users]);
 
-  const resetForm = () => {
-    setNama("");
-    setUsername("");
-    setUsernameManuallyEdited(false);
-    setPassword("");
-    setRole("outlet");
-    setPosisi("Kasir");
-    setOutletId(outlets[0]?.id ?? "none");
-    setGajiPokok(17500);
-    setBonusOmset(0);
-    setBonusUlasan(0);
-    setBonusOH(0);
-    setTunjanganHarian(0);
-    setOvertimeRate(0);
-    setJamMasuk("07:30");
-    setJamPulang("15:00");
+  const rf = () => {
+    setNama(""); setUsername(""); setUme(false); setPassword(""); setRole("karyawan");
+    setPosisi("Kasir"); setOutletId(outlets[0]?.id ?? "none"); setGajiPokok(17500);
+    setBonusOmset(0); setBonusUlasan(0); setBonusOH(0); setTunjanganHarian(0);
+    setOvertimeRate(0); setJamMasuk("07:30"); setJamPulang("15:00");
   };
 
   return (
     <>
-      <Button onClick={() => { setOpen(true); resetForm(); }} className="gradient-primary text-primary-foreground h-9 text-xs">
+      <Button onClick={() => { setOpen(true); rf(); }} className="gradient-primary text-primary-foreground h-9 text-xs">
         <Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Karyawan
       </Button>
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Tambah Karyawan</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!nama) return toast.error("Nama karyawan diperlukan");
-              if (!username) return toast.error("Username untuk akun pengguna diperlukan");
-              if (!password) return toast.error("Password untuk akun pengguna diperlukan");
-              const finalUsername = username.toLowerCase().trim();
-              if (users.some((u: any) => u.username === finalUsername)) {
-                return toast.error("Username sudah terdaftar");
-              }
-              try {
-                await db.addKaryawan({
-                  nama,
-                  posisi,
-                  role,
-                  outletId: outletId === "none" ? undefined : outletId,
-                  gajiPokok,
-                  bonusOmset,
-                  bonusUlasan,
-                  bonusOH,
-                  tunjanganHarian,
-                  overtimeRate,
-                  jamMasuk,
-                  jamPulang
-                }, {
-                  username: finalUsername,
-                  password,
-                  role
-                });
-                toast.success("Karyawan & akun pengguna berhasil ditambahkan");
-                setOpen(false);
-                resetForm();
-              } catch (err: any) {
-                toast.error(err?.message || "Gagal menambahkan karyawan");
-              }
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Nama Karyawan</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Nama Karyawan" />
-            </div>
-
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!nama) return toast.error("Nama diperlukan");
+            if (!username) return toast.error("Username diperlukan");
+            if (!password) return toast.error("Password diperlukan");
+            const fu = username.toLowerCase().trim();
+            if (users.some((u: any) => u.username === fu)) return toast.error("Username sudah terdaftar");
+            try {
+              await db.addKaryawan({ nama, posisi, role, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonusOmset, bonusUlasan, bonusOH, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, { username: fu, password, role });
+              toast.success("Karyawan ditambahkan"); setOpen(false); rf();
+            } catch (err: any) { toast.error(err?.message || "Gagal"); }
+          }} className="space-y-3">
+            <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div className="border-t pt-3 mt-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] text-muted-foreground italic">Akun Pengguna (username otomatis dibuat dari nama)</p>
-                {usernameManuallyEdited && (
-                  <button
-                    type="button"
-                    className="text-[10px] text-primary underline"
-                    onClick={() => {
-                      setUsernameManuallyEdited(false);
-                    }}
-                  >
-                    Reset otomatis
-                  </button>
-                )}
+                <p className="text-[11px] text-muted-foreground italic">Akun Pengguna</p>
+                {ume && <button type="button" className="text-[10px] text-primary underline" onClick={() => setUme(false)}>Reset</button>}
               </div>
               <div className="grid grid-cols-2 gap-2 items-end">
-                <div>
-                  <Label className="flex items-center gap-1 min-h-[20px]">
-                    Username
-                    {!usernameManuallyEdited && username && (
-                      <span className="text-[9px] font-normal text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1 py-0.5">otomatis</span>
-                    )}
-                  </Label>
-                  <Input
-                    value={username}
-                    onChange={(e) => {
-                      setUsernameManuallyEdited(true);
-                      setUsername(e.target.value.toLowerCase().trim());
-                    }}
-                    placeholder="Username untuk login"
-                  />
-                </div>
-                <div>
-                  <Label className="flex items-center min-h-[20px]">Password <span className="text-destructive ml-0.5">*</span></Label>
-                  <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password untuk login" />
-                </div>
-              </div>
-
-            </div>
-
-            <div>
-              <Label>Role / Hak Akses</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
-                  <SelectItem value="produksi">Produksi</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Posisi / Jabatan</Label>
-              <Select value={posisi} onValueChange={setPosisi}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Kasir">Kasir</SelectItem>
-                  <SelectItem value="Produksi">Produksi</SelectItem>
-                  <SelectItem value="Helper">Helper</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Outlet Penugasan</Label>
-              <Select value={outletId} onValueChange={(val) => {
-                setOutletId(val);
-                // Set default jam based on outlet
-                const isPusat = val === "none";
-                setJamMasuk(isPusat ? "07:30" : "07:00");
-                setJamPulang(isPusat ? "15:00" : "14:00");
-              }}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Kantor Pusat</SelectItem>
-                  {outlets.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Gaji Pokok (per Hari)</Label>
-              <Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} />
-            </div>              <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Bonus Omset (Bulanan)</Label>
-                <Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} />
-              </div>
-              <div>
-                <Label>Bonus Ulasan (Bulanan)</Label>
-                <Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} />
+                <div><Label>Username {!ume && username && <span className="text-[9px] font-normal text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1 py-0.5">auto</span>}</Label><Input value={username} onChange={(e) => { setUme(true); setUsername(e.target.value.toLowerCase().trim()); }} /></div>
+                <div><Label>Password *</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Bonus OH (Bulanan)</Label>
-                <Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} />
-              </div>
-            </div>
-
-            <div className="border-t pt-3 mt-3">
-              <p className="text-[11px] text-muted-foreground italic mb-2">Tunjangan Harian & Lembur (per karyawan)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Tunjangan Harian (Rp)</Label>
-                  <Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} />
-                </div>
-                <div>
-                  <Label>Tarif Lembur / Jam (Rp)</Label>
-                  <Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-3 mt-3">
-              <p className="text-[11px] text-muted-foreground italic mb-2">Jam Kerja (per karyawan)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Jam Masuk</Label>
-                  <Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Jam Pulang</Label>
-                  <Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
+            <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+            <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
+            <div><Label>Outlet</Label><Select value={outletId} onValueChange={(v) => { setOutletId(v); const p = v === "none"; setJamMasuk(p ? "07:30" : "07:00"); setJamPulang(p ? "15:00" : "14:00"); }}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Kantor Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Gaji Pokok/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
+            <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
+            <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
+            <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Tunjangan/Hari</Label><Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} /></div><div><Label>Tarif Lembur/Jam</Label><Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} /></div></div></div>
+            <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Jam Masuk</Label><Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} /></div><div><Label>Jam Pulang</Label><Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} /></div></div></div>
+            <DialogFooter className="pt-4"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -1062,200 +313,27 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   );
 }
 
-/* ================= EDIT DIALOGS ================= */
-
-function EditOutletDialog({ outlet }) {
+function EditOutletDialog({ outlet }: { outlet: any }) {
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(outlet.nama);
-
-  const parsed = parseLokasi(outlet.lokasi);
-  const [alamat, setAlamat] = useState(parsed.alamat);
-  const [lat, setLat] = useState(parsed.lat);
-  const [lng, setLng] = useState(parsed.lng);
-  const [rad, setRad] = useState(parsed.rad);
+  const p = parseLokasi(outlet.lokasi);
+  const [alamat, setAlamat] = useState(p.alamat);
+  const [lat, setLat] = useState(p.lat);
+  const [lng, setLng] = useState(p.lng);
+  const [rad, setRad] = useState(p.rad);
 
   return (
     <>
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}>
-        <Pencil className="h-3.5 w-3.5 text-primary" />
-      </Button>
-
+      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}><Pencil className="h-3.5 w-3.5 text-primary" /></Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Outlet</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              // Wajibkan koordinat GPS — dipakai sebagai batasan absensi GPS outlet.
-              if (!lat || !lng) {
-                toast.error("Latitude & Longitude GPS wajib diisi (untuk absensi GPS outlet)");
-                return;
-              }
-              const lokasiCombined = `${alamat} @ ${lat},${lng},${rad || 100}`;
-              db.updateOutlet(outlet.id, { nama, lokasi: lokasiCombined });
-              toast.success("Outlet diperbarui");
-              setOpen(false);
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Nama Outlet</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div>
-              <Label>Alamat / Lokasi</Label>
-              <Input value={alamat} onChange={(e) => setAlamat(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Latitude GPS <span className="text-destructive">*</span></Label>
-                <Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Contoh: -7.641234" />
-              </div>
-              <div>
-                <Label>Longitude GPS <span className="text-destructive">*</span></Label>
-                <Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Contoh: 112.906123" />
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              * Wajib diisi — dipakai sebagai batasan lokasi absensi GPS outlet. Format: alamat @ lat,lng,radius
-            </p>
-            <div>
-              <Label>Radius Absensi (Meter)</Label>
-              <Input type="number" value={rad} onChange={(e) => setRad(e.target.value)} />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function EditBahanDialog({ bahan }) {
-  const [open, setOpen] = useState(false);
-  const [kode, setKode] = useState(bahan.kode);
-  const [nama, setNama] = useState(bahan.nama);
-  const [satuan, setSatuan] = useState(bahan.satuan);
-  const [stokMin, setStokMin] = useState(bahan.stokMin);
-  const [stokAwal, setStokAwal] = useState(bahan.stokAwal);
-  const [hargaBeli, setHargaBeli] = useState(bahan.hargaBeli);
-  const [konversiGram, setKonversiGram] = useState(bahan.konversiGram ?? 0);
-
-  return (
-    <>
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}>
-        <Pencil className="h-3.5 w-3.5 text-primary" />
-      </Button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Edit Bahan Baku</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                await db.updateBahan(bahan.id, { kode, nama, satuan, stokMin, stokAwal, hargaBeli, konversiGram: konversiGram || undefined });
-                toast.success("Bahan baku diperbarui");
-                setOpen(false);
-              } catch (err: any) {
-                toast.error(`Gagal memperbarui bahan: ${err?.message || "Terjadi kesalahan"}`);
-              }
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Kode</Label>
-              <Input value={kode} onChange={(e) => setKode(e.target.value)} />
-            </div>
-            <div>
-              <Label>Nama Bahan Baku</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div>
-              <Label>Satuan</Label>
-              <Input value={satuan} onChange={(e) => setSatuan(e.target.value)} />
-            </div>
-            <div>
-              <Label>Stok Minimum</Label>
-              <Input type="number" value={stokMin} onChange={(e) => setStokMin(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label>Stok Awal</Label>
-              <Input type="number" value={stokAwal} onChange={(e) => setStokAwal(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label>Harga Beli (Rp)</Label>
-              <Input type="number" value={hargaBeli} onChange={(e) => setHargaBeli(Number(e.target.value))} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Konversi Gram</Label>
-                <Input type="number" value={konversiGram} onChange={(e) => setKonversiGram(Number(e.target.value))} />
-              </div>
-              <div className="flex items-end pb-1">
-                <span className="text-xs text-muted-foreground">g / {satuan}</span>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function EditProdukDialog({ produk }) {
-  const [open, setOpen] = useState(false);
-  const [nama, setNama] = useState(produk.nama);
-  const [harga, setHarga] = useState(produk.harga);
-  const [satuan, setSatuan] = useState(produk.satuan);
-
-  return (
-    <>
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}>
-        <Pencil className="h-3.5 w-3.5 text-primary" />
-      </Button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Edit Produk</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              db.updateProduk(produk.id, { nama, harga, satuan });
-              toast.success("Produk diperbarui");
-              setOpen(false);
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Nama Produk</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div>
-              <Label>Harga</Label>
-              <Input type="number" value={harga} onChange={(e) => setHarga(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label>Satuan</Label>
-              <Input value={satuan} onChange={(e) => setSatuan(e.target.value)} />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
+          <form onSubmit={(e) => { e.preventDefault(); const lc = lat && lng ? `${alamat} @ ${lat},${lng},${rad || 100}` : alamat || "-"; db.updateOutlet(outlet.id, { nama, lokasi: lc }); toast.success("Outlet diperbarui"); setOpen(false); }} className="space-y-3">
+            <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
+            <div><Label>Alamat</Label><Input value={alamat} onChange={(e) => setAlamat(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-2"><div><Label>Latitude</Label><Input value={lat} onChange={(e) => setLat(e.target.value)} /></div><div><Label>Longitude</Label><Input value={lng} onChange={(e) => setLng(e.target.value)} /></div></div>
+            <div><Label>Radius (m)</Label><Input type="number" value={rad} onChange={(e) => setRad(e.target.value)} /></div>
+            <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -1268,10 +346,9 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(karyawan.nama);
   const [posisi, setPosisi] = useState(karyawan.posisi);
-  const [role, setRole] = useState(karyawan.role || "outlet");
+  const [role, setRole] = useState(karyawan.role || "karyawan");
   const [username, setUsername] = useState(karyawan.username || "");
-  const [password, setPassword] = useState(karyawan.password || "");
-  const [newPassword, setNewPassword] = useState("");
+  const [np, setNp] = useState("");
   const [outletId, setOutletId] = useState(karyawan.outletId ?? "none");
   const [gajiPokok, setGajiPokok] = useState(karyawan.gajiPokok);
   const [bonusOmset, setBonusOmset] = useState(karyawan.bonusOmset ?? 0);
@@ -1281,184 +358,40 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const [overtimeRate, setOvertimeRate] = useState(karyawan.overtimeRate ?? 0);
   const [jamMasuk, setJamMasuk] = useState(karyawan.jamMasuk || "07:30");
   const [jamPulang, setJamPulang] = useState(karyawan.jamPulang || "15:00");
-
-  const hasAkun = !!karyawan.username;
+  const has = !!karyawan.username;
 
   return (
     <>
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setOpen(true); setNewPassword(""); }}>
-        <Pencil className="h-3.5 w-3.5 text-primary" />
-      </Button>
-
+      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setOpen(true); setNp(""); }}><Pencil className="h-3.5 w-3.5 text-primary" /></Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Edit Data Karyawan</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const finalUsername = username.toLowerCase().trim();
-              if (finalUsername !== karyawan.username) {
-                // Check local state for duplicate
-                if (users.some((u: any) => u.username === finalUsername && u.karyawanId !== karyawan.id)) {
-                  return toast.error("Username sudah digunakan oleh karyawan lain");
-                }
-              }
-              try {
-                await db.updateKaryawan(karyawan.id, {
-                  nama,
-                  posisi,
-                  role,
-                  username: username || undefined,
-                  outletId: outletId === "none" ? undefined : outletId,
-                  gajiPokok,
-                  bonusOmset,
-                  bonusUlasan,
-                  bonusOH,
-                  tunjanganHarian,
-                  overtimeRate,
-                  jamMasuk,
-                  jamPulang
-                }, newPassword || undefined);
-                toast.success(newPassword ? "Data karyawan & password diperbarui" : "Data karyawan diperbarui");
-                setOpen(false);
-              } catch (err: any) {
-                toast.error(err?.message || "Gagal memperbarui karyawan");
-              }
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Nama Karyawan</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-
-            {/* Akun Pengguna Terkait */}
+          <DialogHeader><DialogTitle>Edit Karyawan</DialogTitle></DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const fu = username.toLowerCase().trim();
+            if (fu !== karyawan.username && users.some((u: any) => u.username === fu && u.karyawanId !== karyawan.id)) return toast.error("Username sudah dipakai");
+            try {
+              await db.updateKaryawan(karyawan.id, { nama, posisi, role, username: username || undefined, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonusOmset, bonusUlasan, bonusOH, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, np || undefined);
+              toast.success(np ? "Diperbarui + password" : "Diperbarui"); setOpen(false);
+            } catch (err: any) { toast.error(err?.message || "Gagal"); }
+          }} className="space-y-3">
+            <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div className="border rounded-lg bg-muted/30 p-3 space-y-2">
-              <p className="text-[11px] text-muted-foreground font-medium mb-1">
-                {hasAkun ? "Akun Pengguna Terkait" : "Buat Akun Pengguna"}
-              </p>
+              <p className="text-[11px] text-muted-foreground font-medium mb-1">{has ? "Akun Terkait" : "Buat Akun"}</p>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[11px]">Username</Label>
-                  <Input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
-                    placeholder="Username untuk login"
-                    className="text-xs"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px]">
-                    {hasAkun ? "Password Baru (kosongkan jika tetap)" : "Password"}
-                  </Label>
-                  <Input
-                    type="text"
-                    value={hasAkun ? newPassword : password}
-                    onChange={(e) => {
-                      if (hasAkun) setNewPassword(e.target.value);
-                      else setPassword(e.target.value);
-                    }}
-                    placeholder={hasAkun ? "Biarkan kosong jika tidak diganti" : "Password untuk login"}
-                    className="text-xs"
-                    required={!hasAkun}
-                  />
-                </div>
+                <div><Label className="text-[11px]">Username</Label><Input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().trim())} className="text-xs" required /></div>
+                <div><Label className="text-[11px]">{has ? "Password Baru" : "Password"}</Label><Input type="text" value={has ? np : password} onChange={(e) => { if (has) setNp(e.target.value); }} placeholder={has ? "Kosongkan jika tetap" : ""} className="text-xs" required={!has} /></div>
               </div>
             </div>
-
-            <div>
-              <Label>Role / Hak Akses</Label>
-              <Select value={role} onValueChange={(v) => setRole(v)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
-                  <SelectItem value="produksi">Produksi</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Posisi / Jabatan</Label>
-              <Select value={posisi} onValueChange={setPosisi}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Kasir">Kasir</SelectItem>
-                  <SelectItem value="Produksi">Produksi</SelectItem>
-                  <SelectItem value="Helper">Helper</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Outlet Penugasan</Label>
-              <Select value={outletId} onValueChange={setOutletId}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Kantor Pusat</SelectItem>
-                  {outlets.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Gaji Pokok (per Hari)</Label>
-              <Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} />
-            </div>              <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Bonus Omset (Bulanan)</Label>
-                <Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} />
-              </div>
-              <div>
-                <Label>Bonus Ulasan (Bulanan)</Label>
-                <Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Bonus OH (Bulanan)</Label>
-                <Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} />
-              </div>
-            </div>
-
-            <div className="border-t pt-3 mt-3">
-              <p className="text-[11px] text-muted-foreground italic mb-2">Tunjangan Harian & Lembur (per karyawan)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Tunjangan Harian (Rp)</Label>
-                  <Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} />
-                </div>
-                <div>
-                  <Label>Tarif Lembur / Jam (Rp)</Label>
-                  <Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-3 mt-3">
-              <p className="text-[11px] text-muted-foreground italic mb-2">Jam Kerja (per karyawan)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Jam Masuk</Label>
-                  <Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Jam Pulang</Label>
-                  <Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+            <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
+            <div><Label>Outlet</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Gaji/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
+            <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
+            <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
+            <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Tunjangan/Hari</Label><Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} /></div><div><Label>Lembur/Jam</Label><Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} /></div></div></div>
+            <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Jam Masuk</Label><Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} /></div><div><Label>Jam Pulang</Label><Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} /></div></div></div>
+            <DialogFooter className="pt-4"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -1475,71 +408,17 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
 
   return (
     <>
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}>
-        <Pencil className="h-3.5 w-3.5 text-primary" />
-      </Button>
-
+      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}><Pencil className="h-3.5 w-3.5 text-primary" /></Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Akun Pengguna</DialogTitle></DialogHeader>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              db.updateUser(userAccount.username, {
-                nama,
-                password,
-                role,
-                outletId: role === "admin" ? undefined : (outletId === "none" ? undefined : outletId)
-              });
-              toast.success("Akun pengguna diperbarui");
-              setOpen(false);
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Username (Permanen)</Label>
-              <Input value={userAccount.username} disabled />
-            </div>
-            <div>
-              <Label>Nama Lengkap</Label>
-              <Input value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div>
-              <Label>Password</Label>
-              <Input value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <div>
-              <Label>Role / Peran</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as "admin" | "outlet" | "produksi" | "tl")}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="produksi">Produksi</SelectItem>
-                  <SelectItem value="outlet">Outlet (Cabang)</SelectItem>
-                  <SelectItem value="tl">TL (Tim Leader)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {role === "outlet" && (
-              <div>
-                <Label>Penugasan Outlet</Label>
-                <Select value={outletId} onValueChange={setOutletId}>
-                  <SelectTrigger className="h-10"><SelectValue placeholder="Pilih Outlet" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Kantor Pusat</SelectItem>
-                    {outlets.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
-            </DialogFooter>
+          <DialogHeader><DialogTitle>Edit Akun</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); db.updateUser(userAccount.username, { nama, password, role: role as any, outletId: role === "admin" ? undefined : outletId === "none" ? undefined : outletId }); toast.success("Diperbarui"); setOpen(false); }} className="space-y-3">
+            <div><Label>Username</Label><Input value={userAccount.username} disabled /></div>
+            <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
+            <div><Label>Password</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="karyawan">Karyawan</SelectItem></SelectContent></Select></div>
+            {role === "karyawan" && <div><Label>Outlet</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
+            <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

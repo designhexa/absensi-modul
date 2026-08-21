@@ -1,9 +1,25 @@
-import { LayoutDashboard, ChefHat, FileBarChart, BookOpen, Settings, ChevronsLeft, ChevronsRight, Warehouse, UserCheck, FileText, User } from "lucide-react";
+import {
+  LayoutDashboard,
+  UserCheck,
+  Settings,
+  ChevronsLeft,
+  ChevronsRight,
+  User,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import logo from "@/assets/logo.jpg";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -13,54 +29,16 @@ export function AppSidebar() {
   const toggleSidebar = useSidebar().toggleSidebar;
   const collapsed = stateVal === "collapsed";
   const { user } = useAuth();
-  const items = (() => {
-    if (user?.role === "admin") {
-      return [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Absensi", url: "/absensi", icon: UserCheck },
-        { title: "Produksi", url: "/produksi", icon: ChefHat },
-        { title: "Stok Gudang", url: "/stok", icon: Warehouse },
-        { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Keuangan", url: "/keuangan", icon: BookOpen },
-        { title: "Master Data", url: "/master", icon: Settings },
-        { title: "Profile", url: "/profile", icon: User },
-      ];
-    } else if (user?.role === "produksi") {
-      return [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Stok Gudang", url: "/stok", icon: Warehouse },
-        { title: "Produksi", url: "/produksi", icon: ChefHat },
-        { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Absensi", url: "/absensi", icon: UserCheck },
-        { title: "Profile", url: "/profile", icon: User },
-      ];
-    } else if (user?.role === "gudang") {
-      return [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Absensi", url: "/absensi", icon: UserCheck },
-        { title: "Stok Gudang", url: "/stok", icon: Warehouse },
-        { title: "Produksi", url: "/produksi", icon: ChefHat },
-        { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Profile", url: "/profile", icon: User },
-      ];
-    } else if (user?.role === "tl") {
-      return [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Absensi", url: "/absensi", icon: UserCheck },
-        { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Request & Retur", url: "/stok", icon: Warehouse },
-        { title: "Profile", url: "/profile", icon: User },
-      ];
-    } else { // outlet
-      return [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Laporan", url: "/laporan", icon: FileBarChart },
-        { title: "Absensi", url: "/absensi", icon: UserCheck },
-        { title: "Permohonan", url: "/stok", icon: Warehouse },
-        { title: "Profile", url: "/profile", icon: User },
-      ];
-    }
-  })();
+  const isAdmin = user?.role === "admin";
+
+  const items = [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Absensi", url: "/absensi", icon: UserCheck },
+    ...(isAdmin
+      ? [{ title: "Master Data", url: "/master", icon: Settings }]
+      : []),
+    { title: "Profile", url: "/profile", icon: User },
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -73,15 +51,25 @@ export function AppSidebar() {
         }}
       />
 
-      {/* Geometric decorative graphics — clipped within sidebar bounds */}
+      {/* Geometric decorative graphics */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <svg
           className="absolute inset-0 w-full h-full opacity-[0.07]"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <pattern id="sb-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-              <path d="M24 0H0V24" fill="none" stroke="hsl(95 80% 70%)" strokeWidth="0.5" />
+            <pattern
+              id="sb-grid"
+              width="24"
+              height="24"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M24 0H0V24"
+                fill="none"
+                stroke="hsl(95 80% 70%)"
+                strokeWidth="0.5"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#sb-grid)" />
@@ -95,21 +83,35 @@ export function AppSidebar() {
           </>
         )}
         {/* Lime accent glow */}
-        <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-3xl"
-             style={{ background: "hsl(95 70% 55%)" }} />
-        <div className="absolute bottom-20 left-0 w-24 h-24 rounded-full opacity-20 blur-3xl"
-             style={{ background: "hsl(95 80% 50%)" }} />
+        <div
+          className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-3xl"
+          style={{ background: "hsl(95 70% 55%)" }}
+        />
+        <div
+          className="absolute bottom-20 left-0 w-24 h-24 rounded-full opacity-20 blur-3xl"
+          style={{ background: "hsl(95 80% 50%)" }}
+        />
       </div>
 
       <SidebarHeader className="relative border-b border-white/10 p-3">
-        <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+        <div
+          className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
+        >
           <div className="h-10 w-10 shrink-0 rounded-xl bg-white p-0.5 shadow-soft ring-2 ring-accent/40">
-            <img src={logo} alt="Buba Healthy logo" className="h-full w-full rounded-lg object-contain" />
+            <img
+              src={logo}
+              alt="Absensi logo"
+              className="h-full w-full rounded-lg object-contain"
+            />
           </div>
           {!collapsed && (
             <div className="leading-tight min-w-0 flex-1">
-              <div className="font-bold text-white truncate">Buba Healthy</div>
-              <div className="text-[10px] text-white/70 truncate">Sistem Penjualan MPASI</div>
+              <div className="font-bold text-white truncate">
+                Absensi Karyawan
+              </div>
+              <div className="text-[10px] text-white/70 truncate">
+                Sistem Absensi & Master Data
+              </div>
             </div>
           )}
         </div>
@@ -144,8 +146,16 @@ export function AppSidebar() {
                     >
                       {({ isActive }) => (
                         <>
-                          <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-accent" : "text-white"}`} />
-                          {!collapsed && <span className={`text-sm leading-snug ${isActive ? "text-accent" : "text-white"}`}>{item.title}</span>}
+                          <item.icon
+                            className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-accent" : "text-white"}`}
+                          />
+                          {!collapsed && (
+                            <span
+                              className={`text-sm leading-snug ${isActive ? "text-accent" : "text-white"}`}
+                            >
+                              {item.title}
+                            </span>
+                          )}
                         </>
                       )}
                     </NavLink>

@@ -1,10 +1,9 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { Role } from "@/lib/types";
 
 interface Props {
   adminOnly?: boolean;
-  allowedRoles?: Role[];
+  allowedRoles?: ("admin" | "karyawan")[];
 }
 
 export default function ProtectedRoute({ adminOnly, allowedRoles }: Props) {
@@ -16,7 +15,7 @@ export default function ProtectedRoute({ adminOnly, allowedRoles }: Props) {
     return <Navigate to="/" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !allowedRoles.includes(user.role as any)) {
     return <Navigate to="/" replace />;
   }
 

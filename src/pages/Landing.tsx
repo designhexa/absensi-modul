@@ -2,23 +2,20 @@ import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  ShoppingCart, Factory, FileBarChart, BookOpen, LogIn, ArrowRight,
-  Sparkles, ShieldCheck, Smartphone,
-} from "lucide-react";
+import { UserCheck, Users, Settings, Smartphone, LogIn, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 const features = [
-  { icon: ShoppingCart, title: "Input Penjualan", desc: "Catat transaksi cup harian per outlet, langsung total otomatis." },
-  { icon: Factory, title: "Rencana Produksi", desc: "Plan vs realisasi vs penjualan — stok aman, no waste." },
-  { icon: FileBarChart, title: "Laporan Otomatis", desc: "Rekap harian, mingguan, bulanan. Export Excel sekali klik." },
-  { icon: BookOpen, title: "Jurnal & Neraca", desc: "Pembukuan sederhana: jurnal umum, neraca, laba rugi." },
+  { icon: UserCheck, title: "Absensi GPS", desc: "Karyawan bisa absen masuk & pulang langsung dari HP dengan verifikasi lokasi GPS." },
+  { icon: Users, title: "Data Karyawan", desc: "Kelola data karyawan, posisi, gaji, dan jam kerja dalam satu tempat." },
+  { icon: Settings, title: "Master Data", desc: "Atur lokasi outlet, koordinat GPS, dan pengaturan sistem absensi." },
+  { icon: Smartphone, title: "Mobile Ready", desc: "Tampilan responsif yang nyaman digunakan di HP maupun desktop." },
 ];
 
 const stats = [
-  { k: "17", v: "Outlet aktif" },
-  { k: "6", v: "Produk MPASI" },
-  { k: "100%", v: "Offline ready" },
+  { k: "13", v: "Lokasi outlet" },
+  { k: "GPS", v: "Verifikasi lokasi" },
+  { k: "100%", v: "Mobile ready" },
 ];
 
 export default function Landing() {
@@ -33,14 +30,26 @@ export default function Landing() {
       <header className="sticky top-0 z-30 glass border-b border-border/40">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Buba Healthy" className="h-9 w-9 rounded-xl object-cover bg-white shadow-soft" />
+            <img
+              src={logo}
+              alt="Absensi"
+              className="h-9 w-9 rounded-xl object-cover bg-white shadow-soft"
+            />
             <div className="leading-tight">
-              <div className="font-bold text-sm">Buba Healthy</div>
-              <div className="text-[10px] text-muted-foreground">Sistem Penjualan MPASI</div>
+              <div className="font-bold text-sm">Absensi Karyawan</div>
+              <div className="text-[10px] text-muted-foreground">
+                Sistem Absensi & Master Data
+              </div>
             </div>
           </div>
-          <Button asChild size="sm" className="gradient-primary text-primary-foreground hover-lift">
-            <Link to="/login"><LogIn className="mr-1.5 h-4 w-4" />Masuk</Link>
+          <Button
+            asChild
+            size="sm"
+            className="gradient-primary text-primary-foreground hover-lift"
+          >
+            <Link to="/login">
+              <LogIn className="mr-1.5 h-4 w-4" />Masuk
+            </Link>
           </Button>
         </div>
       </header>
@@ -49,35 +58,51 @@ export default function Landing() {
       <section className="max-w-6xl mx-auto px-4 pt-10 pb-12 md:pt-20 md:pb-20 grid md:grid-cols-2 gap-10 items-center">
         <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 text-accent-foreground text-xs font-medium border border-accent/30">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            Dashboard operasional MPASI
+            <UserCheck className="h-3.5 w-3.5 text-accent" />
+            Sistem Absensi Karyawan
           </div>
           <h1 className="text-4xl md:text-5xl font-bold leading-[1.1]">
-            Pantau penjualan, produksi & keuangan{" "}
-            <span className="text-gradient">17 outlet</span> dalam satu dasbor.
+            Kelola kehadiran karyawan{" "}
+            <span className="text-gradient">13 lokasi</span> dalam satu dasbor.
           </h1>
           <p className="text-base md:text-lg text-muted-foreground max-w-md">
-            Input cepat di outlet, rekap otomatis untuk owner. Tanpa setup rumit, jalan langsung di browser & HP.
+            Absensi GPS dari HP, rekap otomatis untuk admin. Tanpa setup rumit, jalan langsung di browser & HP.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
-            <Button asChild size="lg" className="gradient-primary text-primary-foreground hover-lift">
-              <Link to="/login">Mulai Sekarang <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Button
+              asChild
+              size="lg"
+              className="gradient-primary text-primary-foreground hover-lift"
+            >
+              <Link to="/login">
+                Mulai Sekarang{" "}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="hover-lift">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="hover-lift"
+            >
               <a href="#fitur">Lihat Fitur</a>
             </Button>
           </div>
           <div className="grid grid-cols-3 gap-2 pt-4 max-w-md">
             {stats.map((s) => (
               <div key={s.v} className="glass rounded-2xl p-3 text-center hover-lift">
-                <div className="text-xl md:text-2xl font-bold text-primary">{s.k}</div>
-                <div className="text-[10px] md:text-xs text-muted-foreground">{s.v}</div>
+                <div className="text-xl md:text-2xl font-bold text-primary">
+                  {s.k}
+                </div>
+                <div className="text-[10px] md:text-xs text-muted-foreground">
+                  {s.v}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mock dashboard preview */}
+        {/* Mock mobile preview */}
         <div className="relative">
           <div className="absolute -inset-4 gradient-primary rounded-3xl opacity-20 blur-2xl" />
           <div className="relative glass-strong rounded-3xl p-4 shadow-soft border border-border/50 space-y-3">
@@ -85,31 +110,48 @@ export default function Landing() {
               <div className="h-2 w-2 rounded-full bg-destructive" />
               <div className="h-2 w-2 rounded-full bg-warning" />
               <div className="h-2 w-2 rounded-full bg-success" />
-              <div className="ml-auto text-[10px] text-muted-foreground">buba-healthy.app</div>
+              <div className="ml-auto text-[10px] text-muted-foreground">
+                absensi.app
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { l: "Penjualan Hari Ini", v: "Rp 1.245K" },
-                { l: "Cup Terjual", v: "284" },
-                { l: "Outlet Aktif", v: "17" },
-                { l: "Stok Aman", v: "94%" },
+                { l: "Hadir Hari Ini", v: "12" },
+                { l: "Total Karyawan", v: "15" },
+                { l: "Lokasi Aktif", v: "13" },
+                { l: "GPS Verified", v: "100%" },
               ].map((c) => (
                 <div key={c.l} className="rounded-2xl bg-card border p-3">
-                  <div className="text-[10px] text-muted-foreground">{c.l}</div>
-                  <div className="text-lg font-bold text-primary mt-0.5">{c.v}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {c.l}
+                  </div>
+                  <div className="text-lg font-bold text-primary mt-0.5">
+                    {c.v}
+                  </div>
                 </div>
               ))}
             </div>
             <div className="rounded-2xl bg-card border p-3">
-              <div className="text-xs text-muted-foreground mb-2">Tren Penjualan</div>
+              <div className="text-xs text-muted-foreground mb-2">
+                Kehadiran Minggu Ini
+              </div>
               <div className="flex items-end gap-1 h-20">
-                {[40, 65, 50, 80, 70, 90, 75, 95, 60, 85, 100, 78].map((h, i) => (
+                {[12, 10, 13, 11, 12, 0, 0].map((h, i) => (
                   <div
                     key={i}
                     className="flex-1 rounded-t-md gradient-primary opacity-90"
-                    style={{ height: `${h}%` }}
+                    style={{ height: `${(h / 15) * 100}%` }}
                   />
                 ))}
+              </div>
+              <div className="flex justify-between text-[8px] text-muted-foreground mt-1">
+                <span>Sen</span>
+                <span>Sel</span>
+                <span>Rab</span>
+                <span>Kam</span>
+                <span>Jum</span>
+                <span>Sab</span>
+                <span>Min</span>
               </div>
             </div>
           </div>
@@ -120,40 +162,26 @@ export default function Landing() {
       <section id="fitur" className="max-w-6xl mx-auto px-4 py-12 md:py-16">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl md:text-3xl font-bold">
-            Fitur <span className="text-gradient">lengkap</span> untuk operasional harian
+            Fitur <span className="text-gradient">lengkap</span> untuk
+            kehadiran karyawan
           </h2>
           <p className="text-muted-foreground mt-2 text-sm md:text-base">
-            Dirancang untuk admin & outlet — sederhana di-input, kaya di-laporkan.
+            Dirancang untuk admin & karyawan — sederhana diinput, akurat
+            dilaporkan.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map((f) => (
-            <div key={f.title} className="glass rounded-2xl p-5 hover-lift border border-border/50">
+            <div
+              key={f.title}
+              className="glass rounded-2xl p-5 hover-lift border border-border/50"
+            >
               <div className="h-11 w-11 rounded-2xl gradient-primary flex items-center justify-center shadow-soft mb-3">
                 <f.icon className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="font-semibold mb-1">{f.title}</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">{f.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Trust */}
-      <section className="max-w-6xl mx-auto px-4 py-12">
-        <div className="glass-strong rounded-3xl p-6 md:p-10 grid md:grid-cols-3 gap-6 border border-border/50">
-          {[
-            { icon: ShieldCheck, t: "Role admin & outlet", d: "Hak akses terpisah, outlet hanya melihat datanya." },
-            { icon: Smartphone, t: "Mobile friendly", d: "Bottom nav untuk input cepat di outlet." },
-            { icon: Sparkles, t: "Import Excel", d: "Migrasi data lama tinggal upload .xlsx." },
-          ].map((c) => (
-            <div key={c.t} className="flex gap-3">
-              <div className="h-10 w-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
-                <c.icon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold">{c.t}</div>
-                <div className="text-sm text-muted-foreground">{c.d}</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">
+                {f.desc}
               </div>
             </div>
           ))}
@@ -161,16 +189,29 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-6xl mx-auto px-4 pb-16 md:pb-24 text-center">
-        <h3 className="text-2xl md:text-3xl font-bold mb-3">Siap mulai?</h3>
-        <p className="text-muted-foreground mb-5">Masuk dengan akun admin atau outlet Anda.</p>
-        <Button asChild size="lg" className="gradient-primary text-primary-foreground hover-lift">
-          <Link to="/login">Masuk ke Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
-        </Button>
+      <section className="max-w-6xl mx-auto px-4 py-12">
+        <div className="glass-strong rounded-3xl p-6 md:p-10 text-center border border-border/50">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">
+            Siap memulai?
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base mb-6 max-w-md mx-auto">
+            Masuk sekarang untuk mengelola kehadiran karyawan Anda.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="gradient-primary text-primary-foreground hover-lift"
+          >
+            <Link to="/login">
+              Masuk Sekarang <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </section>
 
+      {/* Footer */}
       <footer className="border-t border-border/40 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Buba Healthy · Sistem Informasi Penjualan MPASI
+        <p>&copy; 2026 Absensi Karyawan. Sistem Absensi & Master Data.</p>
       </footer>
     </div>
   );

@@ -42,14 +42,22 @@ export default function Login() {
         <Card className="glass-strong border-0 shadow-soft">
           <CardContent className="p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
-              <img src={logo} alt="Buba Healthy" className="h-12 w-12 rounded-xl object-cover bg-white shadow-soft" />
+              <img
+                src={logo}
+                alt="Absensi"
+                className="h-12 w-12 rounded-xl object-cover bg-white shadow-soft"
+              />
               <div className="leading-tight">
-                <div className="font-bold text-lg text-gradient">Buba Healthy</div>
-                <div className="text-xs text-muted-foreground">Sistem Penjualan MPASI</div>
+                <div className="font-bold text-lg text-gradient">Absensi</div>
+                <div className="text-xs text-muted-foreground">
+                  Sistem Absensi & Master Data
+                </div>
               </div>
             </div>
             <h2 className="text-2xl font-bold mb-1">Masuk ke akun Anda</h2>
-            <p className="text-sm text-muted-foreground mb-6">Gunakan kredensial admin atau outlet.</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Gunakan kredensial admin atau karyawan.
+            </p>
 
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
@@ -77,16 +85,25 @@ export default function Login() {
                   />
                   <button
                     type="button"
-                    aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
+                    aria-label={
+                      show ? "Sembunyikan password" : "Tampilkan password"
+                    }
                     onClick={() => setShow((s) => !s)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground"
                   >
-                    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {show ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full gradient-primary text-primary-foreground hover-lift">
+              <Button
+                type="submit"
+                className="w-full gradient-primary text-primary-foreground hover-lift"
+              >
                 <LogIn className="mr-2 h-4 w-4" /> Masuk
               </Button>
             </form>

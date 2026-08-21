@@ -1,63 +1,14 @@
+// =============================================================================
+// Tipe Data Aplikasi Absensi Master Data
+// =============================================================================
+
 export interface Outlet {
   id: string;
   nama: string;
   lokasi: string;
 }
 
-export interface Produk {
-  id: string;
-  nama: string;
-  harga: number;
-  satuan: string;
-}
-
-export interface Penjualan {
-  id: string;
-  tanggal: string;
-  outletId: string;
-  produkId: string;
-  qty: number;
-  harga: number;
-  total: number;
-  sisaGram?: number; // sisa OH dalam gram untuk bubur/tim
-  variant?: string; // 'bubur_d' | 'bubur_i' | 'tim_d' | 'tim_i' | null = single-variant
-}
-
-export interface Produksi {
-  id: string;
-  tanggal: string;
-  produkId: string;
-  qtyRencana: number;
-  qtyRealisasi: number;
-}
-
-export type AkunKategori =
-  | 'Aset'
-  | 'Kewajiban'
-  | 'Ekuitas'
-  | 'Pendapatan'
-  | 'Beban';
-
-export interface Jurnal {
-  id: string;
-  tanggal: string;
-  ref?: string;
-  keterangan: string;
-  kodeAkun?: string;
-  akun: string;
-  tipe: 'Debit' | 'Kredit';
-  jumlah: number;
-  kategori: AkunKategori;
-}
-
-export interface AkunCOA {
-  kode: string;
-  nama: string;
-  tipe: string;
-  kategori: AkunKategori;
-}
-
-export type Role = 'admin' | 'outlet' | 'produksi' | 'gudang' | 'tl';
+export type Role = "admin" | "karyawan";
 
 export interface UserAccount {
   username: string;
@@ -68,31 +19,7 @@ export interface UserAccount {
   karyawanId?: string;
 }
 
-// === Stok Gudang ===
-export interface BahanBaku {
-  id: string;
-  kode: string;
-  nama: string;
-  satuan: string;
-  stokMin: number;
-  stokAwal: number;
-  hargaBeli: number;
-  konversiGram?: number;
-}
-
-export type StokMovementType = 'IN' | 'OUT';
-
-export interface StokMovement {
-  id: string;
-  tanggal: string;
-  bahanId: string;
-  tipe: StokMovementType;
-  qty: number;
-  keterangan?: string;
-  produksiId?: string; // when OUT triggered by produksi
-}
-
-// === Absensi ===
+// === Karyawan ===
 export interface Karyawan {
   id: string;
   nama: string;
@@ -111,7 +38,7 @@ export interface Karyawan {
   password?: string;
 }
 
-export type StatusAbsen = 'Hadir' | 'Izin' | 'Sakit' | 'Alpha';
+export type StatusAbsen = "Hadir" | "Izin" | "Sakit" | "Alpha";
 
 export interface Absensi {
   id: string;
@@ -124,18 +51,4 @@ export interface Absensi {
   bonus?: number;
   tunjangan?: number;
   overtime?: number; // hours
-}
-
-// === Permohonan Stok ===
-export type PermohonanStokStatus = "Pending" | "Disetujui" | "Ditolak";
-
-export interface PermohonanStok {
-  id: string;
-  tanggal: string;
-  tanggalKirim: string;
-  outletId: string;
-  produkId: string;
-  qty: number;
-  status: PermohonanStokStatus;
-  catatan?: string;
 }

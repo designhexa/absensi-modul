@@ -9,12 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
-import Produksi from "./pages/Produksi";
-import Distribusi from "./pages/Distribusi";
-import Laporan from "./pages/Laporan";
-import Keuangan from "./pages/Keuangan";
 import MasterData from "./pages/MasterData";
-import StokGudang from "./pages/StokGudang";
 import Absensi from "./pages/Absensi";
 import SlipGaji from "./pages/SlipGaji";
 import Profile from "./pages/Profile";
@@ -34,38 +29,16 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                {/* Pages accessible to Admin and Kepala Produksi */}
-                {/* Pages accessible to Admin, Produksi, and Gudang */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang"]} />}>
-                  <Route path="/produksi" element={<Produksi />} />
-                  <Route path="/distribusi" element={<Distribusi />} />
-                </Route>
-
-                {/* Pages accessible to Admin, Outlet, Produksi, Gudang, and TL */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "outlet", "produksi", "gudang", "tl"]} />}>
-                  <Route path="/laporan" element={<Laporan />} />
-                </Route>
-                
-                {/* Pages accessible to Admin only */}
-                <Route element={<ProtectedRoute adminOnly />}>
-                  <Route path="/keuangan" element={<Keuangan />} />
-                </Route>
-
-                {/* Master Data — hanya admin (Admin Utama) yang boleh akses */}
+                {/* Master Data — admin only */}
                 <Route element={<ProtectedRoute adminOnly />}>
                   <Route path="/master" element={<MasterData />} />
                 </Route>
 
                 {/* Pages accessible to all logged in users */}
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/stok" element={<StokGudang />} />
                 <Route path="/profile" element={<Profile />} />
-
-                {/* Absensi & Slip Gaji — semua peran karyawan termasuk TL (absen mandiri + slip sendiri) */}
-                <Route element={<ProtectedRoute allowedRoles={["admin", "produksi", "gudang", "outlet", "tl"]} />}>
-                  <Route path="/absensi" element={<Absensi />} />
-                  <Route path="/slip-gaji" element={<SlipGaji />} />
-                </Route>
+                <Route path="/absensi" element={<Absensi />} />
+                <Route path="/slip-gaji" element={<SlipGaji />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />

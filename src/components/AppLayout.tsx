@@ -5,7 +5,7 @@ import { Outlet } from "react-router-dom";
 import logo from "@/assets/logo.jpg";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck, Store, Warehouse, MapPin } from "lucide-react";
+import { LogOut, ShieldCheck, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +28,15 @@ export default function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center border-b border-border/40 glass sticky top-0 z-20 px-3 gap-3 print:hidden">
             <div className="flex md:hidden items-center gap-2">
-              <img src={logo} alt="Buba Healthy" className="h-8 w-8 rounded-lg object-cover" />
-              <span className="font-bold text-gradient">Buba Healthy</span>
+              <img
+                src={logo}
+                alt="Absensi"
+                className="h-8 w-8 rounded-lg object-cover"
+              />
+              <span className="font-bold text-gradient">Absensi</span>
             </div>
             <div className="hidden sm:block ml-2 text-sm text-muted-foreground truncate">
-              Sistem Informasi Penjualan MPASI
+              Sistem Absensi & Master Data Karyawan
             </div>
 
             <div className="ml-auto flex items-center gap-2">
@@ -49,12 +53,9 @@ export default function AppLayout() {
                     <div className="hidden sm:block text-left leading-tight">
                       <div className="text-sm font-medium">{user?.nama}</div>
                       <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        {user?.role === "admin" && <ShieldCheck className="h-3 w-3" />}
-                        {user?.role === "produksi" && <ShieldCheck className="h-3 w-3 text-amber-500" />}
-                        {user?.role === "outlet" && <Store className="h-3 w-3" />}
-                        {user?.role === "gudang" && <Warehouse className="h-3 w-3 text-green-500" />}
-                        {user?.role === "tl" && <MapPin className="h-3 w-3 text-sky-500" />}
-                        {user?.role === "admin" ? "Admin" : user?.role === "produksi" ? "Produksi" : user?.role === "gudang" ? "Pegawai Gudang" : user?.role === "tl" ? "TL (Tim Leader)" : "Outlet"}
+                        {isAdmin && <ShieldCheck className="h-3 w-3" />}
+                        {!isAdmin && <User className="h-3 w-3" />}
+                        {isAdmin ? "Admin" : "Karyawan"}
                       </div>
                     </div>
                   </Button>
@@ -62,10 +63,15 @@ export default function AppLayout() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="font-medium">{user?.nama}</div>
-                    <div className="text-xs text-muted-foreground font-normal">@{user?.username}</div>
+                    <div className="text-xs text-muted-foreground font-normal">
+                      @{user?.username}
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="text-destructive"
+                  >
                     <LogOut className="h-4 w-4 mr-2" />
                     Keluar
                   </DropdownMenuItem>

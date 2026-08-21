@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { UserAccount } from "./types";
 import { supabase } from "./supabaseClient";
 
-const KEY = "buba-auth-v1";
+const KEY = "absensi-auth-v1";
 
 interface AuthCtx {
   user: UserAccount | null;
@@ -40,9 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: u.username,
             password: u.password,
             nama: u.nama,
-            role: u.username === "produksi" ? "produksi" : u.role === "gudang" ? "gudang" : u.role,
+            role: u.role,
             outletId: u.outlet_id,
-            karyawanId: u.karyawan_id
+            karyawanId: u.karyawan_id,
           }));
           setUsers(mapped);
         }
@@ -67,9 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: data.username,
           password: data.password,
           nama: data.nama,
-          role: data.username === "produksi" ? "produksi" : data.role === "gudang" ? "gudang" : data.role,
+          role: data.role,
           outletId: data.outlet_id,
-          karyawanId: data.karyawan_id
+          karyawanId: data.karyawan_id,
         };
         setUser(mappedUser);
         return true;
@@ -82,7 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => setUser(null);
 
-  return <Ctx.Provider value={{ user, login, logout, users }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, login, logout, users }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {

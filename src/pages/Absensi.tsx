@@ -3,14 +3,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { db, useDB } from "@/lib/store";
 import { todayISO, DateRange, inRange, rupiah } from "@/lib/format";
-import { Plus, Trash2, UserCheck, Users, CalendarCheck, CheckCircle2, Check, FileText, MapPin, Navigation, Loader2, Sparkles, Pencil } from "lucide-react";
+import {
+  Plus,
+  UserCheck,
+  Users,
+  CalendarCheck,
+  Check,
+  CheckCircle2,
+  MapPin,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { DateInput } from "@/components/DateInput";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -18,33 +31,26 @@ import { usePagination } from "@/hooks/usePagination";
 import { TablePagination } from "@/components/TablePagination";
 import { useAuth } from "@/lib/auth";
 import { StatusAbsen } from "@/lib/types";
-import { useNavigate } from "react-router-dom";
 
 const STATUSES: StatusAbsen[] = ["Hadir"];
 
 export default function Absensi() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const isAdmin = user?.role === "admin";
   const { karyawan = [], absensi = [], outlets = [] } = useDB();
 
-  const visibleKaryawan = useMemo(
-    () => {
-      if (isAdmin) return karyawan;
-      if (user?.role === "produksi") return karyawan.filter((k) => k.id === "k-produksi");
-      if (user?.role === "gudang") return karyawan.filter((k) => k.id === "k-gudang");
-      if (user?.role === "tl") return karyawan.filter((k) => k.id === "k-tl");
-      return karyawan.filter((k) => k.outletId === user?.outletId);
-    },
-    [karyawan, isAdmin, user]
-  );
+  const visibleKaryawan = useMemo(() => {
+    if (isAdmin) return karyawan;
+    return karyawan.filter((k) => k.outletId === user?.outletId);
+  }, [karyawan, isAdmin, user]);
 
   const [tanggal, setTanggal] = useState(todayISO());
-  const [karyawanId, setKaryawanId] = useState(visibleKaryawan[0]?.id ?? "");
+  const [karyawanId, setKaryawanId] = useState(
+    visibleKaryawan[0]?.id ?? ""
+  );
 
-  // Helper to get jam based on employee data
-  const getJamForKaryawan = (karyawanId: string) => {
-    const k = karyawan.find((x) => x.id === karyawanId);
+  const getJamForKaryawan = (kid: string) => {
+    const k = karyawan.find((x) => x.id === kid);
     return {
       jamMasuk: k?.jamMasuk || (k?.outletId ? "07:00" : "07:30"),
       jamPulang: k?.jamPulang || (k?.outletId ? "14:00" : "15:00"),
@@ -62,7 +68,6 @@ export default function Absensi() {
     }
   }, [karyawanId, karyawan]);
 
-  // Reset recorded state saat ganti karyawan atau tanggal (untuk admin view)
   useEffect(() => {
     setRecordedJamMasuk(null);
     setRecordedJamPulang(null);
@@ -73,34 +78,39 @@ export default function Absensi() {
   const [tunjanganInput, setTunjanganInput] = useState(0);
   const [overtimeInput, setOvertimeInput] = useState(0);
   const [range, setRange] = useState<DateRange>({});
-  const [editingAbsensi, setEditingAbsensi] = useState<any>(null);
 
   // GPS State
   const [gpsLoading, setGpsLoading] = useState(true);
-  const [recordedJamMasuk, setRecordedJamMasuk] = useState<string | null>(null);
-  const [recordedJamPulang, setRecordedJamPulang] = useState<string | null>(null);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [recordedJamMasuk, setRecordedJamMasuk] = useState<string | null>(
+    null
+  );
+  const [recordedJamPulang, setRecordedJamPulang] = useState<string | null>(
+    null
+  );
+  const [coordinates, setCoordinates] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [address, setAddress] = useState("Mencari lokasi GPS...");
 
-  // Get actual outlet location data from Master Data
   const myOutletLocation = useMemo(() => {
-    if (user?.role !== "outlet" || !user?.outletId) return null;
+    if (user?.role !== "karyawan" || !user?.outletId) return null;
     const myOutlet = outlets.find((o: any) => o.id === user.outletId);
     if (!myOutlet || !myOutlet.lokasi) return null;
-    
+
     const parts = (myOutlet.lokasi || "").split(" @ ");
     const alamat = parts[0] || "";
     let lat = -7.641234;
     let lng = 112.906123;
     let radius = 100;
-    
+
     if (parts[1]) {
       const coords = parts[1].split(",");
       if (coords[0]) lat = parseFloat(coords[0]) || lat;
       if (coords[1]) lng = parseFloat(coords[1]) || lng;
       if (coords[2]) radius = parseInt(coords[2]) || radius;
     }
-    
+
     return { alamat, lat, lng, radius, nama: myOutlet.nama };
   }, [user, outlets]);
 
@@ -109,9 +119,10 @@ export default function Absensi() {
     if (loc) {
       return `${loc.nama}, ${loc.alamat || "-"} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
     }
-    
-    // Fallback: use outlet name from database
-    const outletNama = user?.role === "outlet" ? (user?.nama || "Outlet") : (user?.role === "tl" ? (user?.nama || "Tim Leader") : "Dapur Utama Buba Healthy");
+    const outletNama =
+      user?.role === "karyawan"
+        ? user?.nama || "Lokasi"
+        : "Dapur Utama";
     return `${outletNama} (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
   };
 
@@ -130,9 +141,6 @@ export default function Absensi() {
         },
         (error) => {
           console.error("GPS error:", error);
-          // ❌ TIDAK pakai fallback koordinat outlet lagi — itu celah yang membuat
-          // absensi bisa dilakukan dari mana pun. Saat GPS gagal, koordinat tetap null
-          // sehingga validateGPSDistance() memblokir absensi.
           setCoordinates(null);
           setAddress("Gagal mendapatkan lokasi GPS — absensi diblokir");
           setGpsLoading(false);
@@ -140,7 +148,6 @@ export default function Absensi() {
         { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      // Geolocation tidak didukung — koordinat tetap null, absensi diblokir.
       setCoordinates(null);
       setAddress("Perangkat tidak mendukung GPS — absensi diblokir");
       setGpsLoading(false);
@@ -148,7 +155,7 @@ export default function Absensi() {
   };
 
   useEffect(() => {
-    if (user?.role === "produksi" || user?.role === "gudang" || user?.role === "tl" || user?.role === "outlet") {
+    if (user?.role === "karyawan") {
       fetchGPSLocation();
     }
   }, [user]);
@@ -167,7 +174,7 @@ export default function Absensi() {
       status,
       bonus: bonusInput,
       tunjangan: tunjanganInput,
-      overtime: overtimeInput
+      overtime: overtimeInput,
     });
     toast.success("Absensi disimpan");
     setBonusInput(0);
@@ -181,14 +188,23 @@ export default function Absensi() {
   };
 
   const todayRecord = useMemo(() => {
-    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "tl" ? "k-tl" : (user?.role === "outlet" ? `k-${user.outletId}-1` : (karyawanId || visibleKaryawan[0]?.id))));
+    const kid =
+      user?.role === "karyawan"
+        ? `k-${user.outletId}-1`
+        : karyawanId || visibleKaryawan[0]?.id;
     if (!kid) return null;
-    return absensi.find((a) => a.tanggal === todayISO() && a.karyawanId === kid);
+    return absensi.find(
+      (a) => a.tanggal === todayISO() && a.karyawanId === kid
+    );
   }, [absensi, karyawanId, visibleKaryawan, user]);
 
-  // Haversine formula to compute distance between two coordinates in meters
-  const getDistanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // km
+  const getDistanceMeters = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ) => {
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -198,21 +214,23 @@ export default function Absensi() {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c * 1000; // meters
+    return R * c * 1000;
   };
 
   const validateGPSDistance = () => {
-    if (user?.role !== "outlet" || !user?.outletId) return true;
+    if (user?.role !== "karyawan" || !user?.outletId) return true;
     const myOutlet = outlets.find((o: any) => o.id === user.outletId);
-    // SEMENTARA: jika koordinat GPS outlet belum diatur (format "alamat @ lat,lng,radius"),
-    // absensi tetap DIIZINKAN dari mana pun sampai admin mengisi Latitude & Longitude
-    // di Master Data. Setelah koordinat terisi, batasan radius GPS langsung aktif.
-    if (!myOutlet || !myOutlet.lokasi || !myOutlet.lokasi.includes("@")) {
-      toast.info("Koordinat GPS outlet belum diatur — absensi diterima tanpa verifikasi lokasi (sementara).");
+    if (
+      !myOutlet ||
+      !myOutlet.lokasi ||
+      !myOutlet.lokasi.includes("@")
+    ) {
+      toast.info(
+        "Koordinat GPS outlet belum diatur — absensi diterima tanpa verifikasi lokasi."
+      );
       return true;
     }
 
-    // Parse lokasi
     const parts = myOutlet.lokasi.split(" @ ");
     const [latStr, lngStr, radStr] = parts[1].split(",");
     const targetLat = parseFloat(latStr);
@@ -220,49 +238,60 @@ export default function Absensi() {
     const radius = parseFloat(radStr || "100");
 
     if (isNaN(targetLat) || isNaN(targetLng)) {
-      toast.error("Koordinat GPS outlet tidak valid. Hubungi admin.");
+      toast.error("Koordinat GPS outlet tidak valid.");
       return false;
     }
 
     if (!coordinates) {
-      toast.error("Gagal mendapatkan koordinat GPS Anda! Pastikan GPS aktif dan izin lokasi diberikan.");
+      toast.error(
+        "Gagal mendapatkan koordinat GPS Anda! Pastikan GPS aktif."
+      );
       return false;
     }
-    
-    const dist = getDistanceMeters(coordinates.lat, coordinates.lng, targetLat, targetLng);
+
+    const dist = getDistanceMeters(
+      coordinates.lat,
+      coordinates.lng,
+      targetLat,
+      targetLng
+    );
     if (dist > radius) {
-      toast.error(`Gagal Absen! Anda berada di luar area outlet. Jarak Anda: ${Math.round(dist)} meter (Maks: ${radius} meter).`);
+      toast.error(
+        `Gagal Absen! Anda berada di luar area outlet. Jarak: ${Math.round(dist)} meter (Maks: ${radius} meter).`
+      );
       return false;
     }
-    
+
     return true;
   };
 
   const handleClockInGPS = () => {
-    if (gpsLoading) return toast.error("Menunggu GPS mengunci lokasi...");
-    if (user?.role !== "gudang" && !validateGPSDistance()) return;
+    if (gpsLoading)
+      return toast.error("Menunggu GPS mengunci lokasi...");
+    if (!validateGPSDistance()) return;
     const jam = currentTime();
-    const kid = user?.role === "produksi" ? "k-produksi" : (user?.role === "gudang" ? "k-gudang" : (user?.role === "tl" ? "k-tl" : `k-${user?.outletId}-1`));
+    const kid = `k-${user?.outletId}-1`;
     setRecordedJamMasuk(jam);
     db.addAbsensi({
       tanggal: todayISO(),
       karyawanId: kid,
       jamMasuk: jam,
       status: "Hadir",
-      catatan: `GPS Check-in: ${address} @ ${jam}`
+      catatan: `GPS Check-in: ${address} @ ${jam}`,
     });
     toast.success(`Berhasil Absen Masuk (GPS) pukul ${jam}`);
   };
 
   const handleClockOutGPS = () => {
     if (!todayRecord) return toast.error("Data absensi tidak ditemukan");
-    if (gpsLoading) return toast.error("Menunggu GPS mengunci lokasi...");
-    if (user?.role !== "gudang" && !validateGPSDistance()) return;
+    if (gpsLoading)
+      return toast.error("Menunggu GPS mengunci lokasi...");
+    if (!validateGPSDistance()) return;
     const jam = currentTime();
     setRecordedJamPulang(jam);
     db.updateAbsensi(todayRecord.id, {
       jamPulang: jam,
-      catatan: `${todayRecord.catatan || ""} | GPS Check-out: ${address} @ ${jam}`
+      catatan: `${todayRecord.catatan || ""} | GPS Check-out: ${address} @ ${jam}`,
     });
     toast.success(`Berhasil Absen Pulang (GPS) pukul ${jam}`);
   };
@@ -277,7 +306,7 @@ export default function Absensi() {
       karyawanId: kid,
       jamMasuk: jam,
       status: "Hadir",
-      catatan: `Absen Masuk: ${jam}`
+      catatan: `Absen Masuk: ${jam}`,
     });
     toast.success(`Berhasil Absen Masuk pukul ${jam}!`);
   };
@@ -288,14 +317,17 @@ export default function Absensi() {
     setRecordedJamPulang(jam);
     db.updateAbsensi(todayRecord.id, {
       jamPulang: jam,
-      catatan: `${todayRecord.catatan || ""} | Absen Pulang: ${jam}`
+      catatan: `${todayRecord.catatan || ""} | Absen Pulang: ${jam}`,
     });
     toast.success(`Berhasil Absen Pulang pukul ${jam}!`);
   };
 
   const visibleIds = new Set(visibleKaryawan.map((k) => k.id));
   const filtered = useMemo(
-    () => absensi.filter((a) => visibleIds.has(a.karyawanId) && inRange(a.tanggal, range)).sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
+    () =>
+      absensi
+        .filter((a) => visibleIds.has(a.karyawanId) && inRange(a.tanggal, range))
+        .sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
     [absensi, visibleIds, range]
   );
 
@@ -304,46 +336,46 @@ export default function Absensi() {
     return visibleKaryawan.map((k) => {
       const list = filtered.filter((a) => a.karyawanId === k.id);
       const hadir = list.filter((a) => a.status === "Hadir").length;
-
-      // Per-employee tunjangan harian & overtime rate
       const tunjanganHarianKaryawan = k.tunjanganHarian ?? 0;
-      const overtimeRateKaryawan = k.overtimeRate ?? Math.round(k.gajiPokok / 8 * 1.5);
-
-      // Lateness check using employee's jamMasuk
-      const employeeJamMasuk = k.jamMasuk || (k.outletId ? "07:00" : "07:30");
-      const lateLogs = list.filter((a) => a.jamMasuk && a.jamMasuk > employeeJamMasuk);
-
+      const overtimeRateKaryawan =
+        k.overtimeRate ?? Math.round((k.gajiPokok / 8) * 1.5);
+      const employeeJamMasuk =
+        k.jamMasuk || (k.outletId ? "07:00" : "07:30");
+      const lateLogs = list.filter(
+        (a) => a.jamMasuk && a.jamMasuk > employeeJamMasuk
+      );
       const terlambatCount = lateLogs.length;
-      const terlambatDates = lateLogs.map((a) => a.tanggal.slice(-2)).join(", "); // e.g. "15, 18"
-
-      // Sum daily inputs
-      const overtimeHours = list.reduce((sum, a) => sum + (a.overtime ?? 0), 0);
-      const dailyTunjanganTotal = list.reduce((sum, a) => sum + (a.tunjangan ?? 0), 0);
-      const dailyBonusTotal = list.reduce((sum, a) => sum + (a.bonus ?? 0), 0);
-
-      // Tunjangan: from daily input + per-employee base * hadir
-      const tunjanganTotal = dailyTunjanganTotal + (tunjanganHarianKaryawan * hadir);
-
-      // Overtime pay: overtime_hours * employee's overtimeRate
+      const overtimeHours = list.reduce(
+        (sum, a) => sum + (a.overtime ?? 0),
+        0
+      );
+      const dailyTunjanganTotal = list.reduce(
+        (sum, a) => sum + (a.tunjangan ?? 0),
+        0
+      );
+      const dailyBonusTotal = list.reduce(
+        (sum, a) => sum + (a.bonus ?? 0),
+        0
+      );
+      const tunjanganTotal =
+        dailyTunjanganTotal + tunjanganHarianKaryawan * hadir;
       const overtimePay = Math.round(overtimeHours * overtimeRateKaryawan);
-
-      // Flat monthly bonuses
       const flatBonusOmset = k.bonusOmset ?? 0;
       const flatBonusUlasan = k.bonusUlasan ?? 0;
       const flatBonusOH = k.bonusOH ?? 0;
-
-      const totalBonus = dailyBonusTotal + flatBonusOmset + flatBonusUlasan + flatBonusOH;
-      const totalGaji = (hadir * k.gajiPokok) + tunjanganTotal + totalBonus + overtimePay;
+      const totalBonus =
+        dailyBonusTotal + flatBonusOmset + flatBonusUlasan + flatBonusOH;
+      const totalGaji =
+        hadir * k.gajiPokok + tunjanganTotal + totalBonus + overtimePay;
 
       return {
         k,
         hadir,
         terlambatCount,
-        terlambatDates,
         overtimeHours,
         tunjanganTotal,
         totalBonus,
-        totalGaji
+        totalGaji,
       };
     });
   }, [visibleKaryawan, filtered]);
@@ -355,97 +387,235 @@ export default function Absensi() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gradient">Absensi Karyawan</h1>
-        <p className="text-sm text-muted-foreground">Catat kehadiran & rekap penggajian harian</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gradient">
+          Absensi Karyawan
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Catat kehadiran & rekap penggajian harian
+        </p>
       </div>
-
 
       {isAdmin ? (
         <Card className="glass border-0 shadow-card">
-          <CardHeader><CardTitle>Input Absensi</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Input Absensi</CardTitle>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 lg:items-end">
+            <form
+              onSubmit={submit}
+              className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 lg:items-end"
+            >
               <div className="space-y-2 lg:col-span-2">
                 <Label>Tanggal</Label>
                 <DateInput value={tanggal} onChange={setTanggal} />
               </div>
               <div className="space-y-2">
                 <Label>Karyawan</Label>
-                <Select value={karyawanId || visibleKaryawan[0]?.id || ""} onValueChange={setKaryawanId}>
-                  <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+                <Select
+                  value={karyawanId || visibleKaryawan[0]?.id || ""}
+                  onValueChange={setKaryawanId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih" />
+                  </SelectTrigger>
                   <SelectContent>
                     {visibleKaryawan.map((k) => (
-                      <SelectItem key={k.id} value={k.id}>{k.nama} ({k.posisi})</SelectItem>
+                      <SelectItem key={k.id} value={k.id}>
+                        {k.nama} ({k.posisi})
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as StatusAbsen)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as StatusAbsen)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Jam Masuk</Label>
-                <Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} disabled={status !== "Hadir"} />
+                <Input
+                  type="time"
+                  value={jamMasuk}
+                  onChange={(e) => setJamMasuk(e.target.value)}
+                  disabled={status !== "Hadir"}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Jam Pulang</Label>
-                <Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} disabled={status !== "Hadir"} />
+                <Input
+                  type="time"
+                  value={jamPulang}
+                  onChange={(e) => setJamPulang(e.target.value)}
+                  disabled={status !== "Hadir"}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Bonus (Rp)</Label>
-                <Input type="number" min={0} value={bonusInput || ""} onChange={(e) => setBonusInput(Number(e.target.value))} placeholder="0" />
+                <Input
+                  type="number"
+                  min={0}
+                  value={bonusInput || ""}
+                  onChange={(e) => setBonusInput(Number(e.target.value))}
+                  placeholder="0"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Tunjangan (Rp)</Label>
-                <Input type="number" min={0} value={tunjanganInput || ""} onChange={(e) => setTunjanganInput(Number(e.target.value))} placeholder="0" />
+                <Input
+                  type="number"
+                  min={0}
+                  value={tunjanganInput || ""}
+                  onChange={(e) =>
+                    setTunjanganInput(Number(e.target.value))
+                  }
+                  placeholder="0"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Overtime (Jam)</Label>
-                <Input type="number" min={0} value={overtimeInput || ""} onChange={(e) => setOvertimeInput(Number(e.target.value))} placeholder="0" />
+                <Input
+                  type="number"
+                  min={0}
+                  value={overtimeInput || ""}
+                  onChange={(e) =>
+                    setOvertimeInput(Number(e.target.value))
+                  }
+                  placeholder="0"
+                />
               </div>
-              <Button type="submit" className="gradient-primary text-primary-foreground hover-lift lg:col-span-2">
-                <Plus className="mr-1 h-4 w-4" />Simpan Absensi
+              <Button
+                type="submit"
+                className="gradient-primary text-primary-foreground hover-lift lg:col-span-2"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Simpan Absensi
               </Button>
             </form>
 
             {(todayRecord || recordedJamMasuk) && (
               <div className="mt-6 bg-muted/40 p-4 rounded-2xl border text-xs text-muted-foreground space-y-1">
                 <span className="font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                  Status Absensi Hari Ini — {karyawan.find(k => k.id === (karyawanId || visibleKaryawan[0]?.id))?.nama ?? "Karyawan"}
+                  Status Absensi Hari Ini —{" "}
+                  {karyawan.find(
+                    (k) =>
+                      k.id ===
+                      (karyawanId || visibleKaryawan[0]?.id)
+                  )?.nama ?? "Karyawan"}
                 </span>
-                <div>• Jam Masuk: <span className="font-semibold text-foreground">{recordedJamMasuk ?? todayRecord?.jamMasuk ?? "-"}</span></div>
-                <div>• Jam Pulang: <span className="font-semibold text-foreground">{recordedJamPulang ?? todayRecord?.jamPulang ?? "Belum Checkout (Pulang)"}</span></div>
-                <div>• Status Data: <span className="font-semibold text-foreground">{(recordedJamPulang ?? todayRecord?.jamPulang) ? "Komplit" : "Sementara"}</span></div>
+                <div>
+                  • Jam Masuk:{" "}
+                  <span className="font-semibold text-foreground">
+                    {recordedJamMasuk ??
+                      todayRecord?.jamMasuk ??
+                      "-"}
+                  </span>
+                </div>
+                <div>
+                  • Jam Pulang:{" "}
+                  <span className="font-semibold text-foreground">
+                    {recordedJamPulang ??
+                      todayRecord?.jamPulang ??
+                      "Belum Checkout (Pulang)"}
+                  </span>
+                </div>
+                <div>
+                  • Status Data:{" "}
+                  <span className="font-semibold text-foreground">
+                    {recordedJamPulang ?? todayRecord?.jamPulang
+                      ? "Komplit"
+                      : "Sementara"}
+                  </span>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
-      ) : (user?.role === "produksi" || user?.role === "gudang" || user?.role === "tl" || user?.role === "outlet") ? (
+      ) : user?.role === "karyawan" ? (
+        /* GPS Attendance for Karyawan */
         <Card className="glass border-0 shadow-card overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <Navigation className="h-5 w-5 text-red-500 animate-pulse" />
+              <MapPin className="h-5 w-5 text-red-500 animate-pulse" />
               Absensi Mandiri GPS
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Map Area */}
             <div className="relative w-full h-[220px] rounded-2xl overflow-hidden bg-sky-100 dark:bg-sky-950 border shadow-inner">
-              {/* Simulated Map Background */}
-              <svg className="absolute inset-0 w-full h-full text-sky-400 dark:text-sky-800 opacity-30" xmlns="http://www.w3.org/2000/svg">
-                <line x1="0" y1="50" x2="1000" y2="50" stroke="currentColor" strokeWidth="8" />
-                <line x1="0" y1="120" x2="1000" y2="150" stroke="currentColor" strokeWidth="12" strokeDasharray="5,5" />
-                <line x1="0" y1="200" x2="1000" y2="180" stroke="currentColor" strokeWidth="6" />
-                <line x1="120" y1="0" x2="100" y2="1000" stroke="currentColor" strokeWidth="10" />
-                <line x1="280" y1="0" x2="300" y2="1000" stroke="currentColor" strokeWidth="6" />
-                <line x1="450" y1="0" x2="420" y2="1000" stroke="currentColor" strokeWidth="16" />
-                <circle cx="200" cy="100" r="50" fill="currentColor" opacity="0.1" />
+              <svg
+                className="absolute inset-0 w-full h-full text-sky-400 dark:text-sky-800 opacity-30"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <line
+                  x1="0"
+                  y1="50"
+                  x2="1000"
+                  y2="50"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                />
+                <line
+                  x1="0"
+                  y1="120"
+                  x2="1000"
+                  y2="150"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  strokeDasharray="5,5"
+                />
+                <line
+                  x1="0"
+                  y1="200"
+                  x2="1000"
+                  y2="180"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                />
+                <line
+                  x1="120"
+                  y1="0"
+                  x2="100"
+                  y2="1000"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                />
+                <line
+                  x1="280"
+                  y1="0"
+                  x2="300"
+                  y2="1000"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                />
+                <line
+                  x1="450"
+                  y1="0"
+                  x2="420"
+                  y2="1000"
+                  stroke="currentColor"
+                  strokeWidth="16"
+                />
+                <circle
+                  cx="200"
+                  cy="100"
+                  r="50"
+                  fill="currentColor"
+                  opacity="0.1"
+                />
               </svg>
 
               {/* Safe area ripple */}
@@ -454,31 +624,36 @@ export default function Absensi() {
               {/* Pin Marker */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+12px)] flex flex-col items-center">
                 <div className="relative flex flex-col items-center animate-bounce">
-                  {/* Outer Pin Tail (SVG) */}
                   <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center shadow-md p-1">
-                    {/* Buba Smiley Face in Center */}
                     <div className="w-full h-full rounded-full bg-amber-400 border-2 border-white flex items-center justify-center p-0.5">
-                      <svg className="w-full h-full text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <svg
+                        className="w-full h-full text-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      >
                         <circle cx="8" cy="11" r="1.5" fill="currentColor" />
                         <circle cx="16" cy="11" r="1.5" fill="currentColor" />
-                        <path d="M 7 15 Q 12 18 17 15" strokeLinecap="round" />
+                        <path
+                          d="M 7 15 Q 12 18 17 15"
+                          strokeLinecap="round"
+                        />
                       </svg>
                     </div>
                   </div>
-                  {/* Pin Tail Point */}
                   <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-red-500 -mt-[1px] drop-shadow-sm" />
                 </div>
-                {/* Pin shadow */}
                 <div className="w-3.5 h-1 bg-black/20 rounded-full blur-[1px] mt-1.5" />
               </div>
 
-              {/* Lokasi anda overlay card */}
+              {/* Lokasi overlay */}
               <div className="absolute bottom-3 inset-x-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-border/40 shadow-soft">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
                   <span>Lokasi Anda</span>
-                  <button 
-                    type="button" 
-                    onClick={fetchGPSLocation} 
+                  <button
+                    type="button"
+                    onClick={fetchGPSLocation}
                     className="text-primary hover:underline text-[9px] uppercase tracking-normal"
                   >
                     Perbarui GPS
@@ -491,13 +666,14 @@ export default function Absensi() {
               </div>
             </div>
 
-            {/* GPS Loading & Status */}
+            {/* GPS Status */}
             <div className="text-center space-y-1">
               {gpsLoading ? (
                 <div className="flex flex-col items-center justify-center gap-1.5 py-1">
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <p className="text-xs font-medium text-muted-foreground">Sedang mengambil lokasi...</p>
-                  <p className="text-[10px] text-muted-foreground/80">Pastikan anda sudah mengaktifkan GPS</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Sedang mengambil lokasi...
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-1 py-1">
@@ -507,29 +683,53 @@ export default function Absensi() {
                   </div>
                   {(() => {
                     const loc = myOutletLocation;
-                    const gpsSet = !!(user?.role === "outlet" && outlets.find((o: any) => o.id === user.outletId)?.lokasi?.includes("@"));
+                    const gpsSet = !!(
+                      user?.role === "karyawan" &&
+                      outlets.find(
+                        (o: any) => o.id === user.outletId
+                      )?.lokasi?.includes("@")
+                    );
                     if (!gpsSet) {
-                      if (user?.role === "outlet") {
-                        return <p className="text-[10px] text-amber-600">GPS outlet belum diatur — absensi tanpa verifikasi lokasi</p>;
-                      }
-                      return <p className="text-[10px] text-amber-600">Absensi mandiri tanpa verifikasi lokasi</p>;
+                      return (
+                        <p className="text-[10px] text-amber-600">
+                          GPS outlet belum diatur — absensi tanpa
+                          verifikasi lokasi
+                        </p>
+                      );
                     }
                     if (coordinates && loc) {
-                      const dist = getDistanceMeters(coordinates.lat, coordinates.lng, loc.lat, loc.lng);
-                      return <p className="text-[10px] text-muted-foreground">Anda berada ±{Math.round(dist)} meter dari lokasi outlet</p>;
+                      const dist = getDistanceMeters(
+                        coordinates.lat,
+                        coordinates.lng,
+                        loc.lat,
+                        loc.lng
+                      );
+                      return (
+                        <p className="text-[10px] text-muted-foreground">
+                          Anda berada ±{Math.round(dist)} meter dari
+                          lokasi outlet
+                        </p>
+                      );
                     }
-                    return <p className="text-[10px] text-destructive">Lokasi tidak terkunci — absensi diblokir</p>;
+                    return (
+                      <p className="text-[10px] text-destructive">
+                        Lokasi tidak terkunci — absensi diblokir
+                      </p>
+                    );
                   })()}
                 </div>
               )}
             </div>
 
-            {/* Clock-in Info & Date Card */}
+            {/* Clock-in Info */}
             <div className="bg-muted/30 rounded-2xl p-4 border flex items-center justify-between shadow-sm">
               <div className="bg-white dark:bg-slate-900 border rounded-xl p-2.5 flex flex-col items-center justify-center min-w-[72px] shadow-sm">
                 <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
                   {(() => {
-                    const months = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGS", "SEP", "OKT", "NOP", "DES"];
+                    const months = [
+                      "JAN", "FEB", "MAR", "APR", "MEI", "JUN",
+                      "JUL", "AGS", "SEP", "OKT", "NOP", "DES",
+                    ];
                     return months[new Date().getMonth()];
                   })()}
                 </span>
@@ -538,7 +738,10 @@ export default function Absensi() {
                 </span>
                 <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">
                   {(() => {
-                    const daysIndo = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
+                    const daysIndo = [
+                      "MINGGU", "SENIN", "SELASA", "RABU",
+                      "KAMIS", "JUMAT", "SABTU",
+                    ];
                     return daysIndo[new Date().getDay()].slice(0, 3);
                   })()}
                 </span>
@@ -546,24 +749,32 @@ export default function Absensi() {
 
               <div className="flex-1 grid grid-cols-2 gap-2 text-center border-l ml-4 pl-4">
                 <div>
-                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Masuk</div>
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                    Masuk
+                  </div>
                   <div className="text-base font-extrabold text-foreground mt-0.5">
-                    {recordedJamMasuk ?? todayRecord?.jamMasuk ?? "--:--"}
+                    {recordedJamMasuk ??
+                      todayRecord?.jamMasuk ??
+                      "--:--"}
                   </div>
                 </div>
                 <div className="border-l">
-                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Keluar</div>
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                    Keluar
+                  </div>
                   <div className="text-base font-extrabold text-foreground mt-0.5">
-                    {recordedJamPulang ?? todayRecord?.jamPulang ?? "--:--"}
+                    {recordedJamPulang ??
+                      todayRecord?.jamPulang ??
+                      "--:--"}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Checkin Button */}
+            {/* Action Buttons */}
             <div className="w-full space-y-3">
               {!todayRecord ? (
-                <Button 
+                <Button
                   onClick={handleClockInGPS}
                   disabled={gpsLoading}
                   className="w-full h-12 gradient-primary text-primary-foreground hover-lift font-bold text-sm shadow-md"
@@ -571,368 +782,141 @@ export default function Absensi() {
                   <Plus className="mr-2 h-5 w-5" /> Absen Masuk (GPS)
                 </Button>
               ) : !todayRecord.jamPulang ? (
-                <Button 
+                <Button
                   onClick={handleClockOutGPS}
                   disabled={gpsLoading}
                   className="w-full h-12 bg-success text-success-foreground hover:bg-success/90 hover-lift font-bold text-sm shadow-md"
                 >
-                  <CheckCircle2 className="mr-2 h-5 w-5" /> Absen Pulang (GPS)
+                  <CheckCircle2 className="mr-2 h-5 w-5" /> Absen Pulang
+                  (GPS)
                 </Button>
               ) : (
                 <div className="h-12 w-full flex items-center justify-center bg-success/10 border border-success/30 rounded-xl text-sm font-semibold text-success shadow-inner">
-                  <Check className="mr-2 h-5 w-5 shrink-0" /> Absensi Hari Ini Lengkap ({recordedJamMasuk ?? todayRecord.jamMasuk} - {recordedJamPulang ?? todayRecord.jamPulang})
+                  <Check className="mr-2 h-5 w-5 shrink-0" /> Absensi
+                  Hari Ini Lengkap (
+                  {recordedJamMasuk ?? todayRecord.jamMasuk} -{" "}
+                  {recordedJamPulang ?? todayRecord.jamPulang})
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <Card className="glass border-0 shadow-card">
-          <CardHeader>
-            <CardTitle>Absensi Mandiri Cabang</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 items-end">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Pilih Nama Karyawan</Label>
-                <Select value={karyawanId || visibleKaryawan[0]?.id || ""} onValueChange={setKaryawanId}>
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Pilih Karyawan" /></SelectTrigger>
-                  <SelectContent>
-                    {visibleKaryawan.map((k) => (
-                      <SelectItem key={k.id} value={k.id}>{k.nama} ({k.posisi})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      ) : null}
 
-              <div className="w-full space-y-3">
-                {!todayRecord ? (
-                  <Button 
-                    onClick={handleClockIn} 
-                    className="h-12 w-full gradient-primary text-primary-foreground hover-lift font-bold text-sm"
-                  >
-                    <Plus className="mr-2 h-5 w-5 shrink-0" /> Absen Masuk
-                  </Button>
-                ) : !todayRecord.jamPulang ? (
-                  <Button 
-                    onClick={handleClockOut} 
-                    className="h-12 w-full bg-success text-success-foreground hover:bg-success/90 hover-lift font-bold text-sm"
-                  >
-                    <CheckCircle2 className="mr-2 h-5 w-5 shrink-0" /> Absen Pulang
-                  </Button>
-                ) : (
-                  <div className="h-12 w-full flex items-center justify-center bg-success/10 border border-success/30 rounded-xl text-sm font-semibold text-success">
-                    <Check className="mr-1 h-4 w-4 shrink-0" /> Absensi Lengkap · Masuk: {recordedJamMasuk ?? todayRecord?.jamMasuk} · Pulang: {recordedJamPulang ?? todayRecord?.jamPulang}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {(todayRecord || recordedJamMasuk) && (
-              <div className="bg-muted/40 p-4 rounded-2xl border text-xs text-muted-foreground space-y-1">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider block mb-1">Status Absensi Hari Ini:</span>
-                <div>• Jam Masuk: <span className="font-semibold text-foreground">{recordedJamMasuk ?? todayRecord?.jamMasuk ?? "-"}</span></div>
-                <div>• Jam Pulang: <span className="font-semibold text-foreground">{recordedJamPulang ?? todayRecord?.jamPulang ?? "Belum Checkout (Pulang)"}</span></div>
-                <div>• Status Data: <span className="font-semibold text-foreground">{(recordedJamPulang ?? todayRecord?.jamPulang) ? "Komplit" : "Sementara (Menunggu Pulang)"}</span></div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="glass border-0 shadow-card max-w-sm">
-        <CardContent className="p-4 flex items-center gap-3">
-          <CalendarCheck className="h-8 w-8 text-success" />
-          <div>
-            <div className="text-xs text-muted-foreground">Total Hadir (filter)</div>
-            <div className="text-xl font-bold">{totalHadir}</div>
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* Rekap Tabel */}
       <Card className="glass border-0 shadow-card">
-        <CardHeader>
-          <CardTitle>Riwayat Absensi</CardTitle>
-          <div className="flex flex-wrap gap-2 pt-2 items-center">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+              Rekap Kehadiran
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total hadir: <span className="font-bold text-foreground">{totalHadir}</span> | Total gaji:{" "}
+              <span className="font-bold text-foreground">{rupiah(totalGajiAll)}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
             <DateRangeFilter value={range} onChange={setRange} />
-            <div className="w-full sm:w-auto sm:ml-auto">
-              <ExportButtons
-                filename="absensi"
-                title="Riwayat Absensi"
-                headers={["Tanggal", "Karyawan", "Status", "Masuk", "Pulang"]}
-                rows={filtered.map((a) => {
-                  const k = karyawan.find((x) => x.id === a.karyawanId);
-                  return [a.tanggal, k?.nama ?? "-", a.status, a.jamMasuk ?? "-", a.jamPulang ?? "-"];
-                })}
-              />
-            </div>
+            <ExportButtons
+              data={rekap.map((r) => ({
+                Nama: r.k.nama,
+                Posisi: r.k.posisi,
+                Hadir: r.hadir,
+                Terlambat: r.terlambatCount,
+                Tunjangan: r.tunjanganTotal,
+                Bonus: r.totalBonus,
+                "Total Gaji": r.totalGaji,
+              }))}
+              filename="rekap-absensi"
+            />
           </div>
         </CardHeader>
         <CardContent>
-          <AbsensiTable filtered={filtered} karyawan={karyawan} outlets={outlets} isAdmin={isAdmin} onEdit={setEditingAbsensi} />
-        </CardContent>
-      </Card>
-
-      <EditAbsensiDialog record={editingAbsensi} onClose={() => setEditingAbsensi(null)} karyawan={karyawan} />
-
-      <Card className="glass border-0 shadow-card">
-        <CardHeader><CardTitle>Rekap Gaji (sesuai filter tanggal)</CardTitle></CardHeader>
-        <CardContent>
           <div className="rounded-2xl border overflow-hidden">
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Karyawan</TableHead>
-                    <TableHead>Posisi</TableHead>
-                    <TableHead className="text-right">Hadir</TableHead>
-                    <TableHead className="text-right">Terlambat</TableHead>
-                    <TableHead>Tgl Terlambat</TableHead>
-                    <TableHead className="text-right">Lembur (Jam)</TableHead>
-                    <TableHead className="text-right">Tunjangan</TableHead>
-                    <TableHead className="text-right">Bonus</TableHead>
-                    <TableHead className="text-right">Gaji Pokok</TableHead>
-                    <TableHead className="text-right">Total Gaji</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rekapPg.paged.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center text-muted-foreground py-6">
-                        Belum ada data rekap gaji
-                      </TableCell>
-                    </TableRow>
-                  )}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/40">
+                    <th className="text-left p-3 font-semibold text-xs">
+                      Nama
+                    </th>
+                    <th className="text-left p-3 font-semibold text-xs">
+                      Posisi
+                    </th>
+                    <th className="text-center p-3 font-semibold text-xs">
+                      Hadir
+                    </th>
+                    <th className="text-center p-3 font-semibold text-xs">
+                      Terlambat
+                    </th>
+                    <th className="text-right p-3 font-semibold text-xs">
+                      Tunjangan
+                    </th>
+                    <th className="text-right p-3 font-semibold text-xs">
+                      Bonus
+                    </th>
+                    <th className="text-right p-3 font-semibold text-xs">
+                      Total Gaji
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
                   {rekapPg.paged.map((r) => (
-                    <TableRow key={r.k.id}>
-                      <TableCell className="whitespace-nowrap font-semibold">{r.k.nama}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{r.k.posisi}</TableCell>
-                      <TableCell className="text-right font-semibold text-success">{r.hadir} hari</TableCell>
-                      <TableCell className={`text-right font-semibold ${r.terlambatCount > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {r.terlambatCount}x
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate" title={r.terlambatDates}>
-                        {r.terlambatDates || "-"}
-                      </TableCell>
-                      <TableCell className="text-right">{r.overtimeHours} jam</TableCell>
-                      <TableCell className="text-right text-success">+{rupiah(r.tunjanganTotal)}</TableCell>
-                      <TableCell className="text-right text-success">+{rupiah(r.totalBonus)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{rupiah(r.k.gajiPokok)}/hr</TableCell>
-                      <TableCell className="text-right font-bold text-primary">{rupiah(r.totalGaji)}</TableCell>
-                    </TableRow>
+                    <tr
+                      key={r.k.id}
+                      className="border-t hover:bg-muted/20 transition-colors"
+                    >
+                      <td className="p-3 font-medium">{r.k.nama}</td>
+                      <td className="p-3 text-muted-foreground">
+                        {r.k.posisi}
+                      </td>
+                      <td className="p-3 text-center">
+                        <Badge
+                          variant="outline"
+                          className="bg-success/10 text-success border-success/20"
+                        >
+                          {r.hadir}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-center">
+                        {r.terlambatCount > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-500/10 text-amber-600 border-amber-500/20"
+                          >
+                            {r.terlambatCount}x
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right font-medium">
+                        {rupiah(r.tunjanganTotal)}
+                      </td>
+                      <td className="p-3 text-right font-medium">
+                        {rupiah(r.totalBonus)}
+                      </td>
+                      <td className="p-3 text-right font-bold text-primary">
+                        {rupiah(r.totalGaji)}
+                      </td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           </div>
-          <TablePagination 
-            page={rekapPg.page} 
-            totalPages={rekapPg.totalPages} 
-            total={rekapPg.total} 
-            pageSize={rekapPg.pageSize} 
-            onChange={rekapPg.setPage} 
-          />
-          <div className="flex justify-end mt-4 pt-4 border-t">
-            <Button 
-              onClick={() => navigate("/slip-gaji")} 
-              className="gradient-primary text-primary-foreground hover-lift w-full sm:w-auto"
-            >
-              <FileText className="mr-2 h-4 w-4" /> Cetak Slip Gaji
-            </Button>
+          <div className="mt-3 flex justify-center">
+            <TablePagination
+              page={rekapPg.page}
+              totalPages={rekapPg.totalPages}
+              total={rekapPg.total}
+              pageSize={rekapPg.pageSize}
+              onChange={rekapPg.setPage}
+            />
           </div>
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function AbsensiTable({ filtered, karyawan, outlets, isAdmin, onEdit }: any) {
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 10);
-  return (
-    <div className="rounded-2xl border overflow-hidden max-w-full">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tgl</TableHead>
-              <TableHead>Karyawan</TableHead>
-              <TableHead>Outlet</TableHead>
-              <TableHead>Masuk</TableHead>
-              <TableHead>Pulang</TableHead>
-              <TableHead className="text-right">Bonus</TableHead>
-              <TableHead className="text-right">Tunjangan</TableHead>
-              <TableHead className="text-right">Lembur</TableHead>
-              <TableHead>Catatan</TableHead>
-              <TableHead className="w-[90px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 && (
-              <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Belum ada absensi</TableCell></TableRow>
-            )}
-            {paged.map((a: any) => {
-              const k = karyawan.find((x: any) => x.id === a.karyawanId);
-              const o = outlets.find((x: any) => x.id === k?.outletId);
-              const isLate = a.jamMasuk && a.jamMasuk > "07:00";
-              return (
-                <TableRow key={a.id}>
-                  <TableCell className="whitespace-nowrap">{a.tanggal}</TableCell>
-                  <TableCell className="whitespace-nowrap font-medium">{k?.nama ?? "-"}</TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground text-xs">{o?.nama ?? "-"}</TableCell>
-                  <TableCell className={isLate ? "text-destructive font-semibold" : ""}>
-                    {a.jamMasuk ?? "-"}
-                    {isLate && <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">Telat</Badge>}
-                  </TableCell>
-                  <TableCell>{a.jamPulang ?? "-"}</TableCell>
-                  <TableCell className="text-right text-success">+{rupiah(a.bonus ?? 0)}</TableCell>
-                  <TableCell className="text-right text-success">+{rupiah(a.tunjangan ?? 0)}</TableCell>
-                  <TableCell className="text-right font-medium">{a.overtime ?? 0} jam</TableCell>
-                  <TableCell className="max-w-[150px] truncate text-xs text-muted-foreground" title={a.catatan}>{a.catatan || "-"}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      {isAdmin && (
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => onEdit?.(a)}>
-                          <Pencil className="h-4 w-4 text-primary" />
-                        </Button>
-                      )}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => db.deleteAbsensi(a.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-      <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
-    </div>
-  );
-}
-
-function EditAbsensiDialog({ record, onClose, karyawan }: any) {
-  const { absensi = [] } = useDB();
-  const [tanggal, setTanggal] = useState("");
-  const [karyawanId, setKaryawanId] = useState("");
-  const [jamMasuk, setJamMasuk] = useState("");
-  const [jamPulang, setJamPulang] = useState("");
-  const [status, setStatus] = useState<StatusAbsen>("Hadir");
-  const [bonus, setBonus] = useState(0);
-  const [tunjangan, setTunjangan] = useState(0);
-  const [overtime, setOvertime] = useState(0);
-  const [catatan, setCatatan] = useState("");
-
-  // Isi form dari record yang sedang diedit
-  useEffect(() => {
-    if (record) {
-      setTanggal(record.tanggal || "");
-      setKaryawanId(record.karyawanId || "");
-      setJamMasuk(record.jamMasuk || "");
-      setJamPulang(record.jamPulang || "");
-      setStatus(record.status || "Hadir");
-      setBonus(record.bonus ?? 0);
-      setTunjangan(record.tunjangan ?? 0);
-      setOvertime(record.overtime ?? 0);
-      setCatatan(record.catatan || "");
-    }
-  }, [record]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!record) return;
-    if (!karyawanId) return toast.error("Pilih karyawan");
-    // Cegah duplikat (tanggal, karyawan_id): jangan izinkan menyimpan jika record lain
-    // sudah ada utk kombinasi yg sama (anti double-input, konsisten dgn addAbsensi).
-    const clash = absensi.find(
-      (a: any) => a.tanggal === tanggal && a.karyawanId === karyawanId && a.id !== record.id
-    );
-    if (clash) {
-      return toast.error("Data absensi utk karyawan & tanggal tsb sudah ada (duplikat ditolak)");
-    }
-    await db.updateAbsensi(record.id, {
-      tanggal,
-      karyawanId,
-      jamMasuk: status === "Hadir" ? jamMasuk || null : null,
-      jamPulang: status === "Hadir" ? jamPulang || null : null,
-      status,
-      bonus,
-      tunjangan,
-      overtime,
-      catatan: catatan || null
-    });
-    toast.success("Data absensi diperbarui");
-    onClose();
-  };
-
-  return (
-    <Dialog open={!!record} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-primary" />
-            Edit Data Absensi
-          </DialogTitle>
-          <DialogDescription>Perbaiki data kehadiran karyawan</DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSave} className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Tanggal</Label>
-            <DateInput value={tanggal} onChange={setTanggal} />
-          </div>
-          <div className="space-y-2">
-            <Label>Karyawan</Label>
-            <Select value={karyawanId || ""} onValueChange={setKaryawanId}>
-              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-              <SelectContent>
-                {karyawan.map((k: any) => (
-                  <SelectItem key={k.id} value={k.id}>{k.nama} ({k.posisi})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as StatusAbsen)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Jam Masuk</Label>
-            <Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} disabled={status !== "Hadir"} />
-          </div>
-          <div className="space-y-2">
-            <Label>Jam Pulang</Label>
-            <Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} disabled={status !== "Hadir"} />
-          </div>
-          <div className="space-y-2">
-            <Label>Bonus (Rp)</Label>
-            <Input type="number" min={0} value={bonus || ""} onChange={(e) => setBonus(Number(e.target.value))} placeholder="0" />
-          </div>
-          <div className="space-y-2">
-            <Label>Tunjangan (Rp)</Label>
-            <Input type="number" min={0} value={tunjangan || ""} onChange={(e) => setTunjangan(Number(e.target.value))} placeholder="0" />
-          </div>
-          <div className="space-y-2">
-            <Label>Overtime (Jam)</Label>
-            <Input type="number" min={0} value={overtime || ""} onChange={(e) => setOvertime(Number(e.target.value))} placeholder="0" />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Catatan</Label>
-            <Input value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Catatan (opsional)" />
-          </div>
-          <DialogFooter className="md:col-span-2">
-            <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
-            <Button type="submit" className="gradient-primary text-primary-foreground hover-lift">
-              <Check className="mr-1 h-4 w-4" />Simpan Perubahan
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

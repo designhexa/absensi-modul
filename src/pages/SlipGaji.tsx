@@ -14,16 +14,9 @@ export default function SlipGaji() {
   const isAdmin = user?.role === "admin";
   const { karyawan, absensi, outlets } = useDB();
 
-  // Filter employees based on role — karyawan non-outlet (TL, produksi, gudang)
-  // hanya melihat slip gajinya sendiri (k-tl / k-produksi / k-gudang)
   const visibleKaryawan = useMemo(
     () => {
       if (isAdmin) return karyawan;
-      const ownId =
-        user?.role === "produksi" ? "k-produksi" :
-        user?.role === "gudang" ? "k-gudang" :
-        user?.role === "tl" ? "k-tl" : undefined;
-      if (ownId) return karyawan.filter((k) => k.id === ownId);
       return karyawan.filter((k) => k.outletId === user?.outletId);
     },
     [karyawan, isAdmin, user]
