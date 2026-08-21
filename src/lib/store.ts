@@ -247,8 +247,8 @@ export const db = {
       .maybeSingle();
     if (employeeUpdateError) throw employeeUpdateError;
 
-    if (updatedEmployee?.[0]) {
-      const nextEmployee = updatedEmployee[0];
+    if (updatedEmployee) {
+      const nextEmployee = updatedEmployee;
       state = {
         ...state,
         karyawan: state.karyawan.map((employee) =>

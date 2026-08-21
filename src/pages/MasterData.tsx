@@ -239,7 +239,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   const [username, setUsername] = useState("");
   const [ume, setUme] = useState(false);
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("karyawan");
+  const [role, setRole] = useState("operational");
   const [posisi, setPosisi] = useState("Kasir");
   const [outletId, setOutletId] = useState(outlets[0]?.id ?? "none");
   const [gajiPokok, setGajiPokok] = useState(17500);
@@ -260,7 +260,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   }, [nama, ume, users]);
 
   const rf = () => {
-    setNama(""); setUsername(""); setUme(false); setPassword(""); setRole("karyawan");
+    setNama(""); setUsername(""); setUme(false); setPassword(""); setRole("operational");
     setPosisi("Kasir"); setOutletId(outlets[0]?.id ?? "none"); setGajiPokok(17500);
     setBonusOmset(0); setBonusUlasan(0); setBonusOH(0); setTunjanganHarian(0);
     setOvertimeRate(0); setJamMasuk("07:30"); setJamPulang("15:00");
@@ -297,7 +297,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
                 <div><Label>Password *</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
               </div>
             </div>
-            <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
             <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
             <div><Label>Departemen</Label><Select value={outletId} onValueChange={(v) => { setOutletId(v); const p = v === "none"; setJamMasuk(p ? "07:30" : "07:00"); setJamPulang(p ? "15:00" : "14:00"); }}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Kantor Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji Pokok/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
@@ -384,7 +384,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
                 <div><Label className="text-[11px]">{has ? "Password Baru" : "Password"}</Label><Input type="text" value={has ? np : password} onChange={(e) => { if (has) setNp(e.target.value); }} placeholder={has ? "Kosongkan jika tetap" : ""} className="text-xs" required={!has} /></div>
               </div>
             </div>
-            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
             <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
             <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
@@ -404,7 +404,7 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(userAccount.nama);
   const [password, setPassword] = useState(userAccount.password);
-  const [role, setRole] = useState(userAccount.role);
+  const [role, setRole] = useState(userAccount.role === "karyawan" ? "operational" : userAccount.role);
   const [outletId, setOutletId] = useState(userAccount.outletId ?? "none");
 
   return (
@@ -417,8 +417,8 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
             <div><Label>Username</Label><Input value={userAccount.username} disabled /></div>
             <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div><Label>Password</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="karyawan">Karyawan</SelectItem></SelectContent></Select></div>
-            {role === "karyawan" && <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem></SelectContent></Select></div>
+            {role !== "admin" && <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
             <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>
