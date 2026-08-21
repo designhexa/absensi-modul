@@ -261,6 +261,8 @@ export const db = {
       const userMapped: any = {};
       if (k.nama !== undefined) userMapped.nama = k.nama;
       if (k.role !== undefined) userMapped.role = k.role;
+      if (k.outletId !== undefined)
+        userMapped.departemen_id = k.outletId ?? null;
       if (k.username !== undefined) userMapped.username = k.username;
       if (password !== undefined) userMapped.password = password;
       if (Object.keys(userMapped).length > 0) {
