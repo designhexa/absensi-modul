@@ -245,11 +245,40 @@ export const db = {
     if (k.overtimeRate !== undefined) mapped.overtime_rate = k.overtimeRate;
     if (k.jamMasuk !== undefined) mapped.jam_masuk = k.jamMasuk;
     if (k.jamPulang !== undefined) mapped.jam_pulang = k.jamPulang;
-    const { error: employeeUpdateError } = await supabase
+    const { data: updatedEmployee, error: employeeUpdateError } = await supabase
       .from("karyawan")
       .update(mapped)
-      .eq("id", id);
+      .eq("id", id)
+      .select()
+      .maybeSingle();
     if (employeeUpdateError) throw employeeUpdateError;
+
+    if (updatedEmployee?.[0]) {
+      const nextEmployee = updatedEmployee[0];
+      state = {
+        ...state,
+        karyawan: state.karyawan.map((employee) =>
+          employee.id === id
+            ? {
+                ...employee,
+                nama: nextEmployee.nama,
+                posisi: nextEmployee.posisi,
+                role: nextEmployee.role,
+                outletId: nextEmployee.departemen_id,
+                gajiPokok: Number(nextEmployee.gaji_pokok),
+                bonusOmset: Number(nextEmployee.bonus_omset),
+                bonusUlasan: Number(nextEmployee.bonus_ulasan),
+                bonusOH: Number(nextEmployee.bonus_oh ?? 0),
+                tunjanganHarian: Number(nextEmployee.tunjangan_harian ?? 0),
+                overtimeRate: Number(nextEmployee.overtime_rate ?? 0),
+                jamMasuk: nextEmployee.jam_masuk || undefined,
+                jamPulang: nextEmployee.jam_pulang || undefined,
+              }
+            : employee
+        ),
+      };
+      notify();
+    }
 
     // Check if linked user account exists, then update or create
     const { data: linkedUser } = await supabase
