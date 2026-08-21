@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { supabase } from "./supabaseClient";
+import { isSupabaseConfigured, supabase } from "./supabaseClient";
 import { Outlet, Karyawan, Absensi, UserAccount } from "./types";
 import { SEED_OUTLETS, SEED_KARYAWAN, SEED_USERS } from "./seed";
 
@@ -56,6 +56,13 @@ async function safeFetch(table: string) {
 
 // Fetch all tables from Supabase and update state cache.
 export async function fetchFromSupabase() {
+  if (!isSupabaseConfigured) {
+    console.warn(
+      "Supabase belum dikonfigurasi. Gunakan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY pada environment hosting."
+    );
+    return;
+  }
+
   const [departemenRes, karyawanRes, absensiRes, usersRes] = await Promise.all([
     safeFetch("departemen"),
     safeFetch("karyawan"),
