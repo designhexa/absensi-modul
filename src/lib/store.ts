@@ -54,6 +54,10 @@ async function safeFetch(table: string) {
   }
 }
 
+function hasData<T>(result: { data: T[] | null }) {
+  return Array.isArray(result.data);
+}
+
 // Fetch all tables from Supabase and update state cache.
 export async function fetchFromSupabase() {
   if (!isSupabaseConfigured) {
@@ -71,8 +75,11 @@ export async function fetchFromSupabase() {
   ]);
 
   state = {
-    outlets: departemenRes.data || [],
-    karyawan: (karyawanRes.data || []).map((k: any) => {
+    outlets: hasData(departemenRes)
+      ? departemenRes.data!
+      : state.outlets,
+    karyawan: hasData(karyawanRes)
+      ? karyawanRes.data!.map((k: any) => {
       const linkedUser = (usersRes.data || []).find(
         (u: any) => u.karyawan_id === k.id
       );
@@ -95,8 +102,10 @@ export async function fetchFromSupabase() {
         username: linkedUser?.username || undefined,
         password: linkedUser?.password || undefined,
       };
-    }),
-    absensi: (absensiRes.data || []).map((a: any) => ({
+    })
+      : state.karyawan,
+    absensi: hasData(absensiRes)
+      ? absensiRes.data!.map((a: any) => ({
       id: a.id,
       tanggal: a.tanggal,
       karyawanId: a.karyawan_id,
@@ -107,15 +116,18 @@ export async function fetchFromSupabase() {
       bonus: a.bonus ? Number(a.bonus) : 0,
       tunjangan: a.tunjangan ? Number(a.tunjangan) : 0,
       overtime: a.overtime ? Number(a.overtime) : 0,
-    })),
-    users: (usersRes.data || []).map((u: any) => ({
+    }))
+      : state.absensi,
+    users: hasData(usersRes)
+      ? usersRes.data!.map((u: any) => ({
       username: u.username,
       password: u.password,
       nama: u.nama,
       role: u.role,
       outletId: u.departemen_id,
       karyawanId: u.karyawan_id,
-    })),
+    }))
+      : state.users,
   };
   notify();
 }
@@ -138,16 +150,27 @@ export const db = {
   // =========================================================================
   async addOutlet(o: Omit<Outlet, "id">) {
     const id = uid();
-    await supabase.from("departemen").insert([{ ...o, id }]);
-    fetchFromSupabase();
+    const { error } = await supabase
+      .from("departemen")
+      .insert([{ ...o, id }]);
+    if (error) throw error;
+    await fetchFromSupabase();
   },
   async updateOutlet(id: string, o: Partial<Outlet>) {
-    await supabase.from("departemen").update(o).eq("id", id);
-    fetchFromSupabase();
+    const { error } = await supabase
+      .from("departemen")
+      .update(o)
+      .eq("id", id);
+    if (error) throw error;
+    await fetchFromSupabase();
   },
   async deleteOutlet(id: string) {
-    await supabase.from("departemen").delete().eq("id", id);
-    fetchFromSupabase();
+    const { error } = await supabase
+      .from("departemen")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    await fetchFromSupabase();
   },
 
   // =========================================================================
@@ -387,7 +410,7 @@ export const db = {
   // USERS
   // =========================================================================
   async addUser(u: UserAccount) {
-    await supabase.from("users").insert([
+    const { error } = await supabase.from("users").insert([
       {
         username: u.username,
         password: u.password,
@@ -397,7 +420,8 @@ export const db = {
           u.outletId === "none" || !u.outletId ? null : u.outletId,
       },
     ]);
-    fetchFromSupabase();
+    if (error) throw error;
+    await fetchFromSupabase();
   },
   async updateUser(username: string, u: Partial<UserAccount>) {
     const mapped: any = {};
@@ -407,12 +431,20 @@ export const db = {
     if (u.outletId !== undefined)
       mapped.departemen_id =
         u.outletId === "none" || !u.outletId ? null : u.outletId;
-    await supabase.from("users").update(mapped).eq("username", username);
-    fetchFromSupabase();
+    const { error } = await supabase
+      .from("users")
+      .update(mapped)
+      .eq("username", username);
+    if (error) throw error;
+    await fetchFromSupabase();
   },
   async deleteUser(username: string) {
-    await supabase.from("users").delete().eq("username", username);
-    fetchFromSupabase();
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("username", username);
+    if (error) throw error;
+    await fetchFromSupabase();
   },
 
   async reset() {

@@ -11,9 +11,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ConfirmDeleteButtonProps {
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title?: string;
   description?: string;
   confirmLabel?: string;
@@ -45,7 +46,16 @@ export default function ConfirmDeleteButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction
+            onClick={async () => {
+              try {
+                await onConfirm();
+              } catch (err: any) {
+                toast.error(err?.message || "Gagal menghapus data");
+              }
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>

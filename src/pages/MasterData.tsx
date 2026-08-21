@@ -84,13 +84,17 @@ export default function MasterData() {
               <Card className="border shadow-sm">
                 <CardContent className="p-4 space-y-3">
                   <h3 className="text-sm font-bold">Tambah Departemen</h3>
-                  <form onSubmit={(e) => {
+                  <form onSubmit={async (e) => {
                     e.preventDefault();
                     if (!oN) return toast.error("Nama departemen diperlukan");
                     const lc = oLt && oLn ? `${oL} @ ${oLt},${oLn},${oR || 100}` : oL || "-";
-                    db.addOutlet({ nama: oN, lokasi: lc });
-                    setON(""); setOL(""); setOLt(""); setOLn(""); setOR("100");
-                    toast.success("Departemen ditambahkan");
+                    try {
+                      await db.addOutlet({ nama: oN, lokasi: lc });
+                      setON(""); setOL(""); setOLt(""); setOLn(""); setOR("100");
+                      toast.success("Departemen ditambahkan");
+                    } catch (err: any) {
+                      toast.error(err?.message || "Departemen gagal ditambahkan");
+                    }
                   }} className="space-y-2">
                     <Input value={oN} onChange={(e) => setON(e.target.value)} placeholder="Nama Departemen" />
                     <Input value={oL} onChange={(e) => setOL(e.target.value)} placeholder="Alamat" />
@@ -328,7 +332,7 @@ function EditOutletDialog({ outlet }: { outlet: any }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Departemen</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); const lc = lat && lng ? `${alamat} @ ${lat},${lng},${rad || 100}` : alamat || "-"; db.updateOutlet(outlet.id, { nama, lokasi: lc }); toast.success("Departemen diperbarui"); setOpen(false); }} className="space-y-3">
+          <form onSubmit={async (e) => { e.preventDefault(); const lc = lat && lng ? `${alamat} @ ${lat},${lng},${rad || 100}` : alamat || "-"; try { await db.updateOutlet(outlet.id, { nama, lokasi: lc }); toast.success("Departemen diperbarui"); setOpen(false); } catch (err: any) { toast.error(err?.message || "Departemen gagal diperbarui"); } }} className="space-y-3">
             <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div><Label>Alamat</Label><Input value={alamat} onChange={(e) => setAlamat(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-2"><div><Label>Latitude</Label><Input value={lat} onChange={(e) => setLat(e.target.value)} /></div><div><Label>Longitude</Label><Input value={lng} onChange={(e) => setLng(e.target.value)} /></div></div>
