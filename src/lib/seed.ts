@@ -1,25 +1,19 @@
 import { Outlet, UserAccount, Karyawan } from "./types";
 
-const OUTLET_NAMES = [
-  "Gunung Gangsir",
-  "Randu Pitu",
-  "Kuti",
-  "Sidohwayah",
-  "Gempeng",
-  "Kesambi",
-  "Permata",
-  "MCA",
-  "Sugihwaras",
-  "Sidokare",
-  "Kenongo",
-  "Kepadangan",
-  "Pagerwojo",
+const DEPARTMENT_NAMES = [
+  "management",
+  "design",
+  "marketing",
+  "development",
+  "operational",
+  "finance",
+  "logistic",
 ];
 
 const slug = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export const SEED_OUTLETS: Outlet[] = OUTLET_NAMES.map((name) => ({
+export const SEED_OUTLETS: Outlet[] = DEPARTMENT_NAMES.map((name) => ({
   id: `o-${slug(name)}`,
   nama: name,
   lokasi: "-",
@@ -31,7 +25,7 @@ export const SEED_USERS: UserAccount[] = [
   ...SEED_OUTLETS.map((o, i) => ({
     username: `pegawai${i + 1}`,
     password: "pegawai123",
-    nama: o.nama,
+    nama: `Pegawai ${o.nama}`,
     role: (i % 4 === 0 ? "operational" : i % 4 === 1 ? "development" : i % 4 === 2 ? "management" : "marketing") as const,
     outletId: o.id,
     karyawanId: `k-${o.id}-1`,
@@ -41,9 +35,9 @@ export const SEED_USERS: UserAccount[] = [
 export const SEED_KARYAWAN: Karyawan[] = [
   ...SEED_OUTLETS.map((o, i) => ({
     id: `k-${o.id}-1`,
-    nama: `Staff ${o.nama} A`,
-    posisi: "Kasir",
-    role: i % 4 === 0 ? "operational" : i % 4 === 1 ? "development" : i % 4 === 2 ? "management" : "marketing",
+    nama: `Pegawai ${o.nama}`,
+    posisi: o.nama,
+    role: o.nama as Karyawan["role"],
     outletId: o.id,
     gajiPokok: 17500,
     bonusOmset: 0,
