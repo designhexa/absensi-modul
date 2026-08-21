@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { UserAccount } from "./types";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
+import { SEED_USERS } from "./seed";
 
 const KEY = "absensi-auth-v1";
 
@@ -55,7 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    if (!isSupabaseConfigured) return false;
+    if (!isSupabaseConfigured) {
+      const localUser = SEED_USERS.find(
+        (candidate) =>
+          candidate.username === username.toLowerCase() &&
+          candidate.password === password
+      );
+      if (localUser) setUser(localUser);
+      return Boolean(localUser);
+    }
     try {
       const { data, error } = await supabase
         .from("users")
