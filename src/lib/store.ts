@@ -124,15 +124,7 @@ export async function fetchFromSupabase() {
 fetchFromSupabase();
 
 if (isSupabaseConfigured) {
-  // Setup Supabase Real-time listener for database sync.
-  supabase
-    .channel("db-realtime-channel")
-    .on("postgres_changes", { event: "*", schema: "public" }, () => {
-      fetchFromSupabase();
-    })
-    .subscribe();
-
-  // Periodic polling fallback (every 30s) in case Realtime connection drops.
+  // Polling keeps the browser client independent from Realtime/WebSocket access.
   setInterval(() => {
     fetchFromSupabase();
   }, 30_000);
