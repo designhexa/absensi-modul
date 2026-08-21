@@ -350,7 +350,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(karyawan.nama);
   const [posisi, setPosisi] = useState(karyawan.posisi);
-  const [role, setRole] = useState(karyawan.role === "karyawan" ? "operational" : karyawan.role || "operational");
+  const [role, setRole] = useState(karyawan.role || "operational");
   const [username, setUsername] = useState(karyawan.username || "");
   const [password, setPassword] = useState("");
   const [np, setNp] = useState("");
@@ -388,7 +388,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
                 <div><Label className="text-[11px]">{has ? "Password Baru" : "Password"}</Label><Input type="text" value={has ? np : password} onChange={(e) => { if (has) setNp(e.target.value); }} placeholder={has ? "Kosongkan jika tetap" : ""} className="text-xs" required={!has} /></div>
               </div>
             </div>
-            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="design">Design</SelectItem><SelectItem value="finance">Finance</SelectItem><SelectItem value="logistic">Logistic</SelectItem><SelectItem value="karyawan">Karyawan (legacy)</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
             <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
             <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
