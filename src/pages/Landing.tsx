@@ -8,12 +8,12 @@ import { UserCheck, Users, Settings, Smartphone, LogIn, ArrowRight } from "lucid
 const features = [
   { icon: UserCheck, title: "Absensi GPS", desc: "Karyawan bisa absen masuk & pulang langsung dari HP dengan verifikasi lokasi GPS." },
   { icon: Users, title: "Data Karyawan", desc: "Kelola data karyawan, posisi, gaji, dan jam kerja dalam satu tempat." },
-  { icon: Settings, title: "Master Data", desc: "Atur lokasi outlet, koordinat GPS, dan pengaturan sistem absensi." },
+  { icon: Settings, title: "Master Data", desc: "Atur departemen, koordinat GPS, dan pengaturan sistem absensi." },
   { icon: Smartphone, title: "Mobile Ready", desc: "Tampilan responsif yang nyaman digunakan di HP maupun desktop." },
 ];
 
 const stats = [
-  { k: "13", v: "Lokasi outlet" },
+  { k: "13", v: "Departemen" },
   { k: "GPS", v: "Verifikasi lokasi" },
   { k: "100%", v: "Mobile ready" },
 ];

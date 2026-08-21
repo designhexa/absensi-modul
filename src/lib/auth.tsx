@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password: u.password,
             nama: u.nama,
             role: u.role,
-            outletId: u.outlet_id,
+            outletId: u.departemen_id,
             karyawanId: u.karyawan_id,
           }));
           setUsers(mapped);
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: data.password,
           nama: data.nama,
           role: data.role,
-          outletId: data.outlet_id,
+          outletId: data.departemen_id,
           karyawanId: data.karyawan_id,
         };
         setUser(mappedUser);

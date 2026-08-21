@@ -56,15 +56,15 @@ async function safeFetch(table: string) {
 
 // Fetch all tables from Supabase and update state cache.
 export async function fetchFromSupabase() {
-  const [outletsRes, karyawanRes, absensiRes, usersRes] = await Promise.all([
-    safeFetch("outlets"),
+  const [departemenRes, karyawanRes, absensiRes, usersRes] = await Promise.all([
+    safeFetch("departemen"),
     safeFetch("karyawan"),
     safeFetch("absensi"),
     safeFetch("users"),
   ]);
 
   state = {
-    outlets: outletsRes.data || [],
+    outlets: departemenRes.data || [],
     karyawan: (karyawanRes.data || []).map((k: any) => {
       const linkedUser = (usersRes.data || []).find(
         (u: any) => u.karyawan_id === k.id
@@ -74,7 +74,7 @@ export async function fetchFromSupabase() {
         nama: k.nama,
         posisi: k.posisi,
         role: k.role || linkedUser?.role || "operational",
-        outletId: k.outlet_id,
+        outletId: k.departemen_id,
         gajiPokok: Number(k.gaji_pokok),
         bonusOmset: Number(k.bonus_omset),
         bonusUlasan: Number(k.bonus_ulasan),
@@ -106,7 +106,7 @@ export async function fetchFromSupabase() {
       password: u.password,
       nama: u.nama,
       role: u.role,
-      outletId: u.outlet_id,
+      outletId: u.departemen_id,
       karyawanId: u.karyawan_id,
     })),
   };
@@ -137,15 +137,15 @@ export const db = {
   // =========================================================================
   async addOutlet(o: Omit<Outlet, "id">) {
     const id = uid();
-    await supabase.from("outlets").insert([{ ...o, id }]);
+    await supabase.from("departemen").insert([{ ...o, id }]);
     fetchFromSupabase();
   },
   async updateOutlet(id: string, o: Partial<Outlet>) {
-    await supabase.from("outlets").update(o).eq("id", id);
+    await supabase.from("departemen").update(o).eq("id", id);
     fetchFromSupabase();
   },
   async deleteOutlet(id: string) {
-    await supabase.from("outlets").delete().eq("id", id);
+    await supabase.from("departemen").delete().eq("id", id);
     fetchFromSupabase();
   },
 
@@ -175,7 +175,7 @@ export const db = {
         nama: k.nama,
         posisi: k.posisi,
         role,
-        outlet_id: k.outletId,
+        departemen_id: k.outletId,
         gaji_pokok: k.gajiPokok,
         bonus_omset: k.bonusOmset,
         bonus_ulasan: k.bonusUlasan,
@@ -195,7 +195,7 @@ export const db = {
         password: userAccount.password,
         nama: k.nama,
         role,
-        outlet_id: k.outletId ?? null,
+        departemen_id: k.outletId ?? null,
         karyawan_id: id,
       },
     ]);
@@ -228,7 +228,7 @@ export const db = {
     if (k.nama !== undefined) mapped.nama = k.nama;
     if (k.posisi !== undefined) mapped.posisi = k.posisi;
     if (k.role !== undefined) mapped.role = k.role;
-    if (k.outletId !== undefined) mapped.outlet_id = k.outletId;
+    if (k.outletId !== undefined) mapped.departemen_id = k.outletId;
     if (k.gajiPokok !== undefined) mapped.gaji_pokok = k.gajiPokok;
     if (k.bonusOmset !== undefined) mapped.bonus_omset = k.bonusOmset;
     if (k.bonusUlasan !== undefined) mapped.bonus_ulasan = k.bonusUlasan;
@@ -269,7 +269,7 @@ export const db = {
           password,
           nama: k.nama || "",
           role: k.role || "operational",
-          outlet_id: k.outletId ?? null,
+          departemen_id: k.outletId ?? null,
           karyawan_id: id,
         },
       ]);
@@ -356,7 +356,7 @@ export const db = {
         password: u.password,
         nama: u.nama,
         role: u.role,
-        outlet_id:
+        departemen_id:
           u.outletId === "none" || !u.outletId ? null : u.outletId,
       },
     ]);
@@ -368,7 +368,7 @@ export const db = {
     if (u.nama !== undefined) mapped.nama = u.nama;
     if (u.role !== undefined) mapped.role = u.role;
     if (u.outletId !== undefined)
-      mapped.outlet_id =
+      mapped.departemen_id =
         u.outletId === "none" || !u.outletId ? null : u.outletId;
     await supabase.from("users").update(mapped).eq("username", username);
     fetchFromSupabase();
@@ -384,11 +384,11 @@ export const db = {
         supabase.from("absensi").delete().neq("id", ""),
         supabase.from("karyawan").delete().neq("id", ""),
         supabase.from("users").delete().neq("username", ""),
-        supabase.from("outlets").delete().neq("id", ""),
+        supabase.from("departemen").delete().neq("id", ""),
       ]);
 
       // re-seed
-      await supabase.from("outlets").insert(SEED_OUTLETS);
+      await supabase.from("departemen").insert(SEED_OUTLETS);
 
       const seedUsers = [
         {
@@ -396,7 +396,7 @@ export const db = {
           password: "admin123",
           nama: "Administrator",
           role: "admin",
-          outlet_id: null,
+          departemen_id: null,
           karyawan_id: null,
         },
         {
@@ -404,7 +404,7 @@ export const db = {
           password: "Fazana@10",
           nama: "Super Admin",
           role: "admin",
-          outlet_id: null,
+          departemen_id: null,
           karyawan_id: null,
         },
         ...SEED_OUTLETS.map((o, i) => ({
@@ -412,7 +412,7 @@ export const db = {
           password: "pegawai123",
           nama: o.nama,
           role: "operational",
-          outlet_id: o.id,
+          departemen_id: o.id,
           karyawan_id: `k-${o.id}-1`,
         })),
       ];
@@ -423,7 +423,7 @@ export const db = {
         nama: k.nama,
         posisi: k.posisi,
         role: k.role || "karyawan",
-        outlet_id: k.outletId,
+        departemen_id: k.outletId,
         gaji_pokok: k.gajiPokok,
         bonus_omset: k.bonusOmset,
         bonus_ulasan: k.bonusUlasan,

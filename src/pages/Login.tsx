@@ -64,7 +64,7 @@ export default function Login() {
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin atau nama-outlet"
+                  placeholder="admin atau nama-departemen"
                   autoComplete="username"
                   required
                 />

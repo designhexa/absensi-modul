@@ -64,7 +64,7 @@ export default function MasterData() {
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-3xl font-bold text-gradient">Master Data</h1>
-          <p className="text-muted-foreground">Kelola outlet, karyawan, dan akun pengguna</p>
+          <p className="text-muted-foreground">Kelola departemen, karyawan, dan akun pengguna</p>
         </div>
         <Button variant="outline" onClick={() => { if (confirm("Reset semua data?")) { db.reset(); toast.success("Data direset"); } }}>
           <RotateCcw className="mr-2 h-4 w-4" />Reset
@@ -72,35 +72,35 @@ export default function MasterData() {
       </div>
 
       <Accordion type="single" collapsible className="space-y-2">
-        <AccordionItem value="outlet" className="rounded-xl border bg-card overflow-hidden">
+        <AccordionItem value="departemen" className="rounded-xl border bg-card overflow-hidden">
           <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center"><Store className="h-4 w-4 text-primary-foreground" /></div>
-              <div className="text-left"><div className="font-semibold text-sm">Outlet</div><div className="text-[11px] text-muted-foreground">{outlets.length} terdaftar</div></div>
+              <div className="text-left"><div className="font-semibold text-sm">Departemen</div><div className="text-[11px] text-muted-foreground">{outlets.length} terdaftar</div></div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="grid gap-4">
               <Card className="border shadow-sm">
                 <CardContent className="p-4 space-y-3">
-                  <h3 className="text-sm font-bold">Tambah Outlet</h3>
+                  <h3 className="text-sm font-bold">Tambah Departemen</h3>
                   <form onSubmit={(e) => {
                     e.preventDefault();
-                    if (!oN) return toast.error("Nama outlet diperlukan");
+                    if (!oN) return toast.error("Nama departemen diperlukan");
                     const lc = oLt && oLn ? `${oL} @ ${oLt},${oLn},${oR || 100}` : oL || "-";
                     db.addOutlet({ nama: oN, lokasi: lc });
                     setON(""); setOL(""); setOLt(""); setOLn(""); setOR("100");
-                    toast.success("Outlet ditambahkan");
+                    toast.success("Departemen ditambahkan");
                   }} className="space-y-2">
-                    <Input value={oN} onChange={(e) => setON(e.target.value)} placeholder="Nama Outlet" />
+                    <Input value={oN} onChange={(e) => setON(e.target.value)} placeholder="Nama Departemen" />
                     <Input value={oL} onChange={(e) => setOL(e.target.value)} placeholder="Alamat" />
                     <div className="grid grid-cols-2 gap-2">
                       <Input value={oLt} onChange={(e) => setOLt(e.target.value)} placeholder="Latitude GPS" />
                       <Input value={oLn} onChange={(e) => setOLn(e.target.value)} placeholder="Longitude GPS" />
                     </div>
                     <Input type="number" value={oR} onChange={(e) => setOR(e.target.value)} placeholder="Radius Absensi (M)" />
-                    <p className="text-[10px] text-muted-foreground">Lat &amp; Lng opsional — diisi untuk batasan absensi GPS outlet.</p>
-                    <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Outlet</Button>
+                    <p className="text-[10px] text-muted-foreground">Lat &amp; Lng opsional — diisi untuk batasan absensi GPS departemen.</p>
+                    <Button className="w-full h-9 text-xs gradient-primary text-primary-foreground"><Plus className="mr-1.5 h-3.5 w-3.5" />Tambah Departemen</Button>
                   </form>
                 </CardContent>
               </Card>
@@ -109,8 +109,8 @@ export default function MasterData() {
                   <div className="mb-3">
                     <div className="flex flex-col lg:flex-row lg:items-center gap-2">
                       <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
-                        <h3 className="text-sm font-bold px-1 shrink-0">Daftar Outlet</h3>
-                        <Input placeholder="Cari outlet..." value={os} onChange={(e) => { setOs(e.target.value); oPg.setPage(1); }} className="h-8 w-40 text-xs shrink-0" />
+                        <h3 className="text-sm font-bold px-1 shrink-0">Daftar Departemen</h3>
+                        <Input placeholder="Cari departemen..." value={os} onChange={(e) => { setOs(e.target.value); oPg.setPage(1); }} className="h-8 w-40 text-xs shrink-0" />
                       </div>
                       <div className="flex justify-center lg:justify-end shrink-0"><TablePagination page={oPg.page} totalPages={oPg.totalPages} total={oPg.total} pageSize={oPg.pageSize} onChange={oPg.setPage} /></div>
                     </div>
@@ -124,7 +124,7 @@ export default function MasterData() {
                             <span className="font-semibold">{o.nama}</span>
                             <div className="flex gap-1">
                               <EditOutletDialog outlet={o} />
-                              <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteOutlet(o.id)} title="Hapus Outlet" description={`Outlet ${o.nama} akan dihapus permanen.`} />
+                              <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteOutlet(o.id)} title="Hapus Departemen" description={`Departemen ${o.nama} akan dihapus permanen.`} />
                             </div>
                           </div>
                           <div className="text-xs text-muted-foreground">{p.alamat || "-"}</div>
@@ -136,7 +136,7 @@ export default function MasterData() {
                         </div>
                       );
                     })}
-                    {oPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada outlet</div>}
+                    {oPg.paged.length === 0 && <div className="text-center text-muted-foreground py-6 text-sm">Belum ada departemen</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -299,7 +299,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
             </div>
             <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
             <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
-            <div><Label>Outlet</Label><Select value={outletId} onValueChange={(v) => { setOutletId(v); const p = v === "none"; setJamMasuk(p ? "07:30" : "07:00"); setJamPulang(p ? "15:00" : "14:00"); }}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Kantor Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Departemen</Label><Select value={outletId} onValueChange={(v) => { setOutletId(v); const p = v === "none"; setJamMasuk(p ? "07:30" : "07:00"); setJamPulang(p ? "15:00" : "14:00"); }}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Kantor Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji Pokok/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
             <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
             <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
@@ -327,8 +327,8 @@ function EditOutletDialog({ outlet }: { outlet: any }) {
       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(true)}><Pencil className="h-3.5 w-3.5 text-primary" /></Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Outlet</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); const lc = lat && lng ? `${alamat} @ ${lat},${lng},${rad || 100}` : alamat || "-"; db.updateOutlet(outlet.id, { nama, lokasi: lc }); toast.success("Outlet diperbarui"); setOpen(false); }} className="space-y-3">
+          <DialogHeader><DialogTitle>Edit Departemen</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); const lc = lat && lng ? `${alamat} @ ${lat},${lng},${rad || 100}` : alamat || "-"; db.updateOutlet(outlet.id, { nama, lokasi: lc }); toast.success("Departemen diperbarui"); setOpen(false); }} className="space-y-3">
             <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div><Label>Alamat</Label><Input value={alamat} onChange={(e) => setAlamat(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-2"><div><Label>Latitude</Label><Input value={lat} onChange={(e) => setLat(e.target.value)} /></div><div><Label>Longitude</Label><Input value={lng} onChange={(e) => setLng(e.target.value)} /></div></div>
@@ -385,7 +385,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
             </div>
             <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="karyawan">Karyawan</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
             <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
-            <div><Label>Outlet</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
             <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
             <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
@@ -417,7 +417,7 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
             <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div><Label>Password</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
             <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="karyawan">Karyawan</SelectItem></SelectContent></Select></div>
-            {role === "karyawan" && <div><Label>Outlet</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
+            {role === "karyawan" && <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
             <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>
         </DialogContent>

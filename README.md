@@ -23,7 +23,9 @@ Sistem Absensi & Master Data Karyawan — GPS check-in/out untuk karyawan, admin
 Buka **SQL Editor** di Supabase Dashboard, lalu paste isi file:
 
 ```
-supabase/migrations/20260821000000_attendance_tables.sql
+supabase/migrations/20260821_init_absensi_schema.sql
+supabase/migrations/20260821_add_test_employees.sql
+supabase/migrations/20260821_rename_outlets_to_departemen.sql
 ```
 
 Klik **Run** untuk membuat tabel + seed data.
@@ -62,11 +64,11 @@ Buka `http://localhost:5173`
 
 ## Database Schema
 
-### Tabel `outlets`
+### Tabel `departemen`
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
-| id | text (PK) | ID outlet |
-| nama | text | Nama outlet |
+| id | text (PK) | ID departemen |
+| nama | text | Nama departemen |
 | lokasi | text | Alamat @ lat,lng,radius |
 
 ### Tabel `users`
@@ -75,8 +77,8 @@ Buka `http://localhost:5173`
 | username | text (PK) | Username login |
 | password | text | Password |
 | nama | text | Nama lengkap |
-| role | text | `admin` atau `karyawan` |
-| outlet_id | text (FK) | Outlet penugasan |
+| role | text | `admin`, `operational`, `development`, `management`, atau `marketing` |
+| departemen_id | text (FK) | Departemen penugasan |
 | karyawan_id | text (FK) | Link ke tabel karyawan |
 
 ### Tabel `karyawan`
@@ -86,7 +88,7 @@ Buka `http://localhost:5173`
 | nama | text | Nama karyawan |
 | posisi | text | Posisi/jabatan |
 | role | text | Role |
-| outlet_id | text (FK) | Outlet penugasan |
+| departemen_id | text (FK) | Departemen penugasan |
 | gaji_pokok | numeric | Gaji per hari |
 | bonus_omset | numeric | Bonus omset bulanan |
 | bonus_ulasan | numeric | Bonus ulasan bulanan |

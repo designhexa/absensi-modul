@@ -226,7 +226,7 @@ export default function Absensi() {
       !myOutlet.lokasi.includes("@")
     ) {
       toast.info(
-        "Koordinat GPS outlet belum diatur — absensi diterima tanpa verifikasi lokasi."
+        "Koordinat GPS departemen belum diatur — absensi diterima tanpa verifikasi lokasi."
       );
       return true;
     }
@@ -238,7 +238,7 @@ export default function Absensi() {
     const radius = parseFloat(radStr || "100");
 
     if (isNaN(targetLat) || isNaN(targetLng)) {
-      toast.error("Koordinat GPS outlet tidak valid.");
+      toast.error("Koordinat GPS departemen tidak valid.");
       return false;
     }
 
@@ -257,7 +257,7 @@ export default function Absensi() {
     );
     if (dist > radius) {
       toast.error(
-        `Gagal Absen! Anda berada di luar area outlet. Jarak: ${Math.round(dist)} meter (Maks: ${radius} meter).`
+        `Gagal Absen! Anda berada di luar area departemen. Jarak: ${Math.round(dist)} meter (Maks: ${radius} meter).`
       );
       return false;
     }
@@ -692,7 +692,7 @@ export default function Absensi() {
                     if (!gpsSet) {
                       return (
                         <p className="text-[10px] text-amber-600">
-                          GPS outlet belum diatur — absensi tanpa
+                          GPS departemen belum diatur — absensi tanpa
                           verifikasi lokasi
                         </p>
                       );
@@ -707,7 +707,7 @@ export default function Absensi() {
                       return (
                         <p className="text-[10px] text-muted-foreground">
                           Anda berada ±{Math.round(dist)} meter dari
-                          lokasi outlet
+                          lokasi departemen
                         </p>
                       );
                     }
