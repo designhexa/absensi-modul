@@ -4,6 +4,10 @@ begin;
 
 alter table public.karyawan add column if not exists bonus numeric not null default 0;
 
+-- Remove the legacy checks before writing the new role values.
+alter table public.karyawan drop constraint if exists karyawan_role_check;
+alter table public.users drop constraint if exists users_role_check;
+
 -- Preserve the old three bonus values as one total before dropping their columns.
 update public.karyawan
 set bonus = coalesce(bonus, 0)
@@ -27,9 +31,6 @@ set role = case
   when role = 'supervisi' then 'supervisi'
   else 'staff'
 end;
-
-alter table public.karyawan drop constraint if exists karyawan_role_check;
-alter table public.users drop constraint if exists users_role_check;
 
 alter table public.karyawan
   add constraint karyawan_role_check
