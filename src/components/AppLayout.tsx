@@ -2,7 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { BottomNav } from "./BottomNav";
 import { Outlet } from "react-router-dom";
-import logo from "@/assets/logo.jpg";
+
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck, User } from "lucide-react";
@@ -28,11 +28,9 @@ export default function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center border-b border-border/40 glass sticky top-0 z-20 px-3 gap-3 print:hidden">
             <div className="flex md:hidden items-center gap-2">
-              <img
-                src={logo}
-                alt="Absensi"
-                className="h-8 w-8 rounded-lg object-cover"
-              />
+              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
+                <svg className="h-5 w-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
               <span className="font-bold text-gradient">Absensi</span>
             </div>
             <div className="hidden sm:block ml-2 text-sm text-muted-foreground truncate">

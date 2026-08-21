@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserCheck, Users, Settings, Smartphone, LogIn, ArrowRight } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+
 
 const features = [
   { icon: UserCheck, title: "Absensi GPS", desc: "Karyawan bisa absen masuk & pulang langsung dari HP dengan verifikasi lokasi GPS." },
@@ -30,11 +30,9 @@ export default function Landing() {
       <header className="sticky top-0 z-30 glass border-b border-border/40">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img
-              src={logo}
-              alt="Absensi"
-              className="h-9 w-9 rounded-xl object-cover bg-white shadow-soft"
-            />
+            <div className="h-9 w-9 rounded-xl bg-white shadow-soft flex items-center justify-center">
+              <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
             <div className="leading-tight">
               <div className="font-bold text-sm">Absensi Karyawan</div>
               <div className="text-[10px] text-muted-foreground">

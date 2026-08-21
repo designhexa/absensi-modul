@@ -187,8 +187,8 @@ export default function SlipGaji() {
           {/* Header */}
           <div className="flex justify-between items-start border-b border-border/60 pb-6 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-primary">BUBA HEALTHY</h2>
-              <p className="text-xs text-muted-foreground">Sistem Informasi Penjualan MPASI</p>
+              <h2 className="text-xl font-bold text-primary">ABSENSI KARYAWAN</h2>
+              <p className="text-xs text-muted-foreground">Sistem Absensi & Master Data</p>
               {activeOutlet && <p className="text-xs text-muted-foreground">{activeOutlet.nama} — {activeOutlet.lokasi}</p>}
             </div>
             <div className="text-right">
@@ -308,7 +308,7 @@ export default function SlipGaji() {
             <div className="space-y-12">
               <p className="text-muted-foreground">Disetujui Oleh</p>
               <div className="space-y-1">
-                <p className="font-bold underline">Management Buba Healthy</p>
+                <p className="font-bold underline">Management</p>
                 <p className="text-[10px] text-muted-foreground">Administrator</p>
               </div>
             </div>

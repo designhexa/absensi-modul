@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { LogIn, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+
 
 export default function Login() {
   const { login, user } = useAuth();
@@ -42,11 +42,9 @@ export default function Login() {
         <Card className="glass-strong border-0 shadow-soft">
           <CardContent className="p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
-              <img
-                src={logo}
-                alt="Absensi"
-                className="h-12 w-12 rounded-xl object-cover bg-white shadow-soft"
-              />
+              <div className="h-12 w-12 rounded-xl bg-white shadow-soft flex items-center justify-center">
+                <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
               <div className="leading-tight">
                 <div className="font-bold text-lg text-gradient">Absensi</div>
                 <div className="text-xs text-muted-foreground">

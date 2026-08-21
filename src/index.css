@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Buba Healthy Design System - Fresh, natural, MPASI brand */
+/* Absensi Karyawan Design System */
 @layer base {
   :root {
     --background: 80 33% 97%;
@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 145 40% 12%;
 
-    /* Buba green */
+    /* Primary green */
     --primary: 142 72% 26%;
     --primary-foreground: 80 33% 97%;
     --primary-glow: 95 70% 45%;
