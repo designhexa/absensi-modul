@@ -338,17 +338,34 @@ export const db = {
     await fetchFromSupabase();
   },
   async deleteKaryawan(id: string) {
-    // Delete associated user account first, then karyawan
+    if (!isSupabaseConfigured) {
+      throw new Error(
+        "Supabase belum dikonfigurasi. Data Master Data tidak dapat dihapus dari database."
+      );
+    }
+
+    // Delete dependent records and the linked account before the employee row.
+    const { error: absensiError } = await supabase
+      .from("absensi")
+      .delete()
+      .eq("karyawan_id", id);
+    if (absensiError) throw absensiError;
+
     const { error: errU } = await supabase
       .from("users")
       .delete()
       .eq("karyawan_id", id);
     if (errU) throw errU;
-    const { error: errK } = await supabase
+    const { data: deletedEmployee, error: errK } = await supabase
       .from("karyawan")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (errK) throw errK;
+    if (!deletedEmployee) {
+      throw new Error("Data karyawan tidak ditemukan di database.");
+    }
     await fetchFromSupabase();
   },
 
