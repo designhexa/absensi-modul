@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { EMPLOYEE_ROLES } from "@/lib/types";
 
 export default function Dashboard() {
   const { karyawan = [], absensi = [], outlets = [] } = useDB();
@@ -163,16 +164,14 @@ export default function Dashboard() {
         {isAdmin && (
           <Card className="glass border-0 shadow-card">
             <CardHeader>
-              <CardTitle>Karyawan per Lokasi</CardTitle>
+              <CardTitle>Karyawan per Departemen</CardTitle>
             </CardHeader>
             <CardContent className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={outlets.map((o) => ({
-                    nama: o.nama,
-                    karyawan: karyawan.filter(
-                      (k) => k.outletId === o.id
-                    ).length,
+                  data={EMPLOYEE_ROLES.map((role) => ({
+                    nama: role.charAt(0).toUpperCase() + role.slice(1),
+                    karyawan: karyawan.filter((k) => k.role === role).length,
                   }))}
                   layout="vertical"
                   margin={{ top: 10, right: 15, left: -30, bottom: 0 }}

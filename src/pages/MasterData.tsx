@@ -293,7 +293,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
                 {ume && <button type="button" className="text-[10px] text-primary underline" onClick={() => setUme(false)}>Reset</button>}
               </div>
               <div className="grid grid-cols-2 gap-2 items-end">
-                <div><Label>Username {!ume && username && <span className="text-[9px] font-normal text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1 py-0.5">auto</span>}</Label><Input value={username} onChange={(e) => { setUme(true); setUsername(e.target.value.toLowerCase().trim()); }} /></div>
+                <div><Label>Username {!ume && username && <span className="text-[9px] font-normal text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 py-0.5">auto</span>}</Label><Input value={username} onChange={(e) => { setUme(true); setUsername(e.target.value.toLowerCase().trim()); }} /></div>
                 <div><Label>Password *</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
               </div>
             </div>

@@ -619,7 +619,7 @@ export default function Absensi() {
               </svg>
 
               {/* Safe area ripple */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-emerald-500/10 border-2 border-emerald-500/20 animate-pulse pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-blue-500/10 border-2 border-blue-500/20 animate-pulse pointer-events-none" />
 
               {/* Pin Marker */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+12px)] flex flex-col items-center">

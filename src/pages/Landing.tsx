@@ -55,8 +55,8 @@ export default function Landing() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 pt-10 pb-12 md:pt-20 md:pb-20 grid md:grid-cols-2 gap-10 items-center">
         <div className="space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 text-accent-foreground text-xs font-medium border border-accent/30">
-            <UserCheck className="h-3.5 w-3.5 text-accent" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/15 text-blue-700 text-xs font-medium border border-blue-500/30">
+            <UserCheck className="h-3.5 w-3.5 text-blue-600" />
             Sistem Absensi Karyawan
           </div>
           <h1 className="text-4xl md:text-5xl font-bold leading-[1.1]">

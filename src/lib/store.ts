@@ -73,7 +73,7 @@ export async function fetchFromSupabase() {
         id: k.id,
         nama: k.nama,
         posisi: k.posisi,
-        role: k.role || linkedUser?.role || "karyawan",
+        role: k.role || linkedUser?.role || "operational",
         outletId: k.outlet_id,
         gajiPokok: Number(k.gaji_pokok),
         bonusOmset: Number(k.bonus_omset),
@@ -167,7 +167,7 @@ export const db = {
     }
 
     const id = uid();
-    const role = k.role || userAccount.role || "karyawan";
+    const role = k.role || userAccount.role || "operational";
 
     const { error: errK } = await supabase.from("karyawan").insert([
       {
@@ -268,7 +268,7 @@ export const db = {
           username,
           password,
           nama: k.nama || "",
-          role: k.role || "karyawan",
+          role: k.role || "operational",
           outlet_id: k.outletId ?? null,
           karyawan_id: id,
         },
@@ -411,7 +411,7 @@ export const db = {
           username: `pegawai${i + 1}`,
           password: "pegawai123",
           nama: o.nama,
-          role: "karyawan",
+          role: "operational",
           outlet_id: o.id,
           karyawan_id: `k-${o.id}-1`,
         })),

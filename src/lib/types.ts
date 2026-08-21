@@ -8,7 +8,14 @@ export interface Outlet {
   lokasi: string;
 }
 
-export type Role = "admin" | "karyawan";
+export const EMPLOYEE_ROLES = [
+  "operational",
+  "development",
+  "management",
+  "marketing",
+] as const;
+
+export type Role = "admin" | (typeof EMPLOYEE_ROLES)[number];
 
 export interface UserAccount {
   username: string;

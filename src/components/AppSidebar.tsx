@@ -47,7 +47,7 @@ export function AppSidebar() {
         className="absolute inset-0 pointer-events-none opacity-90"
         style={{
           background:
-            "linear-gradient(180deg, hsl(142 72% 22%) 0%, hsl(142 72% 26%) 50%, hsl(142 60% 20%) 100%)",
+            "linear-gradient(180deg, hsl(217 82% 24%) 0%, hsl(217 78% 31%) 50%, hsl(215 80% 20%) 100%)",
         }}
       />
 
@@ -67,7 +67,7 @@ export function AppSidebar() {
               <path
                 d="M24 0H0V24"
                 fill="none"
-                stroke="hsl(95 80% 70%)"
+                stroke="hsl(199 89% 72%)"
                 strokeWidth="0.5"
               />
             </pattern>
@@ -76,20 +76,20 @@ export function AppSidebar() {
         </svg>
         {!collapsed && (
           <>
-            <div className="absolute top-1/4 -left-6 w-24 h-24 rotate-45 border-2 border-accent/20 rounded-2xl" />
-            <div className="absolute bottom-1/3 -right-8 w-32 h-32 rotate-12 border border-accent/15 rounded-full" />
-            <div className="absolute top-2/3 left-4 w-3 h-3 rounded-full bg-accent/40" />
-            <div className="absolute top-[45%] right-6 w-2 h-2 rounded-full bg-accent/50" />
+            <div className="absolute top-1/4 -left-6 w-24 h-24 rotate-45 border-2 border-cyan-300/25 rounded-2xl" />
+            <div className="absolute bottom-1/3 -right-8 w-32 h-32 rotate-12 border border-sky-300/20 rounded-full" />
+            <div className="absolute top-2/3 left-4 w-3 h-3 rounded-full bg-cyan-300/50" />
+            <div className="absolute top-[45%] right-6 w-2 h-2 rounded-full bg-sky-300/60" />
           </>
         )}
-        {/* Lime accent glow */}
+        {/* Blue accent glow */}
         <div
           className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-3xl"
-          style={{ background: "hsl(95 70% 55%)" }}
+          style={{ background: "hsl(199 89% 48%)" }}
         />
         <div
           className="absolute bottom-20 left-0 w-24 h-24 rounded-full opacity-20 blur-3xl"
-          style={{ background: "hsl(95 80% 50%)" }}
+          style={{ background: "hsl(217 91% 50%)" }}
         />
       </div>
 
@@ -97,7 +97,7 @@ export function AppSidebar() {
         <div
           className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
         >
-          <div className="h-10 w-10 shrink-0 rounded-xl bg-white flex items-center justify-center shadow-soft ring-2 ring-accent/40">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-white flex items-center justify-center shadow-soft ring-2 ring-cyan-300/50">
             <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           {!collapsed && (
@@ -135,7 +135,7 @@ export function AppSidebar() {
                       className={({ isActive }) =>
                         `relative flex items-center gap-3 w-full h-full ${collapsed ? "justify-center px-3 py-3" : "pl-5 pr-5 py-3"} rounded-xl transition-all ${
                           isActive
-                            ? "bg-gradient-to-r from-accent/45 via-accent/25 to-accent/10 text-accent font-semibold shadow-soft border border-accent/50 backdrop-blur-sm"
+                            ? "bg-gradient-to-r from-cyan-400/45 via-blue-400/25 to-blue-300/10 text-cyan-200 font-semibold shadow-soft border border-cyan-300/50 backdrop-blur-sm"
                             : "text-white hover:bg-white/10 hover:text-white"
                         }`
                       }
@@ -143,11 +143,11 @@ export function AppSidebar() {
                       {({ isActive }) => (
                         <>
                           <item.icon
-                            className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-accent" : "text-white"}`}
+                            className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-cyan-200" : "text-white"}`}
                           />
                           {!collapsed && (
                             <span
-                              className={`text-sm leading-snug ${isActive ? "text-accent" : "text-white"}`}
+                              className={`text-sm leading-snug ${isActive ? "text-cyan-200" : "text-white"}`}
                             >
                               {item.title}
                             </span>
@@ -169,7 +169,7 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className={`w-full ${collapsed ? "justify-center px-0" : "justify-end"} gap-2 text-white/80 hover:text-white hover:bg-white/10`}
+          className={`w-full ${collapsed ? "justify-center px-0" : "justify-end"} gap-2 text-cyan-100/80 hover:text-white hover:bg-blue-400/20`}
           aria-label={collapsed ? "Perbesar sidebar" : "Minimize sidebar"}
         >
           {collapsed ? (

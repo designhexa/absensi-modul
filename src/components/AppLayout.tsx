@@ -6,6 +6,15 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck, User } from "lucide-react";
+
+const roleLabel = (role?: string) => {
+  if (!role || role === "admin") return "Admin";
+  if (role === "operational") return "Operational";
+  if (role === "development") return "Development";
+  if (role === "management") return "Management";
+  if (role === "marketing") return "Marketing";
+  return "Pegawai";
+};
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +62,7 @@ export default function AppLayout() {
                       <div className="text-[10px] text-muted-foreground flex items-center gap-1">
                         {isAdmin && <ShieldCheck className="h-3 w-3" />}
                         {!isAdmin && <User className="h-3 w-3" />}
-                        {isAdmin ? "Admin" : "Karyawan"}
+                        {roleLabel(user?.role)}
                       </div>
                     </div>
                   </Button>

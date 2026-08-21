@@ -18,8 +18,16 @@ export default function Profile() {
     switch (role) {
       case "admin":
         return "Administrator";
+      case "operational":
+        return "Operational";
+      case "development":
+        return "Development";
+      case "management":
+        return "Management";
+      case "marketing":
+        return "Marketing";
       default:
-        return "Karyawan";
+        return "Pegawai";
     }
   };
 

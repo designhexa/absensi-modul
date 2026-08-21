@@ -1,9 +1,10 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
+import { Role } from "@/lib/types";
 
 interface Props {
   adminOnly?: boolean;
-  allowedRoles?: ("admin" | "karyawan")[];
+  allowedRoles?: Role[];
 }
 
 export default function ProtectedRoute({ adminOnly, allowedRoles }: Props) {
