@@ -100,13 +100,10 @@ Buka `http://localhost:5173`
 |-------|------|------------|
 | id | text (PK) | ID karyawan |
 | nama | text | Nama karyawan |
-| posisi | text | Posisi/jabatan |
 | role | text | Role |
 | departemen_id | text (FK) | Departemen penugasan |
 | gaji_pokok | numeric | Gaji per hari |
-| bonus_omset | numeric | Bonus omset bulanan |
-| bonus_ulasan | numeric | Bonus ulasan bulanan |
-| bonus_oh | numeric | Bonus OH bulanan |
+| bonus | numeric | Bonus bulanan |
 | tunjangan_harian | numeric | Tunjangan per hari |
 | overtime_rate | numeric | Tarif lembur per jam |
 | jam_masuk | text | Jam masuk (HH:mm) |

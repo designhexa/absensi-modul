@@ -9,10 +9,9 @@ export interface Outlet {
 }
 
 export const EMPLOYEE_ROLES = [
-  "operational",
-  "development",
   "management",
-  "marketing",
+  "supervisi",
+  "staff",
 ] as const;
 
 export type Role = "admin" | (typeof EMPLOYEE_ROLES)[number];
@@ -30,13 +29,10 @@ export interface UserAccount {
 export interface Karyawan {
   id: string;
   nama: string;
-  posisi: string;
-  role: string;
+  role: Role;
   outletId?: string;
   gajiPokok: number; // per hari
-  bonusOmset?: number;
-  bonusUlasan?: number;
-  bonusOH?: number;
+  bonus?: number;
   tunjanganHarian?: number;
   overtimeRate?: number;
   jamMasuk?: string; // "HH:mm"

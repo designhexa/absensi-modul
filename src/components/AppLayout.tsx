@@ -9,10 +9,9 @@ import { LogOut, ShieldCheck, User } from "lucide-react";
 
 const roleLabel = (role?: string) => {
   if (!role || role === "admin") return "Admin";
-  if (role === "operational") return "Operational";
-  if (role === "development") return "Development";
   if (role === "management") return "Management";
-  if (role === "marketing") return "Marketing";
+  if (role === "supervisi") return "Supervisi";
+  if (role === "staff") return "Staff";
   return "Pegawai";
 };
 import {

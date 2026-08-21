@@ -86,13 +86,10 @@ export async function fetchFromSupabase() {
       return {
         id: k.id,
         nama: k.nama,
-        posisi: k.posisi,
-        role: k.role || linkedUser?.role || "operational",
+        role: k.role || linkedUser?.role || "staff",
         outletId: k.departemen_id,
         gajiPokok: Number(k.gaji_pokok),
-        bonusOmset: Number(k.bonus_omset),
-        bonusUlasan: Number(k.bonus_ulasan),
-        bonusOH: Number(k.bonus_oh ?? 0),
+        bonus: Number(k.bonus ?? 0),
         tunjanganHarian: k.tunjangan_harian
           ? Number(k.tunjangan_harian)
           : 0,
@@ -191,19 +188,16 @@ export const db = {
     }
 
     const id = uid();
-    const role = k.role || userAccount.role || "operational";
+    const role = k.role || userAccount.role || "staff";
 
     const { error: errK } = await supabase.from("karyawan").insert([
       {
         id,
         nama: k.nama,
-        posisi: k.posisi,
         role,
         departemen_id: k.outletId,
         gaji_pokok: k.gajiPokok,
-        bonus_omset: k.bonusOmset,
-        bonus_ulasan: k.bonusUlasan,
-        bonus_oh: k.bonusOH ?? 0,
+        bonus: k.bonus ?? 0,
         tunjangan_harian: k.tunjanganHarian ?? 0,
         overtime_rate: k.overtimeRate ?? 0,
         jam_masuk: k.jamMasuk ?? null,
@@ -250,13 +244,10 @@ export const db = {
 
     const mapped: any = {};
     if (k.nama !== undefined) mapped.nama = k.nama;
-    if (k.posisi !== undefined) mapped.posisi = k.posisi;
     if (k.role !== undefined) mapped.role = k.role;
     if (k.outletId !== undefined) mapped.departemen_id = k.outletId;
     if (k.gajiPokok !== undefined) mapped.gaji_pokok = k.gajiPokok;
-    if (k.bonusOmset !== undefined) mapped.bonus_omset = k.bonusOmset;
-    if (k.bonusUlasan !== undefined) mapped.bonus_ulasan = k.bonusUlasan;
-    if (k.bonusOH !== undefined) mapped.bonus_oh = k.bonusOH;
+    if (k.bonus !== undefined) mapped.bonus = k.bonus;
     if (k.tunjanganHarian !== undefined)
       mapped.tunjangan_harian = k.tunjanganHarian;
     if (k.overtimeRate !== undefined) mapped.overtime_rate = k.overtimeRate;
@@ -279,13 +270,10 @@ export const db = {
             ? {
                 ...employee,
                 nama: nextEmployee.nama,
-                posisi: nextEmployee.posisi,
                 role: nextEmployee.role,
                 outletId: nextEmployee.departemen_id,
                 gajiPokok: Number(nextEmployee.gaji_pokok),
-                bonusOmset: Number(nextEmployee.bonus_omset),
-                bonusUlasan: Number(nextEmployee.bonus_ulasan),
-                bonusOH: Number(nextEmployee.bonus_oh ?? 0),
+                bonus: Number(nextEmployee.bonus ?? 0),
                 tunjanganHarian: Number(nextEmployee.tunjangan_harian ?? 0),
                 overtimeRate: Number(nextEmployee.overtime_rate ?? 0),
                 jamMasuk: nextEmployee.jam_masuk || undefined,
@@ -328,7 +316,7 @@ export const db = {
           username,
           password,
           nama: k.nama || "",
-          role: k.role || "operational",
+          role: k.role || "staff",
           departemen_id: k.outletId ?? null,
           karyawan_id: id,
         },
@@ -497,7 +485,7 @@ export const db = {
           username: `pegawai${i + 1}`,
           password: "pegawai123",
           nama: o.nama,
-          role: "operational",
+          role: "staff",
           departemen_id: o.id,
           karyawan_id: `k-${o.id}-1`,
         })),
@@ -507,13 +495,10 @@ export const db = {
       const seedKaryawanMapped = SEED_KARYAWAN.map((k) => ({
         id: k.id,
         nama: k.nama,
-        posisi: k.posisi,
         role: k.role || "karyawan",
         departemen_id: k.outletId,
         gaji_pokok: k.gajiPokok,
-        bonus_omset: k.bonusOmset,
-        bonus_ulasan: k.bonusUlasan,
-        bonus_oh: k.bonusOH ?? 0,
+        bonus: k.bonus ?? 0,
         tunjangan_harian: k.tunjanganHarian ?? 0,
         overtime_rate: k.overtimeRate ?? 0,
         jam_masuk: k.jamMasuk ?? null,

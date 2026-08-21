@@ -58,7 +58,7 @@ export default function SlipGaji() {
 
   // Calculate salary details
   const payroll = useMemo(() => {
-    if (!activeKaryawan) return { pokok: 0, tunjangan: 0, bonusHarian: 0, bonusOmset: 0, bonusUlasan: 0, bonusOH: 0, overtimeHours: 0, overtimePay: 0, total: 0 };
+    if (!activeKaryawan) return { pokok: 0, tunjangan: 0, bonusHarian: 0, bonus: 0, overtimeHours: 0, overtimePay: 0, total: 0 };
     
     const pokok = stats.hadir * activeKaryawan.gajiPokok;
     
@@ -67,19 +67,15 @@ export default function SlipGaji() {
     const overtimeHours = monthlyAbsensi.reduce((sum, a) => sum + (a.overtime ?? 0), 0);
     const overtimePay = Math.round(overtimeHours * (activeKaryawan.gajiPokok / 8) * 1.5);
     
-    const bonusOmset = activeKaryawan.bonusOmset ?? 0;
-    const bonusUlasan = activeKaryawan.bonusUlasan ?? 0;
-    const bonusOH = activeKaryawan.bonusOH ?? 0;
+    const bonus = activeKaryawan.bonus ?? 0;
     
-    const total = pokok + tunjangan + bonusHarian + bonusOmset + bonusUlasan + bonusOH + overtimePay;
+    const total = pokok + tunjangan + bonusHarian + bonus + overtimePay;
     
     return {
       pokok,
       tunjangan,
       bonusHarian,
-      bonusOmset,
-      bonusUlasan,
-      bonusOH,
+      bonus,
       overtimeHours,
       overtimePay,
       total
@@ -142,7 +138,7 @@ export default function SlipGaji() {
                 <SelectContent>
                   {visibleKaryawan.map((k) => (
                     <SelectItem key={k.id} value={k.id}>
-                      {k.nama} ({k.posisi})
+                      {k.nama}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -152,7 +148,7 @@ export default function SlipGaji() {
             <div className="space-y-2 flex-1 min-w-[200px]">
               <label className="text-xs font-semibold text-muted-foreground">Karyawan</label>
               <div className="h-10 flex items-center px-3 border rounded-lg bg-muted text-foreground text-sm font-semibold">
-                {activeKaryawan?.nama} ({activeKaryawan?.posisi})
+                {activeKaryawan?.nama}
               </div>
             </div>
           )}
@@ -211,9 +207,9 @@ export default function SlipGaji() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Award className="h-3.5 w-3.5" />
-                <span>Jabatan / Posisi</span>
+                <span>Role</span>
               </div>
-              <p className="font-semibold pl-5.5">{activeKaryawan.posisi}</p>
+              <p className="font-semibold pl-5.5 capitalize">{activeKaryawan.role}</p>
             </div>
           </div>
 
@@ -262,22 +258,10 @@ export default function SlipGaji() {
                     <span className="font-medium text-success">+{rupiah(payroll.bonusHarian)}</span>
                   </div>
                 )}
-                {payroll.bonusOmset > 0 && (
+                {payroll.bonus > 0 && (
                   <div className="flex justify-between py-2.5">
-                    <span className="text-muted-foreground">Bonus Pencapaian Omset</span>
-                    <span className="font-medium text-success">+{rupiah(payroll.bonusOmset)}</span>
-                  </div>
-                )}
-                {payroll.bonusUlasan > 0 && (
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-muted-foreground">Bonus Ulasan Bintang 5</span>
-                    <span className="font-medium text-success">+{rupiah(payroll.bonusUlasan)}</span>
-                  </div>
-                )}
-                {payroll.bonusOH > 0 && (
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-muted-foreground">Bonus OH (Overhead ≤ 2%)</span>
-                    <span className="font-medium text-success">+{rupiah(payroll.bonusOH)}</span>
+                    <span className="text-muted-foreground">Bonus</span>
+                    <span className="font-medium text-success">+{rupiah(payroll.bonus)}</span>
                   </div>
                 )}
                 {payroll.overtimePay > 0 && (

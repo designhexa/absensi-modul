@@ -2,12 +2,8 @@ import { EMPLOYEE_ROLES, Outlet, UserAccount, Karyawan } from "./types";
 
 const DEPARTMENT_NAMES = [
   "management",
-  "design",
-  "marketing",
-  "development",
-  "operational",
-  "finance",
-  "logistic",
+  "supervisi",
+  "staff",
 ];
 
 const slug = (s: string) =>
@@ -36,13 +32,10 @@ export const SEED_KARYAWAN: Karyawan[] = [
   ...SEED_OUTLETS.map((o, i) => ({
     id: `k-${o.id}-1`,
     nama: `Pegawai ${o.nama}`,
-    posisi: o.nama,
     role: EMPLOYEE_ROLES[i % EMPLOYEE_ROLES.length],
     outletId: o.id,
     gajiPokok: 17500,
-    bonusOmset: 0,
-    bonusUlasan: 0,
-    bonusOH: 0,
+    bonus: 0,
     tunjanganHarian: 5000,
     overtimeRate: 10000,
     jamMasuk: "07:00",

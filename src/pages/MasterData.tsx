@@ -183,7 +183,7 @@ export default function MasterData() {
                           </div>
                           <div className="flex gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
                             <span className="capitalize bg-muted px-1.5 py-0.5 rounded text-[10px]">{k.role}</span>
-                            <span>{k.posisi}</span><span>&bull;</span><span>{o?.nama ?? "Pusat"}</span><span>&bull;</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hari</span>
+                            <span>{o?.nama ?? "Pusat"}</span><span>&bull;</span><span className="font-semibold">{rupiah(k.gajiPokok)}/hari</span>
                           </div>
                           {k.username && <div className="mt-1.5 text-[10px] text-primary flex items-center gap-1"><Users className="h-3 w-3" /><span>Akun: {k.username}</span></div>}
                         </div>
@@ -214,6 +214,7 @@ export default function MasterData() {
                       <div className="flex items-center justify-between">
                         <div><span className="font-semibold">{u.username}</span><span className="text-xs text-muted-foreground ml-2">{u.nama}</span></div>
                         <EditUserDialog userAccount={u} outlets={outlets} />
+                        <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteUser(u.username)} title="Hapus Akun" description={`Akun ${u.username} akan dihapus permanen.`} />
                       </div>
                       <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
                         <span className="capitalize bg-muted px-1.5 py-0.5 rounded">{u.role}</span>
@@ -243,13 +244,10 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   const [username, setUsername] = useState("");
   const [ume, setUme] = useState(false);
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("operational");
-  const [posisi, setPosisi] = useState("Kasir");
+  const [role, setRole] = useState("staff");
   const [outletId, setOutletId] = useState(outlets[0]?.id ?? "none");
   const [gajiPokok, setGajiPokok] = useState(17500);
-  const [bonusOmset, setBonusOmset] = useState(0);
-  const [bonusUlasan, setBonusUlasan] = useState(0);
-  const [bonusOH, setBonusOH] = useState(0);
+  const [bonus, setBonus] = useState(0);
   const [tunjanganHarian, setTunjanganHarian] = useState(0);
   const [overtimeRate, setOvertimeRate] = useState(0);
   const [jamMasuk, setJamMasuk] = useState("07:30");
@@ -264,9 +262,9 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
   }, [nama, ume, users]);
 
   const rf = () => {
-    setNama(""); setUsername(""); setUme(false); setPassword(""); setRole("operational");
-    setPosisi("Kasir"); setOutletId(outlets[0]?.id ?? "none"); setGajiPokok(17500);
-    setBonusOmset(0); setBonusUlasan(0); setBonusOH(0); setTunjanganHarian(0);
+    setNama(""); setUsername(""); setUme(false); setPassword(""); setRole("staff");
+    setOutletId(outlets[0]?.id ?? "none"); setGajiPokok(17500);
+    setBonus(0); setTunjanganHarian(0);
     setOvertimeRate(0); setJamMasuk("07:30"); setJamPulang("15:00");
   };
 
@@ -286,7 +284,7 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
             const fu = username.toLowerCase().trim();
             if (users.some((u: any) => u.username === fu)) return toast.error("Username sudah terdaftar");
             try {
-              await db.addKaryawan({ nama, posisi, role, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonusOmset, bonusUlasan, bonusOH, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, { username: fu, password, role });
+              await db.addKaryawan({ nama, role: role as any, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonus, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, { username: fu, password, role });
               toast.success("Karyawan ditambahkan"); setOpen(false); rf();
             } catch (err: any) { toast.error(err?.message || "Gagal"); }
           }} className="space-y-3">
@@ -301,12 +299,10 @@ function TambahKaryawanDialog({ outlets }: { outlets: any[] }) {
                 <div><Label>Password *</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
               </div>
             </div>
-            <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
-            <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="supervisi">Supervisi</SelectItem><SelectItem value="staff">Staff</SelectItem></SelectContent></Select></div>
             <div><Label>Departemen</Label><Select value={outletId} onValueChange={(v) => { setOutletId(v); const p = v === "none"; setJamMasuk(p ? "07:30" : "07:00"); setJamPulang(p ? "15:00" : "14:00"); }}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Kantor Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji Pokok/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
-            <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
-            <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
+            <div><Label>Bonus</Label><Input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></div>
             <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Tunjangan/Hari</Label><Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} /></div><div><Label>Tarif Lembur/Jam</Label><Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} /></div></div></div>
             <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Jam Masuk</Label><Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} /></div><div><Label>Jam Pulang</Label><Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} /></div></div></div>
             <DialogFooter className="pt-4"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
@@ -349,16 +345,13 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
   const { users } = useDB();
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(karyawan.nama);
-  const [posisi, setPosisi] = useState(karyawan.posisi);
-  const [role, setRole] = useState(karyawan.role || "operational");
+  const [role, setRole] = useState(karyawan.role || "staff");
   const [username, setUsername] = useState(karyawan.username || "");
   const [password, setPassword] = useState("");
   const [np, setNp] = useState("");
   const [outletId, setOutletId] = useState(karyawan.outletId ?? "none");
   const [gajiPokok, setGajiPokok] = useState(karyawan.gajiPokok);
-  const [bonusOmset, setBonusOmset] = useState(karyawan.bonusOmset ?? 0);
-  const [bonusUlasan, setBonusUlasan] = useState(karyawan.bonusUlasan ?? 0);
-  const [bonusOH, setBonusOH] = useState(karyawan.bonusOH ?? 0);
+  const [bonus, setBonus] = useState(karyawan.bonus ?? 0);
   const [tunjanganHarian, setTunjanganHarian] = useState(karyawan.tunjanganHarian ?? 0);
   const [overtimeRate, setOvertimeRate] = useState(karyawan.overtimeRate ?? 0);
   const [jamMasuk, setJamMasuk] = useState(karyawan.jamMasuk || "07:30");
@@ -376,7 +369,7 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
             const fu = username.toLowerCase().trim();
             if (fu !== karyawan.username && users.some((u: any) => u.username === fu && u.karyawanId !== karyawan.id)) return toast.error("Username sudah dipakai");
             try {
-              await db.updateKaryawan(karyawan.id, { nama, posisi, role, username: username || undefined, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonusOmset, bonusUlasan, bonusOH, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, np || undefined);
+              await db.updateKaryawan(karyawan.id, { nama, role: role as any, username: username || undefined, outletId: outletId === "none" ? undefined : outletId, gajiPokok, bonus, tunjanganHarian, overtimeRate, jamMasuk, jamPulang }, np || undefined);
               toast.success(np ? "Diperbarui + password" : "Diperbarui"); setOpen(false);
             } catch (err: any) { toast.error(err?.message || "Gagal"); }
           }} className="space-y-3">
@@ -388,12 +381,10 @@ function EditKaryawanDialog({ karyawan, outlets }: { karyawan: any; outlets: any
                 <div><Label className="text-[11px]">{has ? "Password Baru" : "Password"}</Label><Input type="text" value={has ? np : password} onChange={(e) => { if (has) setNp(e.target.value); }} placeholder={has ? "Kosongkan jika tetap" : ""} className="text-xs" required={!has} /></div>
               </div>
             </div>
-            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="design">Design</SelectItem><SelectItem value="finance">Finance</SelectItem><SelectItem value="logistic">Logistic</SelectItem><SelectItem value="karyawan">Karyawan (legacy)</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
-            <div><Label>Posisi</Label><Select value={posisi} onValueChange={setPosisi}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Kasir">Kasir</SelectItem><SelectItem value="Kurir">Kurir</SelectItem><SelectItem value="Helper">Helper</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="supervisi">Supervisi</SelectItem><SelectItem value="staff">Staff</SelectItem></SelectContent></Select></div>
             <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Gaji/Hari</Label><Input type="number" value={gajiPokok} onChange={(e) => setGajiPokok(Number(e.target.value))} /></div>
-            <div className="grid grid-cols-2 gap-2"><div><Label>Bonus Omset</Label><Input type="number" value={bonusOmset} onChange={(e) => setBonusOmset(Number(e.target.value))} /></div><div><Label>Bonus Ulasan</Label><Input type="number" value={bonusUlasan} onChange={(e) => setBonusUlasan(Number(e.target.value))} /></div></div>
-            <div><Label>Bonus OH</Label><Input type="number" value={bonusOH} onChange={(e) => setBonusOH(Number(e.target.value))} /></div>
+            <div><Label>Bonus</Label><Input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></div>
             <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Tunjangan/Hari</Label><Input type="number" value={tunjanganHarian} onChange={(e) => setTunjanganHarian(Number(e.target.value))} /></div><div><Label>Lembur/Jam</Label><Input type="number" value={overtimeRate} onChange={(e) => setOvertimeRate(Number(e.target.value))} /></div></div></div>
             <div className="border-t pt-3 mt-3"><div className="grid grid-cols-2 gap-2"><div><Label>Jam Masuk</Label><Input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} /></div><div><Label>Jam Pulang</Label><Input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} /></div></div></div>
             <DialogFooter className="pt-4"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
@@ -408,7 +399,7 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState(userAccount.nama);
   const [password, setPassword] = useState(userAccount.password);
-  const [role, setRole] = useState(userAccount.role === "karyawan" ? "operational" : userAccount.role);
+  const [role, setRole] = useState(userAccount.role);
   const [outletId, setOutletId] = useState(userAccount.outletId ?? "none");
 
   return (
@@ -421,7 +412,7 @@ function EditUserDialog({ userAccount, outlets }: { userAccount: any; outlets: a
             <div><Label>Username</Label><Input value={userAccount.username} disabled /></div>
             <div><Label>Nama</Label><Input value={nama} onChange={(e) => setNama(e.target.value)} /></div>
             <div><Label>Password</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="operational">Operational</SelectItem><SelectItem value="development">Development</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="marketing">Marketing</SelectItem></SelectContent></Select></div>
+            <div><Label>Role</Label><Select value={role} onValueChange={(v) => setRole(v)}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="management">Management</SelectItem><SelectItem value="supervisi">Supervisi</SelectItem><SelectItem value="staff">Staff</SelectItem></SelectContent></Select></div>
             {role !== "admin" && <div><Label>Departemen</Label><Select value={outletId} onValueChange={setOutletId}><SelectTrigger className="h-10"><SelectValue placeholder="Pilih" /></SelectTrigger><SelectContent><SelectItem value="none">Pusat</SelectItem>{outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.nama}</SelectItem>)}</SelectContent></Select></div>}
             <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button type="submit">Simpan</Button></DialogFooter>
           </form>

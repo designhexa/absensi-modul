@@ -361,11 +361,7 @@ export default function Absensi() {
       const tunjanganTotal =
         dailyTunjanganTotal + tunjanganHarianKaryawan * hadir;
       const overtimePay = Math.round(overtimeHours * overtimeRateKaryawan);
-      const flatBonusOmset = k.bonusOmset ?? 0;
-      const flatBonusUlasan = k.bonusUlasan ?? 0;
-      const flatBonusOH = k.bonusOH ?? 0;
-      const totalBonus =
-        dailyBonusTotal + flatBonusOmset + flatBonusUlasan + flatBonusOH;
+      const totalBonus = dailyBonusTotal + (k.bonus ?? 0);
       const totalGaji =
         hadir * k.gajiPokok + tunjanganTotal + totalBonus + overtimePay;
 
@@ -422,7 +418,7 @@ export default function Absensi() {
                   <SelectContent>
                     {visibleKaryawan.map((k) => (
                       <SelectItem key={k.id} value={k.id}>
-                        {k.nama} ({k.posisi})
+                        {k.nama}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -822,10 +818,9 @@ export default function Absensi() {
             <ExportButtons
               filename="rekap-absensi"
               title="Rekap Absensi"
-              headers={["Nama", "Posisi", "Hadir", "Terlambat", "Tunjangan", "Bonus", "Total Gaji"]}
+              headers={["Nama", "Hadir", "Terlambat", "Tunjangan", "Bonus", "Total Gaji"]}
               rows={rekap.map((r) => [
                 r.k.nama,
-                r.k.posisi,
                 r.hadir,
                 r.terlambatCount,
                 r.tunjanganTotal,
@@ -843,9 +838,6 @@ export default function Absensi() {
                   <tr className="bg-muted/40">
                     <th className="text-left p-3 font-semibold text-xs">
                       Nama
-                    </th>
-                    <th className="text-left p-3 font-semibold text-xs">
-                      Posisi
                     </th>
                     <th className="text-center p-3 font-semibold text-xs">
                       Hadir
@@ -871,9 +863,6 @@ export default function Absensi() {
                       className="border-t hover:bg-muted/20 transition-colors"
                     >
                       <td className="p-3 font-medium">{r.k.nama}</td>
-                      <td className="p-3 text-muted-foreground">
-                        {r.k.posisi}
-                      </td>
                       <td className="p-3 text-center">
                         <Badge
                           variant="outline"
