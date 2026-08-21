@@ -245,7 +245,11 @@ export const db = {
     if (k.overtimeRate !== undefined) mapped.overtime_rate = k.overtimeRate;
     if (k.jamMasuk !== undefined) mapped.jam_masuk = k.jamMasuk;
     if (k.jamPulang !== undefined) mapped.jam_pulang = k.jamPulang;
-    await supabase.from("karyawan").update(mapped).eq("id", id);
+    const { error: employeeUpdateError } = await supabase
+      .from("karyawan")
+      .update(mapped)
+      .eq("id", id);
+    if (employeeUpdateError) throw employeeUpdateError;
 
     // Check if linked user account exists, then update or create
     const { data: linkedUser } = await supabase
@@ -266,10 +270,11 @@ export const db = {
       if (k.username !== undefined) userMapped.username = k.username;
       if (password !== undefined) userMapped.password = password;
       if (Object.keys(userMapped).length > 0) {
-        await supabase
+        const { error: userUpdateError } = await supabase
           .from("users")
           .update(userMapped)
           .eq("karyawan_id", id);
+        if (userUpdateError) throw userUpdateError;
       }
     } else if (username && password) {
       const { error: err } = await supabase.from("users").insert([
