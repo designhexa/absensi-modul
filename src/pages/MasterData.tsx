@@ -213,8 +213,10 @@ export default function MasterData() {
                     <div key={u.username} className="rounded-lg border p-3 text-sm">
                       <div className="flex items-center justify-between">
                         <div><span className="font-semibold">{u.username}</span><span className="text-xs text-muted-foreground ml-2">{u.nama}</span></div>
-                        <EditUserDialog userAccount={u} outlets={outlets} />
-                        <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteUser(u.username)} title="Hapus Akun" description={`Akun ${u.username} akan dihapus permanen.`} />
+                        <div className="flex items-center gap-1">
+                          <EditUserDialog userAccount={u} outlets={outlets} />
+                          <ConfirmDeleteButton className="h-7 w-7" onConfirm={() => db.deleteUser(u.username)} title="Hapus Akun" description={`Akun ${u.username} akan dihapus permanen.`} />
+                        </div>
                       </div>
                       <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
                         <span className="capitalize bg-muted px-1.5 py-0.5 rounded">{u.role}</span>
