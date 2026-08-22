@@ -10,10 +10,9 @@ interface Props {
   rows: (string | number)[][];
   /** Optional richer rows for Excel (objects). Falls back to building from headers+rows. */
   excelRows?: Record<string, any>[];
-  size?: "sm" | "default";
 }
 
-export function ExportButtons({ filename, title, headers, rows, excelRows, size = "sm" }: Props) {
+export function ExportButtons({ filename, title, headers, rows, excelRows }: Props) {
   const data =
     excelRows ??
     rows.map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
@@ -24,14 +23,28 @@ export function ExportButtons({ filename, title, headers, rows, excelRows, size 
   const handlePDF = () => exportToPDF(data, filename, title);
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" size={size} variant="outline" onClick={handleExcel} className="hover-lift">
-        <FileSpreadsheet className="h-4 w-4 mr-1.5 text-success" />
-        Excel
+    <div className="flex flex-nowrap gap-2">
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        onClick={handleExcel}
+        className="hover-lift"
+        aria-label="Download Excel"
+        title="Download Excel"
+      >
+        <FileSpreadsheet className="h-4 w-4 text-success" />
       </Button>
-      <Button type="button" size={size} variant="outline" onClick={handlePDF} className="hover-lift">
-        <FileText className="h-4 w-4 mr-1.5 text-destructive" />
-        PDF
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        onClick={handlePDF}
+        className="hover-lift"
+        aria-label="Download PDF"
+        title="Download PDF"
+      >
+        <FileText className="h-4 w-4 text-destructive" />
       </Button>
     </div>
   );

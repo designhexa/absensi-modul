@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export function exportToExcel(data: Record<string, any>[], filename: string) {
   if (!data.length) return;
@@ -19,7 +19,7 @@ export function exportToPDF(data: Record<string, any>[], filename: string, title
   doc.setFontSize(14);
   doc.text(title || filename, 14, 22);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: 30,
     head: [headers],
     body: rows,
