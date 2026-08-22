@@ -19,11 +19,27 @@ export default function Dashboard() {
   });
 
   const isAdmin = user?.role === "admin";
+  const currentKaryawan = useMemo(
+    () =>
+      karyawan.find(
+        (k) => k.id === user?.karyawanId || k.username === user?.username
+      ),
+    [karyawan, user]
+  );
+  const dashboardAbsensi = useMemo(
+    () =>
+      isAdmin
+        ? absensi
+        : absensi.filter(
+            (a) => a.karyawanId === (user?.karyawanId || currentKaryawan?.id)
+          ),
+    [absensi, currentKaryawan, isAdmin, user]
+  );
 
   // Today's attendance
   const todayAbsensi = useMemo(
-    () => absensi.filter((a) => a.tanggal === today),
-    [absensi, today]
+    () => dashboardAbsensi.filter((a) => a.tanggal === today),
+    [dashboardAbsensi, today]
   );
   const hadirToday = todayAbsensi.filter((a) => a.status === "Hadir").length;
   const izinToday = todayAbsensi.filter((a) => a.status === "Izin").length;
@@ -32,8 +48,8 @@ export default function Dashboard() {
 
   // Monthly stats
   const monthAbsensi = useMemo(
-    () => absensi.filter((a) => monthKey(a.tanggal) === m),
-    [absensi, m]
+    () => dashboardAbsensi.filter((a) => monthKey(a.tanggal) === m),
+    [dashboardAbsensi, m]
   );
   const hadirMonth = monthAbsensi.filter((a) => a.status === "Hadir").length;
 
@@ -46,7 +62,7 @@ export default function Dashboard() {
     const last = new Date(end);
     while (cur <= last) {
       const iso = cur.toISOString().slice(0, 10);
-      const dayAbs = absensi.filter((a) => a.tanggal === iso);
+      const dayAbs = dashboardAbsensi.filter((a) => a.tanggal === iso);
       result.push({
         tanggal: iso.slice(5),
         hadir: dayAbs.filter((a) => a.status === "Hadir").length,
@@ -55,34 +71,55 @@ export default function Dashboard() {
       cur.setDate(cur.getDate() + 1);
     }
     return result.slice(-31);
-  }, [absensi, range, today]);
+  }, [dashboardAbsensi, range, today]);
 
-  const stats = [
-    {
-      label: "Hadir Hari Ini",
-      value: `${hadirToday}`,
-      icon: UserCheck,
-      sub: `dari ${karyawan.length} karyawan`,
-    },
-    {
-      label: "Total Karyawan",
-      value: `${karyawan.length}`,
-      icon: Users,
-      sub: `${outlets.length} lokasi`,
-    },
-    {
-      label: "Hadir Bulan Ini",
-      value: `${hadirMonth}`,
-      icon: CalendarCheck,
-      sub: m,
-    },
-    {
-      label: "Izin / Sakit / Alpha",
-      value: `${izinToday} / ${sakitToday} / ${alphaToday}`,
-      icon: TrendingUp,
-      sub: "Hari Ini",
-    },
-  ];
+  const stats = isAdmin
+    ? [
+        {
+          label: "Hadir Hari Ini",
+          value: `${hadirToday}`,
+          icon: UserCheck,
+          sub: `dari ${karyawan.length} karyawan`,
+        },
+        {
+          label: "Total Karyawan",
+          value: `${karyawan.length}`,
+          icon: Users,
+          sub: `${outlets.length} lokasi`,
+        },
+        {
+          label: "Hadir Bulan Ini",
+          value: `${hadirMonth}`,
+          icon: CalendarCheck,
+          sub: m,
+        },
+        {
+          label: "Izin / Sakit / Alpha",
+          value: `${izinToday} / ${sakitToday} / ${alphaToday}`,
+          icon: TrendingUp,
+          sub: "Hari Ini",
+        },
+      ]
+    : [
+        {
+          label: "Hadir Hari Ini",
+          value: `${hadirToday}`,
+          icon: UserCheck,
+          sub: user?.nama || "Data pribadi",
+        },
+        {
+          label: "Hadir Bulan Ini",
+          value: `${hadirMonth}`,
+          icon: CalendarCheck,
+          sub: m,
+        },
+        {
+          label: "Izin / Sakit / Alpha",
+          value: `${izinToday} / ${sakitToday} / ${alphaToday}`,
+          icon: TrendingUp,
+          sub: "Hari Ini",
+        },
+      ];
 
   return (
     <div className="space-y-6">
